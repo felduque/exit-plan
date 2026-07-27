@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The mark for the Android 12+ splash screen: the same burning fuse as the
+     launcher icon, at the same proportions, so the cold-start splash and the
+     icon the user just tapped are recognisably one thing.
+
+     Geometry and colours are measured from the shipped Expo icon
+     (`android-icon-foreground.png`, 1024px) and scaled into this 108 viewport:
+     the fuse runs x 290..733 at y 511, 16px thick, with a 76px spark centred at
+     x 573. Amber behind the spark is burnt, near-black ahead of it is not.
+
+     The system centres this in a 240dp circle and clips at 160dp, so the art
+     stays well inside those bounds. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Unburnt length, ahead of the spark. -->
+    <path
+        android:pathData="M60.4,54 L77.3,54"
+        android:strokeColor="#232329"
+        android:strokeWidth="1.7"
+        android:strokeLineCap="round" />
+    <!-- Burnt length, behind it. -->
+    <path
+        android:pathData="M30.6,54 L60.4,54"
+        android:strokeColor="#E8A33D"
+        android:strokeWidth="1.7"
+        android:strokeLineCap="round" />
+    <!-- The glow around the spark. A vector cannot do the PNG's radial falloff,
+         so this is one flat disc at low alpha — enough to read as heat. -->
+    <path
+        android:pathData="M60.4,54 m-7.6,0 a7.6,7.6 0 1,0 15.2,0 a7.6,7.6 0 1,0 -15.2,0"
+        android:fillColor="#F2BC66"
+        android:fillAlpha="0.18" />
+    <!-- The spark itself. -->
+    <path
+        android:pathData="M60.4,54 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0"
+        android:fillColor="#F2BC66" />
+</vector>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ExitColors.bg. The app is dark only, so the window is this colour from
+         the moment the process starts — a white flash on launch would be both
+         off-brand and, in a dim room, the opposite of discreet. Keep it in step
+         with core/theme.dart: a mismatch shows as a one-frame flicker between
+         the native window and the first Flutter frame. -->
+    <color name="exit_screen">#0A0B0D</color>
+
+    <!-- The adaptive launcher icon's background layer. This is the exact value
+         the Expo build shipped (`android.adaptiveIcon.backgroundColor`), kept
+         to the digit so the icon on an existing user's home screen does not
+         visibly shift when they update. -->
+    <color name="ic_launcher_background">#0A0A0C</color>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ ignores windowBackground for the cold-start screen and draws
+         its own splash from the launcher icon instead — which, on a default
+         Flutter project, is a white circle. That flash is both off-brand and,
+         in a dark room, exactly what this app should not do. Overriding the
+         SplashScreen attributes puts the EXITPLAN mark on app-dark instead. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowSplashScreenBackground">@color/exit_screen</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_mark</item>
+    </style>
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/exit_screen</item>
+    </style>
+</resources>

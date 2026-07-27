@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Flat app-dark, no logo: the Dart splash draws the mark a moment later,
+         and two different splashes in a row read as a stutter. -->
+    <item android:drawable="@color/exit_screen" />
+</layer-list>

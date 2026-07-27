@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Not ?android:colorBackground: that follows the system light/dark
+         setting, and this app is dark whatever the phone is set to. -->
+    <item android:drawable="@color/exit_screen" />
+</layer-list>
