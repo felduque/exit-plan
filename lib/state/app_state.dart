@@ -1,11 +1,13 @@
 import 'package:flutter/widgets.dart';
 
 import '../data/app_settings.dart';
+import '../data/call_avatar_files.dart';
 import '../data/merged_library.dart';
 import '../data/persistence.dart';
 import '../data/system_catalog.dart';
 import '../data/user_files.dart';
 import '../data/user_library.dart';
+import '../models/call_preset.dart';
 import '../models/escape_sound.dart';
 import '../models/exit_category.dart';
 
@@ -19,6 +21,7 @@ class AppState extends ChangeNotifier {
     this._quickAccess,
     this._tipIndex,
     this._onboardingDone,
+    this._callPresets,
   ) {
     _rebuildLibrary();
   }
@@ -30,6 +33,7 @@ class AppState extends ChangeNotifier {
   List<String> _quickAccess;
   int _tipIndex;
   bool _onboardingDone;
+  List<CallPreset> _callPresets;
   late MergedLibrary _library;
 
   AppSettings get settings => _settings;
@@ -37,6 +41,7 @@ class AppState extends ChangeNotifier {
   List<String> get quickAccess => List<String>.unmodifiable(_quickAccess);
   int get tipIndex => _tipIndex;
   bool get onboardingDone => _onboardingDone;
+  List<CallPreset> get callPresets => List<CallPreset>.unmodifiable(_callPresets);
 
   /// The one library every screen reads from.
   MergedLibrary get library => _library;
@@ -57,6 +62,7 @@ class AppState extends ChangeNotifier {
       store.loadQuickAccess(),
       store.loadTipIndex(),
       store.onboardingDone,
+      store.loadCallPresets(),
     );
 
     // Second pass, deliberately after the user library is in place.
@@ -197,6 +203,51 @@ class AppState extends ChangeNotifier {
     if (source is UserFileSource) {
       await UserFiles.delete(source.path);
     }
+  }
+
+  // --- call presets ----------------------------------------------------------
+
+  Future<void> addCallPreset(CallPreset preset) async {
+    _callPresets = <CallPreset>[..._callPresets, preset];
+    notifyListeners();
+    await _store.saveCallPresets(_callPresets);
+  }
+
+  Future<void> updateCallPreset(CallPreset preset) async {
+    final int index = _callPresets.indexWhere(
+      (CallPreset p) => p.id == preset.id,
+    );
+    if (index < 0) return;
+
+    final CallPreset previous = _callPresets[index];
+    final List<CallPreset> next = List<CallPreset>.of(_callPresets);
+    next[index] = preset;
+    _callPresets = next;
+    notifyListeners();
+    await _store.saveCallPresets(_callPresets);
+
+    // The old photo is only orphaned once the new one is safely saved.
+    if (previous.avatarPath != null &&
+        previous.avatarPath != preset.avatarPath) {
+      await CallAvatarFiles.delete(previous.avatarPath!);
+    }
+  }
+
+  /// Removes a call template and deletes its photo from storage.
+  Future<void> deleteCallPreset(String presetId) async {
+    final CallPreset? preset = _callPresets
+        .cast<CallPreset?>()
+        .firstWhere((CallPreset? p) => p?.id == presetId, orElse: () => null);
+    if (preset == null) return;
+
+    _callPresets = _callPresets
+        .where((CallPreset p) => p.id != presetId)
+        .toList(growable: false);
+    notifyListeners();
+
+    await _store.saveCallPresets(_callPresets);
+    final String? avatarPath = preset.avatarPath;
+    if (avatarPath != null) await CallAvatarFiles.delete(avatarPath);
   }
 
   // --- tips ----------------------------------------------------------------

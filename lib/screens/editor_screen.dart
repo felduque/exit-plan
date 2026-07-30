@@ -13,6 +13,7 @@ import '../models/escape_sound.dart';
 import '../models/exit_category.dart';
 import '../state/app_state.dart';
 import '../state/ui_flags.dart';
+import '../widgets/tip_banner.dart';
 import '../widgets/trim_timeline.dart';
 import 'category_detail_screen.dart';
 
@@ -114,117 +115,121 @@ class _EditorScreenState extends State<EditorScreen> {
   Widget build(BuildContext context) {
     final AppState state = AppScope.of(context);
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 8, 22, 18),
-              child: Row(
-                children: <Widget>[
-                  BackChevron(
-                    icon: Icons.close,
-                    onTap: () => Navigator.of(context).pop(),
-                  ),
-                  Text('New exit', style: ExitText.title),
-                ],
+    return TipsSuppressor(
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 8, 22, 18),
+                child: Row(
+                  children: <Widget>[
+                    BackChevron(
+                      icon: Icons.close,
+                      onTap: () => Navigator.of(context).pop(),
+                    ),
+                    Text('New exit', style: ExitText.title),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(22, 0, 22, 20),
-                children: <Widget>[
-                  if (_loadFailed)
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 20),
+                  children: <Widget>[
+                    if (_loadFailed)
+                      Panel(
+                        borderColor: ExitColors.red,
+                        child: Text(
+                          'This file could not be read.',
+                          style: ExitText.row.copyWith(color: ExitColors.red),
+                        ),
+                      )
+                    else ...<Widget>[
+                      TrimTimeline(
+                        duration: _duration,
+                        start: _start,
+                        end: _end,
+                        position: _position,
+                        onChanged: (Duration start, Duration end) {
+                          setState(() {
+                            _start = start;
+                            _end = end;
+                          });
+                          // Keeps a preview that is already running on the bounds
+                          // being dragged, instead of looping the old cut.
+                          _preview.retargetWindow(start, end);
+                        },
+                        onEdgeReleased: _auditionEdge,
+                      ),
+                      const SizedBox(height: 16),
+                      ValueListenableBuilder<String?>(
+                        valueListenable: _preview.playing,
+                        builder: (BuildContext context, String? playing, _) =>
+                            _PreviewButton(
+                              playing: playing != null,
+                              onTap: _toggleWindow,
+                            ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    const _FieldCaption('LABEL'),
                     Panel(
-                      borderColor: ExitColors.red,
-                      child: Text(
-                        'This file could not be read.',
-                        style: ExitText.row.copyWith(color: ExitColors.red),
+                      radius: ExitRadius.field,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: TextField(
+                        controller: _label,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: sans(14, weight: 500),
+                        cursorColor: ExitColors.green,
+                        cursorWidth: 2,
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          hintText: 'Name it',
+                          hintStyle: sans(14, color: ExitColors.dim),
+                        ),
+                        onChanged: (_) => setState(() {}),
                       ),
-                    )
-                  else ...<Widget>[
-                    TrimTimeline(
-                      duration: _duration,
-                      start: _start,
-                      end: _end,
-                      position: _position,
-                      onChanged: (Duration start, Duration end) {
-                        setState(() {
-                          _start = start;
-                          _end = end;
-                        });
-                        // Keeps a preview that is already running on the bounds
-                        // being dragged, instead of looping the old cut.
-                        _preview.retargetWindow(start, end);
-                      },
-                      onEdgeReleased: _auditionEdge,
                     ),
-                    const SizedBox(height: 16),
-                    ValueListenableBuilder<String?>(
-                      valueListenable: _preview.playing,
-                      builder: (BuildContext context, String? playing, _) =>
-                          _PreviewButton(
-                            playing: playing != null,
-                            onTap: _toggleWindow,
-                          ),
+                    const SizedBox(height: 20),
+                    const _FieldCaption('ICON'),
+                    _IconPicker(
+                      selected: _icon,
+                      onSelected: (String value) =>
+                          setState(() => _icon = value),
                     ),
-                  ],
-                  const SizedBox(height: 20),
-                  const _FieldCaption('LABEL'),
-                  Panel(
-                    radius: ExitRadius.field,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: TextField(
-                      controller: _label,
-                      textCapitalization: TextCapitalization.sentences,
-                      style: sans(14, weight: 500),
-                      cursorColor: ExitColors.green,
-                      cursorWidth: 2,
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Name it',
-                        hintStyle: sans(14, color: ExitColors.dim),
+                    const SizedBox(height: 20),
+                    const _FieldCaption('TARGET CATEGORY'),
+                    _CategoryField(
+                      category: _categoryId == null
+                          ? null
+                          : state.library.categoryById(_categoryId!),
+                      onTap: () => _pickCategory(state),
+                    ),
+                    if (_creatingCategory) ...<Widget>[
+                      const SizedBox(height: 8),
+                      _NewCategoryForm(
+                        controller: _newCategory,
+                        icon: _newCategoryIcon,
+                        onIcon: (String value) =>
+                            setState(() => _newCategoryIcon = value),
+                        onCancel: () =>
+                            setState(() => _creatingCategory = false),
+                        onCreate: () => _createCategory(state),
                       ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const _FieldCaption('ICON'),
-                  _IconPicker(
-                    selected: _icon,
-                    onSelected: (String value) => setState(() => _icon = value),
-                  ),
-                  const SizedBox(height: 20),
-                  const _FieldCaption('TARGET CATEGORY'),
-                  _CategoryField(
-                    category: _categoryId == null
-                        ? null
-                        : state.library.categoryById(_categoryId!),
-                    onTap: () => _pickCategory(state),
-                  ),
-                  if (_creatingCategory) ...<Widget>[
-                    const SizedBox(height: 8),
-                    _NewCategoryForm(
-                      controller: _newCategory,
-                      icon: _newCategoryIcon,
-                      onIcon: (String value) =>
-                          setState(() => _newCategoryIcon = value),
-                      onCancel: () => setState(() => _creatingCategory = false),
-                      onCreate: () => _createCategory(state),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 8, 22, 14),
-              child: PrimaryButton(
-                label: 'Save exit',
-                enabled: _canSave,
-                onTap: _canSave ? () => _save(state) : null,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 8, 22, 14),
+                child: PrimaryButton(
+                  label: 'Save exit',
+                  enabled: _canSave,
+                  onTap: _canSave ? () => _save(state) : null,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

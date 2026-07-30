@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/call_preset.dart';
 import 'app_settings.dart';
 import 'system_catalog.dart';
 import 'user_library.dart';
@@ -20,6 +21,7 @@ class Persistence {
   static const String _kUserLibrary = 'exitplan.userLibrary';
   static const String _kTipIndex = 'exitplan.tips';
   static const String _kNotificationsAsked = 'exitplan.notificationsAsked';
+  static const String _kCallPresets = 'exitplan.callPresets';
 
   final SharedPreferences _prefs;
 
@@ -102,4 +104,27 @@ class Persistence {
 
   Future<void> setNotificationsAsked() =>
       _prefs.setBool(_kNotificationsAsked, true);
+
+  // --- call presets ----------------------------------------------------------
+
+  /// Drops any entry that does not parse, same tolerant rule as every other
+  /// list here: a corrupt template must not cost the user the rest of them.
+  List<CallPreset> loadCallPresets() {
+    final Object? raw = _decode(_kCallPresets);
+    final List<CallPreset> presets = <CallPreset>[];
+    if (raw is List) {
+      for (final Object? entry in raw) {
+        final CallPreset? parsed = CallPreset.tryFromJson(entry);
+        if (parsed == null) continue;
+        if (presets.any((CallPreset p) => p.id == parsed.id)) continue;
+        presets.add(parsed);
+      }
+    }
+    return presets;
+  }
+
+  Future<void> saveCallPresets(List<CallPreset> presets) => _encode(
+    _kCallPresets,
+    presets.map((CallPreset p) => p.toJson()).toList(),
+  );
 }

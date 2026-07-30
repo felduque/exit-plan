@@ -5,6 +5,7 @@ import '../data/app_settings.dart';
 import '../state/app_state.dart';
 import '../state/permissions.dart';
 import '../widgets/permission_notice.dart';
+import '../widgets/tip_banner.dart';
 
 /// Six toggles, and nothing else. No paid tier, no upsell, no account.
 class SettingsScreen extends StatelessWidget {
@@ -15,72 +16,78 @@ class SettingsScreen extends StatelessWidget {
     final AppState state = AppScope.of(context);
     final AppSettings s = state.settings;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 8, 22, 18),
-              child: Row(
-                children: <Widget>[
-                  const BackChevron(),
-                  Text('Settings', style: ExitText.title),
-                ],
+    return TipsSuppressor(
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 8, 22, 18),
+                child: Row(
+                  children: <Widget>[
+                    const BackChevron(),
+                    Text('Settings', style: ExitText.title),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
-                children: <Widget>[
-                  _Toggle(
-                    label: 'Loop sound',
-                    detail: 'Default loop = repeat until stopped',
-                    value: s.loopSound,
-                    onChanged: (bool v) =>
-                        state.updateSettings(s.copyWith(loopSound: v)),
-                  ),
-                  _Toggle(
-                    label: 'Haptic support',
-                    detail: 'Vibrate on fire, per category',
-                    value: s.hapticSupport,
-                    onChanged: (bool v) =>
-                        state.updateSettings(s.copyWith(hapticSupport: v)),
-                  ),
-                  _Toggle(
-                    label: 'Max volume override',
-                    detail: 'Force player to 100% on fire',
-                    value: s.maxVolumeOverride,
-                    onChanged: (bool v) =>
-                        state.updateSettings(s.copyWith(maxVolumeOverride: v)),
-                  ),
-                  _Toggle(
-                    label: 'Dark screen hints',
-                    detail: 'Very faint status on blackout',
-                    value: s.darkScreenHints,
-                    onChanged: (bool v) =>
-                        state.updateSettings(s.copyWith(darkScreenHints: v)),
-                  ),
-                  _Toggle(
-                    label: 'Lock-screen controls',
-                    detail: 'Neutral controls · keeps audio alive',
-                    value: s.lockScreenControls,
-                    onChanged: (bool v) => _setLockScreenControls(state, s, v),
-                  ),
-                  // Sits directly under the toggle it belongs to, so the reason
-                  // the setting is not working is next to the setting.
-                  NotificationPermissionNotice(relevant: s.lockScreenControls),
-                  _Toggle(
-                    label: 'In-app tips',
-                    detail: 'Occasional reminders while open',
-                    value: s.inAppTips,
-                    onChanged: (bool v) =>
-                        state.updateSettings(s.copyWith(inAppTips: v)),
-                  ),
-                ],
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+                  children: <Widget>[
+                    _Toggle(
+                      label: 'Loop sound',
+                      detail: 'Default loop = repeat until stopped',
+                      value: s.loopSound,
+                      onChanged: (bool v) =>
+                          state.updateSettings(s.copyWith(loopSound: v)),
+                    ),
+                    _Toggle(
+                      label: 'Haptic support',
+                      detail: 'Vibrate on fire, per category',
+                      value: s.hapticSupport,
+                      onChanged: (bool v) =>
+                          state.updateSettings(s.copyWith(hapticSupport: v)),
+                    ),
+                    _Toggle(
+                      label: 'Max volume override',
+                      detail: 'Force player to 100% on fire',
+                      value: s.maxVolumeOverride,
+                      onChanged: (bool v) => state.updateSettings(
+                        s.copyWith(maxVolumeOverride: v),
+                      ),
+                    ),
+                    _Toggle(
+                      label: 'Dark screen hints',
+                      detail: 'Very faint status on blackout',
+                      value: s.darkScreenHints,
+                      onChanged: (bool v) =>
+                          state.updateSettings(s.copyWith(darkScreenHints: v)),
+                    ),
+                    _Toggle(
+                      label: 'Lock-screen controls',
+                      detail: 'Neutral controls · keeps audio alive',
+                      value: s.lockScreenControls,
+                      onChanged: (bool v) =>
+                          _setLockScreenControls(state, s, v),
+                    ),
+                    // Sits directly under the toggle it belongs to, so the reason
+                    // the setting is not working is next to the setting.
+                    NotificationPermissionNotice(
+                      relevant: s.lockScreenControls,
+                    ),
+                    _Toggle(
+                      label: 'In-app tips',
+                      detail: 'Occasional reminders while open',
+                      value: s.inAppTips,
+                      onChanged: (bool v) =>
+                          state.updateSettings(s.copyWith(inAppTips: v)),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const FooterNote('100% OFFLINE · NO ACCOUNTS'),
-          ],
+              const FooterNote('100% OFFLINE · NO ACCOUNTS'),
+            ],
+          ),
         ),
       ),
     );

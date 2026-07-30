@@ -11,6 +11,7 @@ import '../widgets/confirm.dart';
 import '../widgets/selectors.dart';
 import '../widgets/slot_picker_sheet.dart';
 import '../widgets/sound_row.dart';
+import '../widgets/tip_banner.dart';
 import 'blackout_screen.dart';
 import 'import_flow.dart';
 
@@ -51,8 +52,10 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
 
     if (category == null) {
       // The category was deleted while this screen was open.
-      return Scaffold(
-        body: Center(child: Text('Category not found', style: ExitText.body)),
+      return TipsSuppressor(
+        child: Scaffold(
+          body: Center(child: Text('Category not found', style: ExitText.body)),
+        ),
       );
     }
 
@@ -62,171 +65,173 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
         ? ExitColors.green
         : accentForCategory(category.id);
 
-    return Scaffold(
-      body: Stack(
-        children: <Widget>[
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 200,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: <Color>[
-                    accent.withValues(alpha: 0.12),
-                    ExitColors.bg.withValues(alpha: 0),
-                  ],
+    return TipsSuppressor(
+      child: Scaffold(
+        body: Stack(
+          children: <Widget>[
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 200,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[
+                      accent.withValues(alpha: 0.12),
+                      ExitColors.bg.withValues(alpha: 0),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
-                  child: Row(
-                    children: <Widget>[
-                      const BackChevron(color: ExitColors.hi),
-                      const Spacer(),
-                      if (category.isUser)
-                        IconTile(
-                          icon: Icons.delete_outline,
-                          semanticLabel: 'Delete category',
-                          color: ExitColors.red,
-                          size: 34,
-                          iconSize: 17,
-                          onTap: () => _deleteCategory(category),
-                        ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 16, 22, 18),
-                  child: Row(
-                    children: <Widget>[
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: ExitColors.surf,
-                          borderRadius: const BorderRadius.all(
-                            Radius.circular(14),
+            SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
+                    child: Row(
+                      children: <Widget>[
+                        const BackChevron(color: ExitColors.hi),
+                        const Spacer(),
+                        if (category.isUser)
+                          IconTile(
+                            icon: Icons.delete_outline,
+                            semanticLabel: 'Delete category',
+                            color: ExitColors.red,
+                            size: 34,
+                            iconSize: 17,
+                            onTap: () => _deleteCategory(category),
                           ),
-                          border: Border.all(color: ExitColors.line2),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 16, 22, 18),
+                    child: Row(
+                      children: <Widget>[
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: ExitColors.surf,
+                            borderRadius: const BorderRadius.all(
+                              Radius.circular(14),
+                            ),
+                            border: Border.all(color: ExitColors.line2),
+                          ),
+                          child: Icon(
+                            iconFor(category.icon),
+                            size: 24,
+                            color: accent,
+                          ),
                         ),
-                        child: Icon(
-                          iconFor(category.icon),
-                          size: 24,
-                          color: accent,
-                        ),
-                      ),
-                      const SizedBox(width: 13),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                Flexible(
-                                  child: Text(
-                                    category.label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: ExitText.display,
+                        const SizedBox(width: 13),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Row(
+                                children: <Widget>[
+                                  Flexible(
+                                    child: Text(
+                                      category.label,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: ExitText.display,
+                                    ),
                                   ),
-                                ),
-                                if (category.isUser) ...<Widget>[
-                                  const SizedBox(width: 9),
-                                  const UserBadge(),
+                                  if (category.isUser) ...<Widget>[
+                                    const SizedBox(width: 9),
+                                    const UserBadge(),
+                                  ],
                                 ],
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _strapline(category),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: mono(10),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Expanded(
-                        child: DelayFuseSelector(
-                          compact: true,
-                          seconds: _delay,
-                          onChanged: (int value) =>
-                              setState(() => _delay = value),
-                        ),
-                      ),
-                      const SizedBox(width: 9),
-                      SizedBox(
-                        width: 104,
-                        child: LoopLengthSelector(
-                          compact: true,
-                          loop: loop,
-                          onChanged: (LoopChoice value) =>
-                              setState(() => _loop = value),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  // Driven by the player itself — see [PreviewPlayer.playing].
-                  child: ValueListenableBuilder<String?>(
-                    valueListenable: _preview.playing,
-                    builder: (BuildContext context, String? playingId, _) {
-                      return ListView(
-                        padding: const EdgeInsets.fromLTRB(22, 0, 22, 24),
-                        children: <Widget>[
-                          for (final EscapeSound sound in sounds) ...<Widget>[
-                            SoundRow(
-                              sound: sound,
-                              pinned: state.isPinned(sound.id),
-                              previewing: playingId == sound.id,
-                              onFire: () => fireSound(
-                                context,
-                                soundId: sound.id,
-                                delaySeconds: _delay,
-                                loop: loop,
                               ),
-                              onPreview: () => _preview.toggle(sound),
-                              onPin: () => showSlotPicker(context, sound),
-                              onDelete: sound.isUser
-                                  ? () => _deleteSound(sound)
-                                  : null,
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                          AddYourAudioRow(
-                            onTap: () => startImport(
-                              context,
-                              targetCategoryId: category.id,
-                            ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _strapline(category),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: mono(10),
+                              ),
+                            ],
                           ),
-                        ],
-                      );
-                    },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(
+                          child: DelayFuseSelector(
+                            compact: true,
+                            seconds: _delay,
+                            onChanged: (int value) =>
+                                setState(() => _delay = value),
+                          ),
+                        ),
+                        const SizedBox(width: 9),
+                        SizedBox(
+                          width: 104,
+                          child: LoopLengthSelector(
+                            compact: true,
+                            loop: loop,
+                            onChanged: (LoopChoice value) =>
+                                setState(() => _loop = value),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    // Driven by the player itself — see [PreviewPlayer.playing].
+                    child: ValueListenableBuilder<String?>(
+                      valueListenable: _preview.playing,
+                      builder: (BuildContext context, String? playingId, _) {
+                        return ListView(
+                          padding: const EdgeInsets.fromLTRB(22, 0, 22, 24),
+                          children: <Widget>[
+                            for (final EscapeSound sound in sounds) ...<Widget>[
+                              SoundRow(
+                                sound: sound,
+                                pinned: state.isPinned(sound.id),
+                                previewing: playingId == sound.id,
+                                onFire: () => fireSound(
+                                  context,
+                                  soundId: sound.id,
+                                  delaySeconds: _delay,
+                                  loop: loop,
+                                ),
+                                onPreview: () => _preview.toggle(sound),
+                                onPin: () => showSlotPicker(context, sound),
+                                onDelete: sound.isUser
+                                    ? () => _deleteSound(sound)
+                                    : null,
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                            AddYourAudioRow(
+                              onTap: () => startImport(
+                                context,
+                                targetCategoryId: category.id,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

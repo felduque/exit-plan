@@ -9,6 +9,7 @@ import '../widgets/quick_slot_button.dart';
 import '../widgets/selectors.dart';
 import 'blackout_screen.dart';
 import 'browse_screen.dart';
+import 'calls_screen.dart';
 import 'settings_screen.dart';
 
 /// The heart of the app, and the only screen that has to work in a hurry:
@@ -108,6 +109,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => _open(const BrowseScreen()),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 8, 22, 0),
+              child: _CallsRow(
+                templateCount: state.callPresets.length,
+                onTap: () => _open(const CallsScreen()),
+              ),
+            ),
             const FooterNote('TAP AN EXIT · SCREEN GOES DARK · SOUND FIRES'),
           ],
         ),
@@ -123,6 +131,51 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _fire(String soundId, LoopChoice loop) {
     fireSound(context, soundId: soundId, delaySeconds: _delay, loop: loop);
+  }
+}
+
+/// The way into `CallsScreen`, styled like [BrowseRow] since they are the same
+/// kind of thing: a second-order entry point that gets one line, not a tile in
+/// the grid.
+class _CallsRow extends StatelessWidget {
+  const _CallsRow({required this.templateCount, required this.onTap});
+
+  final int templateCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Fake calls',
+      child: Panel(
+        onTap: onTap,
+        radius: ExitRadius.tile,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.call_rounded, size: 18, color: ExitColors.mid),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text('Fake calls', style: sans(13, weight: 600)),
+                  const SizedBox(height: 3),
+                  Text(
+                    templateCount == 0
+                        ? 'NO TEMPLATES YET'
+                        : '$templateCount TEMPLATE${templateCount == 1 ? '' : 'S'}',
+                    style: mono(9, letterSpacing: 1),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 18, color: ExitColors.dim),
+          ],
+        ),
+      ),
+    );
   }
 }
 

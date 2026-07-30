@@ -1,6 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 
+import 'call_ring_engine.dart';
 import 'exit_audio_handler.dart';
 import 'fire_engine.dart';
 
@@ -8,6 +9,11 @@ import 'fire_engine.dart';
 /// for the process, and there is only ever one thing firing.
 late final ExitAudioHandler exitAudioHandler;
 late final FireEngine fireEngine;
+
+/// The fake-call engine. Kept separate from [fireEngine] — see
+/// `call_ring_engine.dart` — but the two must never sound at once, so
+/// whichever fires cancels the other first.
+late final CallRingEngine callRingEngine;
 
 /// Configures audio once, at startup, before anything can fire.
 Future<void> initAudio() async {
@@ -25,6 +31,7 @@ Future<void> initAudio() async {
   );
 
   fireEngine = FireEngine(exitAudioHandler);
+  callRingEngine = CallRingEngine();
 
   final AudioSession session = await AudioSession.instance;
   await session.configure(

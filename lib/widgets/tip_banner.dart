@@ -26,6 +26,35 @@ class TipBanner extends StatefulWidget {
   State<TipBanner> createState() => _TipBannerState();
 }
 
+/// Wraps a screen that is not home or "all exits" so [TipBanner] never shows
+/// over it — see [tipSuppressDepth]. Every other screen in the app should
+/// wrap its returned widget in one of these.
+class TipsSuppressor extends StatefulWidget {
+  const TipsSuppressor({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<TipsSuppressor> createState() => _TipsSuppressorState();
+}
+
+class _TipsSuppressorState extends State<TipsSuppressor> {
+  @override
+  void initState() {
+    super.initState();
+    tipSuppressDepth.value++;
+  }
+
+  @override
+  void dispose() {
+    tipSuppressDepth.value--;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
 class _TipBannerState extends State<TipBanner> {
   Timer? _showTimer;
   Timer? _hideTimer;
@@ -50,7 +79,12 @@ class _TipBannerState extends State<TipBanner> {
 
     final AppState state = AppScope.read(context);
     if (!state.settings.inAppTips) return;
-    if (widget.suppressed || blackoutActive.value || modalActive.value) return;
+    if (widget.suppressed ||
+        blackoutActive.value ||
+        modalActive.value ||
+        tipsSuppressedByScreen) {
+      return;
+    }
 
     setState(() => _text = kTips[state.tipIndex % kTips.length]);
     // Remembering the index means reopening the app does not always show the
@@ -68,12 +102,15 @@ class _TipBannerState extends State<TipBanner> {
 
   @override
   Widget build(BuildContext context) {
-    // A tip already up when a sheet opens has to get out of the way too, not
-    // just be skipped next time round.
-    return ValueListenableBuilder<bool>(
-      valueListenable: modalActive,
-      builder: (BuildContext context, bool modal, _) =>
-          _banner(modal ? null : _text),
+    // A tip already up when a sheet opens, or when navigation lands on a
+    // screen that does not want it, has to get out of the way too — not just
+    // be skipped next time round.
+    return AnimatedBuilder(
+      animation: Listenable.merge(<Listenable>[modalActive, tipSuppressDepth]),
+      builder: (BuildContext context, _) {
+        final bool hide = modalActive.value || tipsSuppressedByScreen;
+        return _banner(hide ? null : _text);
+      },
     );
   }
 

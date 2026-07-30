@@ -23,3 +23,16 @@ Future<T> withModal<T>(Future<T> Function() body) async {
     modalActive.value = false;
   }
 }
+
+/// How many currently-mounted screens want the tip banner hidden. A counter
+/// rather than a bool: screens can stack (an editor pushed from settings, say),
+/// and the banner must stay hidden until every one of them is gone, not just
+/// the last one to mount.
+///
+/// The banner is designed for exactly two screens — home and "all exits" — so
+/// every other screen wraps itself in [TipsSuppressor] to opt out. That
+/// matters most for the fake-call screens: a banner is exactly the kind of
+/// thing that would give away a call nobody is really receiving.
+final ValueNotifier<int> tipSuppressDepth = ValueNotifier<int>(0);
+
+bool get tipsSuppressedByScreen => tipSuppressDepth.value > 0;
