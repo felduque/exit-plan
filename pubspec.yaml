@@ -20,14 +20,9 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # build on the SAME Play listing (`com.dg.developer.exitplan`), and Play rejects
 # any upload whose versionCode is not strictly higher than the last one it has.
 #
-# That number is not in this repo and was never in the Expo repo either: its
-# eas.json used `appVersionSource: "remote"` with `autoIncrement`, so EAS held
-# it. Read the last one before the first upload and set this above it:
-#
-#   eas build:version:get --platform android      (from the Expo project)
-#
-# TODO: currently 1 — that is the template default and Play will reject it.
-version: 1.0.0+1
+# Last version published by the Expo build: versionCode 2 (1.0.0), 13 jul.
+# Bump the +N on every upload to Play; it can never repeat or go down.
+version: 1.1.0+3
 
 environment:
   sdk: ^3.12.2
@@ -77,8 +72,10 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Synthesized by tool/gen_audio.dart — regenerate with:
-  #   dart tool/gen_audio.dart
+  # Real, free-licence audio (Edwin Arenas pack + Pixabay) — see
+  # assets/audio/README.md for the origin and licence note. `tool/gen_audio.dart`
+  # synthesized the original placeholder set and is unused by the current
+  # bundle, kept only in case a category ever needs a from-scratch fallback.
   assets:
     - assets/audio/doorbell/
     - assets/audio/alarms/

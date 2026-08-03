@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -40,12 +42,13 @@ class IncomingCallScreen extends StatefulWidget {
 
 class _IncomingCallScreenState extends State<IncomingCallScreen> {
   bool _handedOff = false;
+  StreamSubscription<void>? _engineSub;
 
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    callRingEngine.changes.listen(_onEngine);
+    _engineSub = callRingEngine.changes.listen(_onEngine);
     WidgetsBinding.instance.addPostFrameCallback((_) => _arm());
   }
 
@@ -86,6 +89,8 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
 
   @override
   void dispose() {
+    _engineSub?.cancel();
+    _engineSub = null;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     // Belt and braces, mirroring BlackoutScreen: leaving this route must never
     // leave the ring running.

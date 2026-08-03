@@ -58,7 +58,17 @@ class _TipsSuppressorState extends State<TipsSuppressor> {
 class _TipBannerState extends State<TipBanner> {
   Timer? _showTimer;
   Timer? _hideTimer;
+
+  /// Null while hidden. Driving visibility off a separate flag rather than off
+  /// this being null lets the banner keep its last text mounted through the
+  /// whole hide animation, instead of swapping to an empty box the instant it
+  /// starts fading — which would skip the fade entirely.
   String? _text;
+  String _lastText = '';
+
+  /// Live drag offset while a swipe-to-dismiss gesture is in progress. Reset
+  /// to 0 once the finger lifts, whether or not the drag dismissed anything.
+  double _dragY = 0;
 
   @override
   void initState() {
@@ -86,7 +96,12 @@ class _TipBannerState extends State<TipBanner> {
       return;
     }
 
-    setState(() => _text = kTips[state.tipIndex % kTips.length]);
+    final String next = kTips[state.tipIndex % kTips.length];
+    setState(() {
+      _lastText = next;
+      _text = next;
+      _dragY = 0;
+    });
     // Remembering the index means reopening the app does not always show the
     // same first tip.
     await state.advanceTip(kTips.length);
@@ -95,9 +110,27 @@ class _TipBannerState extends State<TipBanner> {
     _hideTimer = Timer(TipBanner.visible, _hide);
   }
 
+  /// Ends the banner early — a tap, a swipe, or navigation landing on a
+  /// screen that does not want it. The auto-hide timer no longer matters once
+  /// this fires, so it is cancelled rather than left to fire on nothing.
   void _hide() {
     if (!mounted) return;
+    _hideTimer?.cancel();
+    _hideTimer = null;
     setState(() => _text = null);
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    setState(() => _dragY = (_dragY + details.delta.dy).clamp(-80.0, 0.0));
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    // Swiping it back up, the direction it dropped in from, is what dismisses
+    // it — the same "undo the entrance" gesture the call screens use for
+    // slide-to-answer.
+    final bool dismiss = _dragY <= -28;
+    setState(() => _dragY = 0);
+    if (dismiss) _hide();
   }
 
   @override
@@ -109,58 +142,76 @@ class _TipBannerState extends State<TipBanner> {
       animation: Listenable.merge(<Listenable>[modalActive, tipSuppressDepth]),
       builder: (BuildContext context, _) {
         final bool hide = modalActive.value || tipsSuppressedByScreen;
-        return _banner(hide ? null : _text);
+        return _banner(!hide && _text != null);
       },
     );
   }
 
-  Widget _banner(String? text) {
+  Widget _banner(bool visible) {
     return IgnorePointer(
-      ignoring: text == null,
-      child: AnimatedOpacity(
-        opacity: text == null ? 0 : 1,
+      ignoring: !visible,
+      // Drops down from behind the status bar and fades in; reverses on the
+      // way out. Both properties animate the same mounted content — the text
+      // itself only ever changes when a fresh tip is about to show, in
+      // [_show] — so the exit is a real fade, not an instant swap.
+      child: AnimatedSlide(
+        offset: visible ? Offset.zero : const Offset(0, -1),
         duration: const Duration(milliseconds: 220),
-        // The banner is stacked in MaterialApp.builder, above the navigator and
-        // outside any Scaffold, so it has no Material ancestor — without one,
-        // Flutter paints the debug double underline over every letter.
-        child: text == null
-            ? const SizedBox.shrink()
-            : Material(
-                type: MaterialType.transparency,
-                child: SafeArea(
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-                      child: GestureDetector(
-                        onTap: _hide,
-                        child: Panel(
-                          color: ExitColors.surf2,
-                          borderColor: ExitColors.line2,
-                          radius: ExitRadius.tile,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 15,
-                            vertical: 13,
-                          ),
-                          child: Row(
-                            children: <Widget>[
-                              const Icon(
-                                Icons.info_outline,
-                                size: 15,
-                                color: ExitColors.mid,
+        curve: Curves.easeOut,
+        child: AnimatedOpacity(
+          opacity: visible ? 1 : 0,
+          duration: const Duration(milliseconds: 220),
+          // The banner is stacked in MaterialApp.builder, above the navigator
+          // and outside any Scaffold, so it has no Material ancestor —
+          // without one, Flutter paints the debug double underline over
+          // every letter.
+          child: _lastText.isEmpty
+              ? const SizedBox.shrink()
+              : Material(
+                  type: MaterialType.transparency,
+                  child: SafeArea(
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: Transform.translate(
+                          offset: Offset(0, _dragY),
+                          child: GestureDetector(
+                            onTap: _hide,
+                            onVerticalDragUpdate: _onDragUpdate,
+                            onVerticalDragEnd: _onDragEnd,
+                            child: Panel(
+                              color: ExitColors.surf2,
+                              borderColor: ExitColors.line2,
+                              radius: ExitRadius.tile,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 15,
+                                vertical: 13,
                               ),
-                              const SizedBox(width: 11),
-                              Expanded(
-                                child: Text(text, style: sans(12, height: 1.4)),
+                              child: Row(
+                                children: <Widget>[
+                                  const Icon(
+                                    Icons.info_outline,
+                                    size: 15,
+                                    color: ExitColors.mid,
+                                  ),
+                                  const SizedBox(width: 11),
+                                  Expanded(
+                                    child: Text(
+                                      _lastText,
+                                      style: sans(12, height: 1.4),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
+        ),
       ),
     );
   }

@@ -1,0 +1,248 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face {
+          font-family: "Inter";
+          font-weight: 400;
+          font-style: normal;
+          src: url("assets/fonts/Inter-400.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Inter";
+          font-weight: 800;
+          font-style: normal;
+          src: url("assets/fonts/Inter-800.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Inter";
+          font-weight: 900;
+          font-style: normal;
+          src: url("assets/fonts/Inter-900.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "JetBrains Mono";
+          font-weight: 400;
+          font-style: normal;
+          src: url("assets/fonts/JetBrainsMono-400.woff2") format("woff2");
+        }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: hidden;
+          container-type: size;
+          font-family: "Inter", sans-serif;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        .pv-ground {
+          position: absolute;
+          inset: 0;
+          background: #08090b;
+          z-index: 0;
+        }
+
+        /* background role: the real settings screen, screen-only crop, dimmed + soft */
+        .pv-plate-wrap {
+          position: absolute;
+          left: 230.5px;
+          top: 30px;
+          width: 619px;
+          height: 1395px;
+          z-index: 1;
+        }
+        .pv-plate {
+          position: absolute;
+          inset: 0;
+          background-image: url("assets/screenshot_8_privacy.png");
+          background-size: 1080px 1920px;
+          background-position: -231px -486px;
+          background-repeat: no-repeat;
+          filter: blur(2.5px) saturate(0.75);
+        }
+        /* keeps the claims legible over it */
+        .pv-scrim {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            to bottom,
+            rgba(8, 9, 11, 0.55) 0%,
+            rgba(8, 9, 11, 0.72) 46%,
+            rgba(8, 9, 11, 0.95) 74%,
+            #08090b 100%
+          );
+          z-index: 2;
+        }
+
+        .pv-stack {
+          position: absolute;
+          left: 60px;
+          top: 1250px;
+          width: 960px;
+          z-index: 3;
+        }
+        .pv-claim {
+          font-weight: 800;
+          font-size: 72px;
+          line-height: 1.1;
+          letter-spacing: -0.03em;
+          color: #f2f2f3;
+          margin-bottom: 22px;
+          white-space: nowrap;
+        }
+        .pv-claim:last-child {
+          margin-bottom: 0;
+          color: #e8a33d;
+          font-weight: 900;
+        }
+        .pv-claim span {
+          font-family: "JetBrains Mono", monospace;
+          font-weight: 400;
+          font-size: 52px;
+          color: #e8a33d;
+          margin-right: 24px;
+          letter-spacing: 0;
+        }
+
+        .pv-hair {
+          position: absolute;
+          left: 60px;
+          top: 1608px;
+          width: 960px;
+          height: 1px;
+          background: #282726;
+          transform-origin: left center;
+          z-index: 3;
+        }
+        .pv-foot {
+          position: absolute;
+          left: 60px;
+          top: 1628px;
+          width: 960px;
+          z-index: 3;
+          font-family: "JetBrains Mono", monospace;
+          font-weight: 400;
+          font-size: 26px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #8a8c93;
+        }
+      </style>
+
+      <div
+        id="root"
+        data-composition-id="05-privacy"
+        data-start="0"
+        data-duration="6"
+        data-width="1080"
+        data-height="1920"
+      >
+        <div
+          class="pv-ground clip"
+          data-start="0"
+          data-duration="6"
+          data-track-index="0"
+        ></div>
+
+        <div
+          class="pv-plate-wrap clip"
+          data-layout-allow-overflow
+          data-start="0"
+          data-duration="6"
+          data-track-index="1"
+        >
+          <div class="pv-plate"></div>
+        </div>
+
+        <div
+          class="pv-scrim clip"
+          data-start="0"
+          data-duration="6"
+          data-track-index="2"
+        ></div>
+
+        <div
+          class="pv-stack clip"
+          data-start="0"
+          data-duration="6"
+          data-track-index="3"
+        >
+          <div class="pv-claim pv-c1"><span>/</span>funciona sin internet</div>
+          <div class="pv-claim pv-c2"><span>/</span>sin cuenta</div>
+          <div class="pv-claim pv-c3"><span>/</span>sin datos</div>
+        </div>
+
+        <div
+          class="pv-hair clip"
+          data-start="0"
+          data-duration="6"
+          data-track-index="4"
+        ></div>
+        <div
+          class="pv-foot clip"
+          data-start="0"
+          data-duration="6"
+          data-track-index="5"
+        >
+          100% sin internet &middot; sin cuentas
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          window.__timelines = window.__timelines || {};
+          const tl = gsap.timeline({ paused: true });
+
+          // ---- Scene 1 (0.0-1.1): the real settings screen fades up, dimmed ----
+          tl.fromTo(
+            ".pv-plate-wrap",
+            { opacity: 0, scale: 1.09 },
+            { opacity: 1, scale: 1.15, duration: 1.0, ease: "power3.out" },
+            0,
+          );
+          tl.fromTo(
+            ".pv-scrim",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.9, ease: "power2.out" },
+            0,
+          );
+
+          // ---- Scenes 2-4 (1.1-3.8): the three claims assemble, one per beat ----
+          // nothing was front-loaded — the whole payload lands in the back half
+          const claims = [".pv-c1", ".pv-c2", ".pv-c3"];
+          claims.forEach((sel, i) => {
+            tl.fromTo(
+              sel,
+              { opacity: 0, x: -34 },
+              { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" },
+              1.1 + i * 0.9,
+            );
+          });
+
+          // ---- Scene 5 (3.8-5.0): held. The app's own footer string seals it. ----
+          tl.fromTo(
+            ".pv-hair",
+            { scaleX: 0, opacity: 0 },
+            { scaleX: 1, opacity: 1, duration: 0.7, ease: "power3.out" },
+            3.7,
+          );
+          tl.fromTo(
+            ".pv-foot",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.55, ease: "power2.out" },
+            3.95,
+          );
+
+          window.__timelines["05-privacy"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

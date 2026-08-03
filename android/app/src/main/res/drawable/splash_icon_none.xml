@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A deliberately empty icon for the Android 12+ cold-start splash.
+
+     The system always draws that splash and, if `windowSplashScreenAnimatedIcon`
+     is unset, falls back to the launcher icon — so the only way to get a flat
+     screen is to hand it something that paints nothing. This is that something.
+
+     Why no mark: the app's own `AnimatedSplash` (widgets/animated_splash.dart)
+     starts the moment Flutter's first frame lands, and a system mark ahead of it
+     reads as two splashes in a row. With no icon there is also no icon animation
+     for the system to wait on, so the splash is handed over immediately and the
+     Dart animation is what the user actually sees first.
+
+     Referenced only from values-v31/styles.xml — read the note there before
+     touching any other LaunchTheme copy. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M0,0 L108,0 L108,108 L0,108 Z"
+        android:fillColor="#00000000" />
+</vector>

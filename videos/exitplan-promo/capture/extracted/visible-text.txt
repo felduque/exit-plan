@@ -1,0 +1,60 @@
+ExitPlan — Fake Call & Escape (Android)
+
+An app that plays realistic fake calls, doorbells and alarms so the user has a
+believable reason to leave an awkward situation. Framing is personal convenience
+and feeling comfortable leaving — never harassment, deception, or surveillance,
+and never an emergency service.
+
+--- Strings taken from the supplied app screens ---
+
+HOME
+EXITPLAN
+STANDBY · 4 EXITS READY
+QUICK EXITS
+  01  Ding          "That's the door."          TAP TO FIRE
+  02  Alarm clock   "That's my alarm. I have to go."   TAP TO FIRE
+  03  Signal drop 3 "The call dropped."         TAP TO FIRE
+  04  Fire          "Something's burning. I have to check."  TAP TO FIRE
+FUSE   0s / 5 / 10 / 30
+LOOP   1x / 30s / infinity
+Browse all — 6 CATEGORIES · 47 SOUNDS
+Fake calls
+TAP AN EXIT · SCREEN GOES DARK · SOUND FIRES
+
+DELAY FUSE
+Set a fuse. Walk away.
+STEP 02 · DELAY FUSE
+Arm it, then pocket the phone.
+Set a fuse of 5, 10 or 30 seconds. Fire it, put the phone away, and let the noise
+go off on its own — completely hands free.
+
+SOUND LIBRARY
+47 sounds. 6 categories.
+All exits — DOORBELL / ALARMS / BAD SIGNAL / ...
+Doorbell 8: Ding, Bell, Bells, Ting, Doorbell 1-4
+Alarms 8: Alarm clock "That's my alarm. I have to go."
+
+FAKE CALLS
+Build a caller in seconds.
+Fake calls — + NEW — Mom
+
+INCOMING
+Contact name and photo, Decline / Accept
+
+LIVE CALL
+Answer, talk, hang up when ready.
+
+PRIVACY
+100% offline. No account, no data.
+Settings: Loop sound · Haptic support · Max volume override · Dark screen hints ·
+Lock-screen controls · In-app tips
+100% OFFLINE · NO ACCOUNTS
+
+--- Video brief (user-supplied, verbatim beats) ---
+
+SCENE 1 (0:00-0:03) CAPTION: NEED AN EXCUSE TO LEAVE?
+SCENE 2 (0:03-0:07) CAPTION: 47 SOUNDS · DOORBELL · ALARM · SIREN
+SCENE 3 (0:07-0:11) CAPTION: SET A FUSE. WALK AWAY.
+SCENE 4 (0:11-0:16) CAPTION: FAKE CALL, REAL ESCAPE
+SCENE 5 (0:16-0:21) CAPTION: WORKS OFFLINE · NO ACCOUNT · NO DATA
+SCENE 6 (0:21-0:25) CAPTION: ExitPlan — Fake Call & Escape / GET IT ON GOOGLE PLAY

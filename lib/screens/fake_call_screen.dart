@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -27,12 +29,13 @@ class _FakeCallScreenState extends State<FakeCallScreen> {
   bool _keypadOpen = false;
   bool _videoOn = false;
   bool _hungUp = false;
+  StreamSubscription<void>? _engineSub;
 
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    callRingEngine.changes.listen(_onEngine);
+    _engineSub = callRingEngine.changes.listen(_onEngine);
   }
 
   void _onEngine(void _) {
@@ -49,6 +52,8 @@ class _FakeCallScreenState extends State<FakeCallScreen> {
 
   @override
   void dispose() {
+    _engineSub?.cancel();
+    _engineSub = null;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     if (!_hungUp) callRingEngine.cancel();
     super.dispose();

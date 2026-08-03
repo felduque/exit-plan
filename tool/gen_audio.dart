@@ -1,4 +1,9 @@
-// Synthesizes the bundled escape sounds of EXITPLAN as 16-bit mono WAV files.
+// Synthesizes escape sounds as 16-bit mono WAV files.
+//
+// Not currently wired to the bundled catalog: `system_catalog.dart` now points
+// at real, free-licence mp3s (see assets/audio/README.md) instead of this
+// tool's output. Kept for any category that ever needs a from-scratch,
+// zero-licensing-risk fallback again.
 //
 //   dart run tool/gen_audio.dart
 //

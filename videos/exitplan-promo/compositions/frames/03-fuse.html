@@ -1,0 +1,424 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face {
+          font-family: "Inter";
+          font-weight: 400;
+          font-style: normal;
+          src: url("assets/fonts/Inter-400.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Inter";
+          font-weight: 800;
+          font-style: normal;
+          src: url("assets/fonts/Inter-800.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Inter";
+          font-weight: 900;
+          font-style: normal;
+          src: url("assets/fonts/Inter-900.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "JetBrains Mono";
+          font-weight: 400;
+          font-style: normal;
+          src: url("assets/fonts/JetBrainsMono-400.woff2") format("woff2");
+        }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: hidden;
+          container-type: size;
+          font-family: "Inter", sans-serif;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        .fz-ground {
+          position: absolute;
+          inset: 0;
+          background: #08090b;
+          z-index: 0;
+        }
+
+        /* hero device — identical geometry to frame 02 (cut-the-curve continuity) */
+        .fz-dev-wrap {
+          position: absolute;
+          left: 222.5px;
+          top: 69px;
+          width: 635px;
+          height: 1411px;
+          z-index: 2;
+        }
+        .fz-dev {
+          position: absolute;
+          inset: 0;
+          background-image: url("assets/screenshot_2_fuse.png");
+          background-size: 1080px 1920px;
+          background-position: -223px -478px;
+          background-repeat: no-repeat;
+        }
+
+        /* amber "just selected" state on the 10s fuse cell (device-local coords) */
+        .fz-cell {
+          position: absolute;
+          left: 316px;
+          top: 674px;
+          width: 126px;
+          height: 64px;
+          border: 2px solid #e8a33d;
+          background: rgba(232, 163, 61, 0.16);
+        }
+
+        /* the screen blacks out — bezel and its edge highlight survive */
+        .fz-blackout {
+          position: absolute;
+          left: 8px;
+          top: 8px;
+          width: 619px;
+          height: 1395px;
+          background: #050506;
+        }
+        .fz-hint {
+          position: absolute;
+          left: 305px;
+          top: 697px;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: #e8a33d;
+          opacity: 0.5;
+        }
+
+        /* touch dot — a fingertip, not a desktop cursor */
+        .fz-touch {
+          position: absolute;
+          left: -46px;
+          top: -46px;
+          width: 92px;
+          height: 92px;
+          border-radius: 50%;
+          background: rgba(232, 163, 61, 0.3);
+          border: 3px solid #e8a33d;
+          z-index: 5;
+        }
+        .fz-ripple {
+          position: absolute;
+          left: -46px;
+          top: -46px;
+          width: 92px;
+          height: 92px;
+          border-radius: 50%;
+          border: 3px solid #e8a33d;
+          z-index: 4;
+        }
+
+        /* caption */
+        .fz-rule {
+          position: absolute;
+          left: 60px;
+          top: 1380px;
+          width: 96px;
+          height: 4px;
+          background: #e8a33d;
+          transform-origin: left center;
+          z-index: 6;
+        }
+        .fz-cap {
+          position: absolute;
+          left: 60px;
+          top: 1396px;
+          width: 960px;
+          z-index: 6;
+          font-weight: 800;
+          font-size: 92px;
+          line-height: 1.06;
+          letter-spacing: -0.03em;
+          color: #f2f2f3;
+        }
+        .fz-cap em {
+          font-style: normal;
+          color: #e8a33d;
+          font-weight: 900;
+        }
+        .fz-tok {
+          display: inline-block;
+        }
+
+        /* the burning fuse — the countdown made visible */
+        .fz-fuse {
+          position: absolute;
+          left: 60px;
+          top: 1652px;
+          width: 600px;
+          height: 6px;
+          z-index: 6;
+        }
+        .fz-fuse-line {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 600px;
+          height: 6px;
+          background: #e8a33d;
+          transform-origin: left center;
+        }
+        .fz-fuse-head {
+          position: absolute;
+          left: 582px;
+          top: -12px;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          background: #e8a33d;
+        }
+      </style>
+
+      <div
+        id="root"
+        data-composition-id="03-fuse"
+        data-start="0"
+        data-duration="4.5"
+        data-width="1080"
+        data-height="1920"
+      >
+        <div
+          class="fz-ground clip"
+          data-start="0"
+          data-duration="4.5"
+          data-track-index="0"
+        ></div>
+
+        <div
+          class="fz-dev-wrap clip"
+          data-start="0"
+          data-duration="4.5"
+          data-track-index="1"
+        >
+          <div class="fz-dev">
+            <div class="fz-cell"></div>
+            <div class="fz-blackout"></div>
+            <div class="fz-hint"></div>
+          </div>
+        </div>
+
+        <div
+          class="fz-ripple clip"
+          data-start="0"
+          data-duration="4.5"
+          data-track-index="2"
+        ></div>
+        <div
+          class="fz-touch clip"
+          data-start="0"
+          data-duration="4.5"
+          data-track-index="3"
+        ></div>
+
+        <div
+          class="fz-rule clip"
+          data-start="0"
+          data-duration="4.5"
+          data-track-index="4"
+        ></div>
+
+        <div
+          class="fz-cap clip"
+          data-start="0"
+          data-duration="4.5"
+          data-track-index="5"
+        >
+          <div>
+            <span class="fz-tok fz-t1">activa</span>
+            <span class="fz-tok fz-t1">la</span>
+            <span class="fz-tok fz-t1"><em>mecha.</em></span>
+          </div>
+          <div>
+            <span class="fz-tok fz-t2">y</span>
+            <span class="fz-tok fz-t2">al&eacute;jate.</span>
+          </div>
+        </div>
+
+        <div
+          class="fz-fuse clip"
+          data-start="0"
+          data-duration="4.5"
+          data-track-index="6"
+        >
+          <div class="fz-fuse-line"></div>
+          <div class="fz-fuse-head"></div>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          window.__timelines = window.__timelines || {};
+          const tl = gsap.timeline({ paused: true });
+
+          const devWrap = document.querySelector(".fz-dev-wrap");
+
+          // Initial states are immediate (never a zero-duration set at t=0 inside the
+          // paused timeline — that does not render while the playhead sits on 0).
+          // The device is ALREADY here, at frame 02's exact landed geometry.
+          gsap.set(".fz-dev", { scale: 0.78, opacity: 1 });
+          gsap.set(".fz-cell", { opacity: 0 });
+          gsap.set(".fz-blackout", { opacity: 0 });
+          gsap.set(".fz-hint", { opacity: 0 });
+          gsap.set(".fz-ripple", { opacity: 0 });
+          gsap.set(".fz-fuse", { opacity: 0 });
+          gsap.set(".fz-touch", { x: 940, y: 1300, opacity: 0 });
+
+          // handheld jitter continues unbroken across the cut from frame 02
+          const jit = { p: 0 };
+          tl.to(
+            jit,
+            {
+              p: Math.PI * 2 * 3.8,
+              duration: 4.5,
+              ease: "none",
+              onUpdate: () => {
+                const t = jit.p;
+                gsap.set(devWrap, {
+                  x: Math.sin(t) * 3.2 + Math.sin(t * 1.7) * 1.4,
+                  y: Math.cos(t * 0.83) * 2.6,
+                  rotation: Math.sin(t * 0.61) * 0.16,
+                });
+              },
+            },
+            0,
+          );
+
+          // ---- Scene 1 (0.0-1.0): caption enters, device holds ----
+          tl.fromTo(
+            ".fz-rule",
+            { scaleX: 0, opacity: 0 },
+            { scaleX: 1, opacity: 1, duration: 0.45, ease: "power3.out" },
+            0.0,
+          );
+          tl.fromTo(
+            ".fz-t1",
+            { opacity: 0, y: 26 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.52,
+              ease: "power3.out",
+              stagger: 0.09,
+            },
+            0.06,
+          );
+          tl.fromTo(
+            ".fz-t2",
+            { opacity: 0, y: 26 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.52,
+              ease: "power3.out",
+              stagger: 0.09,
+            },
+            0.46,
+          );
+
+          // ---- Scene 2 (1.0-1.9): touch dot travels in and presses the 10s cell ----
+          tl.fromTo(
+            ".fz-touch",
+            { x: 940, y: 1300, opacity: 0, scale: 0.9 },
+            {
+              x: 588,
+              y: 775,
+              opacity: 1,
+              scale: 1,
+              duration: 0.58,
+              ease: "power3.out",
+            },
+            0.95,
+          );
+          // press: compression, then long-tail recovery
+          tl.to(
+            ".fz-touch",
+            { scale: 0.72, duration: 0.1, ease: "power2.in" },
+            1.58,
+          );
+          tl.to(
+            ".fz-touch",
+            { scale: 1, duration: 0.28, ease: "power3.out" },
+            1.70,
+          );
+          // the selection snaps on AT contact — a state change, not a fade
+          tl.fromTo(
+            ".fz-cell",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.01, ease: "none" },
+            1.68,
+          );
+          // one expanding ripple
+          tl.fromTo(
+            ".fz-ripple",
+            { x: 588, y: 775, scale: 1, opacity: 0.85 },
+            {
+              scale: 2.6,
+              opacity: 0,
+              duration: 0.6,
+              ease: "power2.out",
+              // without this the lit from-state renders at t=0 and the ripple
+              // sits on the fuse cell for the whole first beat
+              immediateRender: false,
+            },
+            1.68,
+          );
+
+          // ---- Scene 3 (1.9-2.6): dot leaves, the screen cuts to black ----
+          tl.to(
+            ".fz-touch",
+            { x: 980, y: 1360, opacity: 0, duration: 0.42, ease: "power2.in" },
+            2.0,
+          );
+          // hard cut of the SCREEN layer only — bezel + jitter never break
+          tl.fromTo(
+            ".fz-blackout",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.01, ease: "none" },
+            2.42,
+          );
+          tl.fromTo(
+            ".fz-hint",
+            { opacity: 0 },
+            { opacity: 0.5, duration: 0.3, ease: "power2.out" },
+            2.52,
+          );
+
+          // ---- Scene 4 (2.6-4.0): HELD. Only the fuse burns down. ----
+          tl.fromTo(
+            ".fz-fuse",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.3, ease: "power2.out" },
+            2.55,
+          );
+          tl.fromTo(
+            ".fz-fuse-line",
+            { scaleX: 1 },
+            { scaleX: 0.14, duration: 1.1, ease: "none" },
+            2.62,
+          );
+          tl.fromTo(
+            ".fz-fuse-head",
+            { x: 0 },
+            { x: -516, duration: 1.1, ease: "none" },
+            2.62,
+          );
+
+          window.__timelines["03-fuse"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

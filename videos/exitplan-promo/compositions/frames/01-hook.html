@@ -1,0 +1,338 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face {
+          font-family: "Inter";
+          font-weight: 400;
+          font-style: normal;
+          src: url("assets/fonts/Inter-400.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Inter";
+          font-weight: 800;
+          font-style: normal;
+          src: url("assets/fonts/Inter-800.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Inter";
+          font-weight: 900;
+          font-style: normal;
+          src: url("assets/fonts/Inter-900.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "JetBrains Mono";
+          font-weight: 400;
+          font-style: normal;
+          src: url("assets/fonts/JetBrainsMono-400.woff2") format("woff2");
+        }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: hidden;
+          container-type: size;
+          font-family: "Inter", sans-serif;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        /* full-bleed ground rides on a clip layer, never on #root */
+        .hook-ground {
+          position: absolute;
+          inset: 0;
+          background: #08090b;
+        }
+
+        .hook-kicker {
+          position: absolute;
+          left: 60px;
+          top: 96px;
+          font-family: "JetBrains Mono", monospace;
+          font-weight: 400;
+          font-size: 26px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #8a8c93;
+        }
+        .hook-kicker b {
+          color: #e8a33d;
+          font-weight: 400;
+        }
+
+        .hook-rule {
+          position: absolute;
+          left: 60px;
+          top: 612px;
+          width: 96px;
+          height: 4px;
+          background: #e8a33d;
+          transform-origin: left center;
+        }
+
+        .hook-stack {
+          position: absolute;
+          left: 60px;
+          top: 636px;
+          width: 960px;
+        }
+
+        .hook-l1,
+        .hook-l3 {
+          font-weight: 800;
+          font-size: 92px;
+          line-height: 1.04;
+          letter-spacing: -0.03em;
+          color: #f2f2f3;
+          white-space: nowrap;
+        }
+        .hook-l2 {
+          font-weight: 900;
+          font-size: 178px;
+          line-height: 1.04;
+          letter-spacing: -0.045em;
+          color: #e8a33d;
+          margin: 10px 0 10px -8px;
+          white-space: nowrap;
+        }
+        .hook-w {
+          display: inline-block;
+        }
+
+        /* exit pictogram — doorway + arrow. Reads as "salida" without the
+           emergency-exit running man, which would imply an emergency service. */
+        .hook-door {
+          position: absolute;
+          left: 60px;
+          top: 1150px;
+          width: 262px;
+          height: 440px;
+          border: 3px solid #3a3936;
+        }
+        /* the leaf edge + knob are what make the rectangle read as a DOOR during
+           the ~2s before the arrow arrives */
+        .hook-door-leaf {
+          position: absolute;
+          left: 137px;
+          top: 1150px;
+          width: 3px;
+          height: 440px;
+          background: #3a3936;
+        }
+        .hook-door-knob {
+          position: absolute;
+          left: 106px;
+          top: 1363px;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #8a8c93;
+        }
+        .hook-arrow {
+          position: absolute;
+          left: 152px;
+          top: 1352px;
+          width: 508px;
+          height: 36px;
+        }
+        .hook-arrow-shaft {
+          position: absolute;
+          left: 0;
+          top: 12px;
+          transform-origin: left center;
+          width: 416px;
+          height: 12px;
+          background: #e8a33d;
+        }
+        .hook-arrow-head {
+          position: absolute;
+          left: 408px;
+          top: 0;
+          width: 0;
+          height: 0;
+          border-top: 18px solid transparent;
+          border-bottom: 18px solid transparent;
+          border-left: 46px solid #e8a33d;
+        }
+      </style>
+
+      <div
+        id="root"
+        data-composition-id="01-hook"
+        data-start="0"
+        data-duration="4"
+        data-width="1080"
+        data-height="1920"
+      >
+        <div
+          class="hook-ground clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="0"
+        ></div>
+
+        <div
+          class="hook-rule clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="1"
+        ></div>
+
+        <div
+          class="hook-stack clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="2"
+        >
+          <div class="hook-l1">
+            <span class="hook-w hook-w1">&iquest;necesitas</span>
+            <span class="hook-w hook-w1">una</span>
+          </div>
+          <div class="hook-l2"><span class="hook-w hook-w2">excusa</span></div>
+          <div class="hook-l3">
+            <span class="hook-w hook-w3">para</span>
+            <span class="hook-w hook-w3">irte?</span>
+          </div>
+        </div>
+
+        <div
+          class="hook-kicker clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="3"
+        >
+          <b>&bull;</b>&nbsp; EXITPLAN
+        </div>
+
+        <div
+          class="hook-door clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="4"
+        ></div>
+        <div
+          class="hook-door-leaf clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="6"
+        ></div>
+        <div
+          class="hook-door-knob clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="7"
+        ></div>
+
+        <div
+          class="hook-arrow clip"
+          data-start="0"
+          data-duration="4"
+          data-track-index="5"
+        >
+          <div class="hook-arrow-shaft"></div>
+          <div class="hook-arrow-head"></div>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          window.__timelines = window.__timelines || {};
+          const tl = gsap.timeline({ paused: true });
+
+          // Scene 1 (0.0-0.9): "need an" — per-word staggered reveal, long-tail settle
+          tl.fromTo(
+            ".hook-w1",
+            { opacity: 0, y: 34 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.62,
+              ease: "power3.out",
+              stagger: 0.11,
+            },
+            0.06,
+          );
+
+          // accent rule stub wipes in under the same beat
+          tl.fromTo(
+            ".hook-rule",
+            { scaleX: 0, opacity: 0 },
+            { scaleX: 1, opacity: 1, duration: 0.5, ease: "power3.out" },
+            0.02,
+          );
+
+          // Scene 2 (0.9-1.7): "excuse" HARD CUT in fire-orange — no fade, the swap is the beat
+          tl.fromTo(
+            ".hook-w2",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.01, ease: "none" },
+            1.15,
+          );
+
+          // Scene 3 (1.7-2.4): "to leave?" waterfall cut — per-word, matched direction
+          tl.fromTo(
+            ".hook-w3",
+            { opacity: 0, x: 26 },
+            {
+              opacity: 1,
+              x: 0,
+              duration: 0.38,
+              ease: "power3.out",
+              stagger: 0.09,
+            },
+            1.95,
+          );
+
+          // the doorway arrives early and quiet — a hairline mark, never competing
+          // with the type for the frame's one display moment
+          tl.fromTo(
+            [".hook-door", ".hook-door-leaf", ".hook-door-knob"],
+            { opacity: 0 },
+            {
+              opacity: 1,
+              duration: 0.6,
+              ease: "power2.out",
+              stagger: 0.09,
+            },
+            0.5,
+          );
+
+          // Scene 4 (2.4-3.0): the answer to the question. The arrow draws itself
+          // out through the doorway — shaft grows from the left edge while the head
+          // rides its tip (same mechanic as frame 03's burning fuse).
+          tl.fromTo(
+            ".hook-kicker",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.45, ease: "power2.out" },
+            2.55,
+          );
+          tl.fromTo(
+            ".hook-arrow",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.12, ease: "none" },
+            2.62,
+          );
+          tl.fromTo(
+            ".hook-arrow-shaft",
+            { scaleX: 0 },
+            { scaleX: 1, duration: 0.5, ease: "power3.out" },
+            2.62,
+          );
+          tl.fromTo(
+            ".hook-arrow-head",
+            { x: -416 },
+            { x: 0, duration: 0.5, ease: "power3.out" },
+            2.62,
+          );
+
+          window.__timelines["01-hook"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

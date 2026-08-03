@@ -2,7 +2,13 @@
 <resources>
     <!-- Both themes use a dark parent even in the OS's light mode: EXITPLAN has
          no light variant, and a white window behind the UI would flash on every
-         cold start. values-night/ carries the identical pair. -->
+         cold start. This file therefore serves both modes, and there is
+         deliberately **no values-night/ copy**: `night` outranks `v31` in
+         Android's qualifier precedence, so a night variant would beat
+         values-v31/styles.xml on any phone in dark mode and strip the splash
+         screen attributes set there. That is not hypothetical — it is the bug
+         that made the launcher icon flash before the Dart splash. -->
+
     <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <!-- Show a splash screen on the activity. Automatically removed when
              the Flutter engine draws its first frame -->

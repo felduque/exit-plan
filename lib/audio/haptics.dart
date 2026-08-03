@@ -8,7 +8,7 @@ import 'package:vibration/vibration.dart';
 /// a missed cancel is not a cosmetic glitch, it is a phone that will not stop
 /// buzzing in a room the user was trying to leave quietly.
 ///
-/// So two rules hold here, and both exist because of a real bug:
+/// So three rules hold here, and all exist because of a real bug:
 ///
 /// 1. **[stop] always reaches the motor.** It never trusts a flag saying nothing
 ///    is running. Cancelling an idle vibrator costs one no-op platform call;
@@ -18,6 +18,12 @@ import 'package:vibration/vibration.dart';
 ///    returns. A stop landing in that window used to be swallowed, so the sound
 ///    ended and the phone kept going. Generations make the late start clean up
 ///    after itself instead.
+/// 3. **A stop does not just ask the motor to cancel.** Some OEM vibrator HALs
+///    are known not to honour a plain cancel on a repeating, alarm-attributed
+///    pattern — the exact shape every pattern here is. [PluginVibration.cancel]
+///    also overwrites the motor with a fresh, effectively-silent vibration,
+///    since a device pre-empting its own running effect is a promise `vibrate`
+///    keeps even on the hardware where `cancel` alone does not.
 class Haptics {
   /// The backend is positional so tests can swap it; nothing in the app passes
   /// one.
@@ -99,6 +105,20 @@ class PluginVibration implements VibrationBackend {
   Future<void> vibrate(List<int> pattern) =>
       Vibration.vibrate(pattern: pattern, repeat: 0);
 
+  /// `Vibration.cancel()` alone is not always enough: a repeating pattern
+  /// started with the alarm audio attribute (see [vibrate]) is known to
+  /// ignore a plain cancel on some OEM vibrator HALs — the pattern keeps
+  /// looping until the app dies. A fresh, effectively-silent vibration
+  /// always pre-empts whatever the motor is currently doing, which is a
+  /// guarantee `vibrate()` itself keeps even on the hardware where `cancel()`
+  /// does not, so it runs right after as a second line of defence.
   @override
-  Future<void> cancel() => Vibration.cancel();
+  Future<void> cancel() async {
+    await Vibration.cancel();
+    try {
+      await Vibration.vibrate(duration: 1, amplitude: 1);
+    } catch (_) {
+      // Best-effort belt and braces on top of the cancel() above.
+    }
+  }
 }

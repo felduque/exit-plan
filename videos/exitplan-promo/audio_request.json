@@ -1,0 +1,25 @@
+{
+  "lines": [
+    {
+      "id": "02",
+      "sfx": [
+        "ui-tap-soft"
+      ]
+    },
+    {
+      "id": "03",
+      "sfx": [
+        "ui-tap-soft"
+      ]
+    },
+    {
+      "id": "04",
+      "sfx": [
+        "phone-ring-soft"
+      ]
+    }
+  ],
+  "bgm": {
+    "mode": "none"
+  }
+}

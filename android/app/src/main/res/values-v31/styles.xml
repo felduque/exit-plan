@@ -1,14 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Android 12+ ignores windowBackground for the cold-start screen and draws
-         its own splash from the launcher icon instead — which, on a default
-         Flutter project, is a white circle. That flash is both off-brand and,
-         in a dark room, exactly what this app should not do. Overriding the
-         SplashScreen attributes puts the EXITPLAN mark on app-dark instead. -->
+         its own splash from the launcher icon instead — the burning fuse, which
+         played before the Dart `AnimatedSplash` and made the launch read as two
+         splashes in a row.
+
+         The system splash cannot be turned off, so it is made invisible instead:
+         app-dark behind, and an icon that paints nothing (see splash_icon_none).
+         What is left is a flat @color/exit_screen — the exact colour the Dart
+         splash opens on — so the animation is the first thing the user sees.
+
+         This only works as long as no *higher-precedence* resource qualifier
+         redefines LaunchTheme. Android resolves `night` before `v31`, so a
+         values-night/styles.xml wins over this file on a phone in dark mode and
+         silently takes the splash attributes back off — which is exactly what
+         used to happen here, and why the fuse kept appearing. Do not add one
+         back: values/styles.xml is already dark and serves both modes. -->
     <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">@drawable/launch_background</item>
         <item name="android:windowSplashScreenBackground">@color/exit_screen</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_mark</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon_none</item>
     </style>
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">@color/exit_screen</item>

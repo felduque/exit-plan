@@ -1,0 +1,353 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face {
+          font-family: "Inter";
+          font-weight: 400;
+          font-style: normal;
+          src: url("assets/fonts/Inter-400.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Inter";
+          font-weight: 800;
+          font-style: normal;
+          src: url("assets/fonts/Inter-800.woff2") format("woff2");
+        }
+        @font-face {
+          font-family: "Inter";
+          font-weight: 900;
+          font-style: normal;
+          src: url("assets/fonts/Inter-900.woff2") format("woff2");
+        }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: hidden;
+          container-type: size;
+          font-family: "Inter", sans-serif;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        .cl-ground {
+          position: absolute;
+          inset: 0;
+          background: #08090b;
+          z-index: 0;
+        }
+
+        /* ring pulses sit BEHIND the device */
+        .cl-ring {
+          position: absolute;
+          left: 286px;
+          top: 209px;
+          width: 508px;
+          height: 1130px;
+          border: 3px solid #e8a33d;
+          border-radius: 68px;
+          z-index: 1;
+        }
+
+        /* hero device — identical geometry to frames 02/03 */
+        .cl-dev-wrap {
+          position: absolute;
+          left: 222.5px;
+          top: 69px;
+          width: 635px;
+          height: 1411px;
+          z-index: 2;
+        }
+        .cl-dev {
+          position: absolute;
+          inset: 0;
+          background-image: url("assets/screenshot_6_incoming_call.png");
+          background-size: 1080px 1920px;
+          background-position: -223px -478px;
+          background-repeat: no-repeat;
+        }
+        /* frame 03 hands over a blacked-out screen; it survives the first beat */
+        .cl-black {
+          position: absolute;
+          left: 8px;
+          top: 8px;
+          width: 619px;
+          height: 1395px;
+          background: #050506;
+          z-index: 3;
+        }
+        /* the answered state, cut in over the incoming state */
+        .cl-live {
+          position: absolute;
+          left: 8px;
+          top: 8px;
+          width: 619px;
+          height: 1395px;
+          background-image: url("assets/screenshot_7_live_call.png");
+          background-size: 1080px 1920px;
+          background-position: -231px -486px;
+          background-repeat: no-repeat;
+          z-index: 2;
+        }
+        /* HARD BRIEF CONSTRAINT: cover the third-party call-service label */
+        .cl-mask {
+          position: absolute;
+          left: 8px;
+          top: 267px;
+          width: 619px;
+          height: 58px;
+          background: #0c1116;
+          z-index: 4;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 30px;
+          font-weight: 400;
+          letter-spacing: 0.02em;
+          color: #8a8c93;
+        }
+
+        /* caption */
+        .cl-rule {
+          position: absolute;
+          left: 60px;
+          top: 1380px;
+          width: 96px;
+          height: 4px;
+          background: #e8a33d;
+          transform-origin: left center;
+          z-index: 6;
+        }
+        .cl-cap {
+          position: absolute;
+          left: 60px;
+          top: 1414px;
+          width: 960px;
+          z-index: 6;
+          font-size: 92px;
+          line-height: 1.06;
+          letter-spacing: -0.03em;
+        }
+        .cl-b1 {
+          font-weight: 800;
+          color: #f2f2f3;
+        }
+        .cl-b2 {
+          font-weight: 900;
+          color: #e8a33d;
+        }
+      </style>
+
+      <div
+        id="root"
+        data-composition-id="04-call"
+        data-start="0"
+        data-duration="5.5"
+        data-width="1080"
+        data-height="1920"
+      >
+        <div
+          class="cl-ground clip"
+          data-start="0"
+          data-duration="5.5"
+          data-track-index="0"
+        ></div>
+
+        <div
+          class="cl-ring cl-r1 clip"
+          data-start="0"
+          data-duration="5.5"
+          data-track-index="1"
+        ></div>
+        <div
+          class="cl-ring cl-r2 clip"
+          data-start="0"
+          data-duration="5.5"
+          data-track-index="2"
+        ></div>
+        <div
+          class="cl-ring cl-r3 clip"
+          data-start="0"
+          data-duration="5.5"
+          data-track-index="3"
+        ></div>
+        <div
+          class="cl-ring cl-r4 clip"
+          data-start="0"
+          data-duration="5.5"
+          data-track-index="4"
+        ></div>
+
+        <div
+          class="cl-dev-wrap clip"
+          data-start="0"
+          data-duration="5.5"
+          data-track-index="5"
+        >
+          <div class="cl-dev">
+            <div class="cl-mask">incoming call</div>
+            <div class="cl-live"></div>
+            <div class="cl-black"></div>
+          </div>
+        </div>
+
+        <div
+          class="cl-rule clip"
+          data-start="0"
+          data-duration="5.5"
+          data-track-index="6"
+        ></div>
+
+        <div
+          class="cl-cap clip"
+          data-start="0"
+          data-duration="5.5"
+          data-track-index="7"
+        >
+          <div class="cl-b1">llamada falsa,</div>
+          <div class="cl-b2">escape real</div>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          window.__timelines = window.__timelines || {};
+          const tl = gsap.timeline({ paused: true });
+
+          const devWrap = document.querySelector(".cl-dev-wrap");
+
+          // Immediate initial states — a zero-duration set at t=0 inside the paused
+          // timeline does not render while the playhead sits exactly on 0.
+          gsap.set(".cl-dev", { scale: 0.78, opacity: 1 });
+          gsap.set(".cl-black", { opacity: 1 });
+          gsap.set(".cl-live", { opacity: 0 });
+          gsap.set(".cl-mask", { opacity: 0 });
+          gsap.set([".cl-r1", ".cl-r2", ".cl-r3", ".cl-r4"], { opacity: 0 });
+
+          // handheld jitter — unbroken across the cut from frame 03
+          const jit = { p: 0 };
+          tl.to(
+            jit,
+            {
+              p: Math.PI * 2 * 4.6,
+              duration: 5.5,
+              ease: "none",
+              onUpdate: () => {
+                const t = jit.p;
+                gsap.set(devWrap, {
+                  x: Math.sin(t) * 3.2 + Math.sin(t * 1.7) * 1.4,
+                  y: Math.cos(t * 0.83) * 2.6,
+                  rotation: Math.sin(t * 0.61) * 0.16,
+                });
+              },
+            },
+            0,
+          );
+
+          // ---- Scene 1 (0.0-0.6): the black screen lights up. The cut IS the ring starting.
+          // inverse zoom-through on the SCREEN layer only — the bezel never moves.
+          tl.fromTo(
+            ".cl-black",
+            { opacity: 1 },
+            { opacity: 0, duration: 0.01, ease: "none" },
+            0.15,
+          );
+          tl.fromTo(
+            ".cl-dev",
+            { scale: 0.815 },
+            {
+              scale: 0.78,
+              duration: 0.4,
+              ease: "power3.out",
+              immediateRender: false,
+            },
+            0.15,
+          );
+          // the neutral label lands with the lit screen, not over the blackout
+          tl.fromTo(
+            ".cl-mask",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.01, ease: "none" },
+            0.15,
+          );
+
+          // ---- Scene 2 (0.6-1.8): finite amber ring pulses (never looped) ----
+          const rings = [".cl-r1", ".cl-r2", ".cl-r3", ".cl-r4"];
+          rings.forEach((sel, i) => {
+            tl.fromTo(
+              sel,
+              { scale: 1, opacity: 0.6 },
+              {
+                scale: 1.2,
+                opacity: 0,
+                duration: 0.9,
+                ease: "power2.out",
+                // without this every ring's lit from-state renders at t=0 and the
+                // device sits inside four stacked amber outlines before it rings
+                immediateRender: false,
+              },
+              0.62 + i * 0.5,
+            );
+          });
+
+          // ---- Scene 3 (1.8-3.1): the caption slams, two beats ----
+          tl.fromTo(
+            ".cl-rule",
+            { scaleX: 0, opacity: 0 },
+            { scaleX: 1, opacity: 1, duration: 0.4, ease: "power3.out" },
+            1.74,
+          );
+          tl.fromTo(
+            ".cl-b1",
+            { opacity: 0, y: 40, scale: 0.94 },
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.46,
+              ease: "power3.out",
+            },
+            1.8,
+          );
+          tl.fromTo(
+            ".cl-b2",
+            { opacity: 0, y: 46, scale: 0.93 },
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.5,
+              ease: "power3.out",
+            },
+            2.15,
+          );
+
+          // ---- Scene 4 (3.1-4.2): answered. Hard state cut; the pulses stop dead. ----
+          tl.fromTo(
+            ".cl-live",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.01, ease: "none" },
+            3.55,
+          );
+          // the masked label belongs to the incoming screen only
+          tl.fromTo(
+            ".cl-mask",
+            { opacity: 1 },
+            { opacity: 0, duration: 0.01, ease: "none" },
+            3.55,
+          );
+
+          // ---- Scene 5 (4.2-5.0): held on the live call. Jitter only. ----
+
+          window.__timelines["04-call"] = tl;
+        })();
+      </script>
+    </template>
+  </body>
+</html>

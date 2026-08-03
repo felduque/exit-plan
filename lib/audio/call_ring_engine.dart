@@ -53,13 +53,24 @@ class CallRingEngine {
     final int generation = _generation;
     await WakelockPlus.enable();
 
+    // Armed the instant the cycle starts, delay or not — including the
+    // `delaySeconds <= 0` path, which used to leave `_phase` at `idle` for
+    // however long `_ring` took to actually start playing (a real bundled
+    // mp3, unlike the old synthesized tones, is not instant to load). The
+    // incoming-call screen renders its Accept button immediately regardless,
+    // and [answer] only acts while armed or ringing — so tapping Accept
+    // during that idle window used to silently do nothing: the screen still
+    // moved on to the in-call view, but the ring had never actually been
+    // told to stop, and finished starting moments later with nothing left
+    // that could cancel it. That is "answer the call and the ringtone keeps
+    // playing anyway."
+    _phase = CallEnginePhase.armed;
+    _notify();
+
     if (delaySeconds <= 0) {
       await _ring(sound, generation);
       return;
     }
-
-    _phase = CallEnginePhase.armed;
-    _notify();
 
     _fuseTimer = Timer(
       Duration(seconds: delaySeconds),
@@ -93,16 +104,24 @@ class CallRingEngine {
       // cycle that has already moved on.
       if (generation != _generation) return;
 
-      await _player.play();
-      // Overtaken while starting: the stop may have reached the player before
-      // play() did. Undo it rather than leave it playing.
-      if (generation != _generation) {
-        await _player.stop();
-        return;
-      }
+      // **Not awaited, on purpose.** just_audio's `play()` completes when
+      // playback *ends*, not when it starts — and a ringtone loops with
+      // `LoopMode.one`, so it would never complete at all. Awaiting it meant
+      // everything below was unreachable: the phase never became `ringing`,
+      // so [answer] saw a phase it refuses to act on and returned without
+      // stopping anything, while the ring itself carried on playing straight
+      // through the answered call.
+      unawaited(_player.play().catchError((Object _) {}));
     } catch (_) {
       // A tone that fails to load still has to ring — silently, rather than
       // not ring at all.
+    }
+
+    // Overtaken while starting: a stop may have reached the player before
+    // play() did. Undo it rather than leave it playing.
+    if (generation != _generation) {
+      await _player.stop();
+      return;
     }
 
     await _haptics.start(kRingVibration);

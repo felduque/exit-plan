@@ -80,7 +80,7 @@ class PreviewPlayer {
           ? file
           : ClippingAudioSource(child: file, start: trim.start, end: trim.end),
     );
-    await _player.play();
+    _play();
   }
 
   // --- editor use ----------------------------------------------------------
@@ -98,7 +98,7 @@ class PreviewPlayer {
     _windowEnd = end;
     _watchWindow();
     await _player.seek(start);
-    await _player.play();
+    _play();
   }
 
   /// Moves the window under a preview that is already running.
@@ -153,13 +153,23 @@ class PreviewPlayer {
       final Duration? start = _windowStart;
       if (start == null) return;
       await _player.seek(start);
-      await _player.play();
+      // Never awaited — see [_play]. Awaiting it here held the `finally`
+      // below until playback ended, so `_restarting` stayed true forever and
+      // the window looped exactly once.
+      _play();
     } catch (_) {
       // A dead player is not worth crashing the editor over.
     } finally {
       _restarting = false;
     }
   }
+
+  /// Starts playback without waiting for it to finish.
+  ///
+  /// just_audio's `play()` completes when playback *ends*, is paused or is
+  /// stopped — not when it begins. Nothing in this class wants to be parked
+  /// for the length of the audio, so no caller may await it.
+  void _play() => unawaited(_player.play().catchError((Object _) {}));
 
   void _cancelWindow() {
     _windowSub?.cancel();

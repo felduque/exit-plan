@@ -31,26 +31,26 @@ void main() {
       SharedPreferences.setMockInitialValues(<String, Object>{
         'exitplan.quickAccess': jsonEncode(<String>[
           'alarms-siren',
-          'fire-roar',
+          'fire-classic',
           'storm-rain',
-          'electric-buzz',
+          'electric-buzz-1',
           'doorbell-ding',
-          'doorbell-knock',
+          'doorbell-1',
         ]),
       });
       final AppState long = await AppState.bootstrap();
       expect(long.quickAccess.length, 4);
-      expect(long.quickAccess.last, 'electric-buzz');
+      expect(long.quickAccess.last, 'electric-buzz-1');
     },
   );
 
   test('junk entries are dropped and backfilled from the defaults', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{
-      'exitplan.quickAccess': jsonEncode(<Object>[42, '', 'fire-roar']),
+      'exitplan.quickAccess': jsonEncode(<Object>[42, '', 'fire-classic']),
     });
     final AppState state = await AppState.bootstrap();
     expect(state.quickAccess.length, 4);
-    expect(state.quickAccess.first, 'fire-roar');
+    expect(state.quickAccess.first, 'fire-classic');
   });
 
   test(
@@ -60,8 +60,8 @@ void main() {
         'exitplan.quickAccess': jsonEncode(<String>[
           'user-gone-forever',
           'alarms-clock',
-          'bad-signal-dropout',
-          'fire-crackle',
+          'bad-signal-drop-1',
+          'fire-classic',
         ]),
       });
       final AppState state = await AppState.bootstrap();
@@ -76,8 +76,8 @@ void main() {
       'exitplan.quickAccess': jsonEncode(<String>[
         'user-99',
         'alarms-clock',
-        'bad-signal-dropout',
-        'fire-crackle',
+        'bad-signal-drop-1',
+        'fire-classic',
       ]),
       'exitplan.userLibrary': jsonEncode(<String, dynamic>{
         'categories': <Object>[],

@@ -59,7 +59,8 @@ class NotificationPermissionNotice extends StatelessWidget {
                   'Lock-screen controls need permission to post one neutral '
                   'notification. Without it the sound still fires, but you '
                   'cannot pause it without reopening the app — and Android may '
-                  'stop the audio on its own after a few minutes.',
+                  'stop the audio on its own after a few minutes. Fake calls '
+                  'do not need this: they ring while you have the app open.',
                   style: ExitText.bodySmall,
                 ),
                 const SizedBox(height: 12),
