@@ -1,7 +1,10 @@
 import 'package:flutter/widgets.dart';
 
+import '../core/premium_cadence.dart';
 import '../data/app_settings.dart';
 import '../data/call_avatar_files.dart';
+import '../data/entitlement.dart';
+import '../data/gate_baseline.dart';
 import '../data/merged_library.dart';
 import '../data/persistence.dart';
 import '../data/system_catalog.dart';
@@ -10,6 +13,7 @@ import '../data/user_library.dart';
 import '../models/call_preset.dart';
 import '../models/escape_sound.dart';
 import '../models/exit_category.dart';
+import 'premium_gate.dart';
 
 /// All persisted user state, loaded in the order the pieces depend on each
 /// other and kept in one place so the UI never has to know about storage.
@@ -22,6 +26,10 @@ class AppState extends ChangeNotifier {
     this._tipIndex,
     this._onboardingDone,
     this._callPresets,
+    this._entitlement,
+    this._gateBaseline,
+    this._nudgedAtMs,
+    this._nudgeCount,
   ) {
     _rebuildLibrary();
   }
@@ -34,6 +42,15 @@ class AppState extends ChangeNotifier {
   int _tipIndex;
   bool _onboardingDone;
   List<CallPreset> _callPresets;
+  Entitlement _entitlement;
+
+  /// Null only between construction and [_ensureGateBaseline], which runs
+  /// inside [bootstrap] before the app is handed a state object.
+  GateBaseline? _gateBaseline;
+
+  int _nudgedAtMs;
+  int _nudgeCount;
+
   late MergedLibrary _library;
 
   AppSettings get settings => _settings;
@@ -47,6 +64,45 @@ class AppState extends ChangeNotifier {
   MergedLibrary get library => _library;
 
   bool get notificationsAsked => _store.notificationsAsked;
+
+  // --- premium ---------------------------------------------------------------
+
+  Entitlement get entitlement => _entitlement;
+
+  /// The single question the rest of the app asks. Read straight from local
+  /// state with no await and no network, so the first frame already knows —
+  /// an entitlement that needed a round-trip to be known would fail every user
+  /// who opens the app somewhere without signal, which is most of them.
+  bool get isPremium => _entitlement.isActive;
+
+  /// What this device already held when limits were introduced. Falls back to
+  /// [GateBaseline.empty] only in the impossible window before [bootstrap]
+  /// captures it.
+  GateBaseline get gateBaseline => _gateBaseline ?? GateBaseline.empty;
+
+  /// The ceilings that actually apply here, and whether there is room for one
+  /// more of each.
+  ///
+  /// Read only by the three creation entry points. No list, screen or player
+  /// consults them — a user over their allowance keeps everything working and
+  /// is simply not offered a new one. See [PremiumGate].
+  int get callPresetCap =>
+      PremiumGate.callPresetCap(gateBaseline, premium: isPremium);
+  int get userSoundCap =>
+      PremiumGate.userSoundCap(gateBaseline, premium: isPremium);
+  int get userCategoryCap =>
+      PremiumGate.userCategoryCap(gateBaseline, premium: isPremium);
+
+  bool get canAddCallPreset =>
+      PremiumGate.canAdd(current: _callPresets.length, cap: callPresetCap);
+  bool get canAddUserSound => PremiumGate.canAdd(
+    current: _userLibrary.sounds.length,
+    cap: userSoundCap,
+  );
+  bool get canAddUserCategory => PremiumGate.canAdd(
+    current: _userLibrary.categories.length,
+    cap: userCategoryCap,
+  );
 
   /// Boot order matters (and the spec calls it out): settings and onboarding
   /// first, then the user library, and only *then* the quick access existence
@@ -63,11 +119,37 @@ class AppState extends ChangeNotifier {
       store.loadTipIndex(),
       store.onboardingDone,
       store.loadCallPresets(),
+      store.loadEntitlement(),
+      store.loadGateBaseline(),
+      store.loadNudgedAtMs(),
+      store.loadNudgeCount(),
     );
 
     // Second pass, deliberately after the user library is in place.
     await state._pruneQuickAccess(persist: true);
+
+    // Must happen here, before any screen exists and therefore before anything
+    // can be added in this process — a baseline that could grow with in-session
+    // activity would ratchet up on every launch and no cap would ever apply.
+    await state._ensureGateBaseline();
     return state;
+  }
+
+  /// Records what the user already had, once and once only.
+  ///
+  /// A no-op on every launch after the first. See [GateBaseline] for why this
+  /// snapshot exists and why it must never be recomputed.
+  Future<void> _ensureGateBaseline() async {
+    if (_gateBaseline != null) return;
+
+    final GateBaseline captured = GateBaseline(
+      callPresets: _callPresets.length,
+      userSounds: _userLibrary.sounds.length,
+      userCategories: _userLibrary.categories.length,
+      capturedAtMs: DateTime.now().millisecondsSinceEpoch,
+    );
+    _gateBaseline = captured;
+    await _store.saveGateBaseline(captured);
   }
 
   void _rebuildLibrary() {
@@ -256,6 +338,48 @@ class AppState extends ChangeNotifier {
     if (tipCount <= 0) return;
     _tipIndex = (_tipIndex + 1) % tipCount;
     await _store.saveTipIndex(_tipIndex);
+  }
+
+  // --- premium ---------------------------------------------------------------
+
+  /// The upsell nudge that [PremiumCadence] would show right now, if any.
+  ///
+  /// Asked by `TipBanner` on each of its ticks. Returns null far more often
+  /// than not — that is the point.
+  String? premiumNudge(DateTime now) => PremiumCadence.pick(
+    isPremium: isPremium,
+    nudgeCount: _nudgeCount,
+    lastNudgeAtMs: _nudgedAtMs,
+    installedAtMs: gateBaseline.capturedAtMs,
+    now: now,
+  );
+
+  /// Records that a nudge was actually shown.
+  ///
+  /// No [notifyListeners]: nothing on screen renders from these counters, and
+  /// rebuilding the whole tree because a banner changed its text would be a
+  /// silly thing to do during the one moment the user might be firing a sound.
+  /// Same reasoning as [advanceTip].
+  Future<void> markPremiumNudge(DateTime now) async {
+    _nudgedAtMs = now.millisecondsSinceEpoch;
+    _nudgeCount += 1;
+    await _store.saveNudge(atMs: _nudgedAtMs, count: _nudgeCount);
+  }
+
+  /// The only writer of the entitlement.
+  ///
+  /// The billing layer never touches storage itself; it hands the resolved
+  /// [Entitlement] here, so purchases follow the same mutate → notify → save
+  /// path as everything else in this class and there is exactly one place that
+  /// can change whether the user is premium.
+  Future<void> setEntitlement(Entitlement value) async {
+    if (value.source == _entitlement.source &&
+        value.lastVerifiedAtMs == _entitlement.lastVerifiedAtMs) {
+      return;
+    }
+    _entitlement = value;
+    notifyListeners();
+    await _store.saveEntitlement(value);
   }
 }
 

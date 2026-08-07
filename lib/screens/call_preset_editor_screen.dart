@@ -158,6 +158,19 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                   ],
                 ),
               ),
+              // No AdBannerSlot here, for the same reason as editor_screen: the
+              // last child of this Column is a filled primary action, not a
+              // footer or a scrolling list, and a banner 14px beneath one is
+              // the accidental-click layout AdMob treats as invalid traffic.
+              //
+              // This screen adds a second reason of its own. The name and
+              // number fields above open the soft keyboard, and with the
+              // default resizeToAvoidBottomInset a bottom-anchored banner would
+              // ride up to sit between the keyboard and the button — closer
+              // still than the static case.
+              //
+              // The rest of the fake-call path already carries a banner:
+              // calls_screen lists the templates and ends in a list.
               Padding(
                 padding: const EdgeInsets.fromLTRB(22, 8, 22, 14),
                 child: PrimaryButton(

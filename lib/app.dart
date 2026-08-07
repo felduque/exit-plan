@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'core/theme.dart';
+import 'data/entitlement.dart';
 import 'screens/home_screen.dart';
+import 'services/billing_service.dart';
+import 'services/tiktok_analytics.dart';
 import 'state/app_state.dart';
 import 'state/permissions.dart';
 import 'widgets/animated_splash.dart';
@@ -28,6 +33,9 @@ class _ExitAppState extends State<ExitApp> {
   /// True once the user is sitting quietly on the home screen.
   bool get _settled => _splashDone && _introDone;
 
+  /// Kept only so it can be disposed; nothing reads it.
+  late final AppLifecycleListener _lifecycle;
+
   @override
   void initState() {
     super.initState();
@@ -37,10 +45,25 @@ class _ExitAppState extends State<ExitApp> {
     NotificationPermission.instance.start(
       alreadyAsked: widget.state.notificationsAsked,
     );
+    // The TikTok SDK batches on a timer, so an install recorded moments before
+    // the user leaves can otherwise sit in the queue unsent. Leaving is exactly
+    // when this app expects to be dismissed mid-use, so the flush matters more
+    // here than it would elsewhere. A no-op when tracking is not configured.
+    _lifecycle = AppLifecycleListener(onPause: TikTokAnalytics.flush);
+    // Opens the Play connection and replays anything already owned — a purchase
+    // made on another device, a subscription that renewed, a payment that
+    // cleared while the app was closed. The service never writes storage; it
+    // hands the resolved entitlement here so AppState stays the only writer.
+    BillingService.instance.start(
+      onEntitlement: (Entitlement value) =>
+          unawaited(widget.state.setEntitlement(value)),
+    );
   }
 
   @override
   void dispose() {
+    _lifecycle.dispose();
+    BillingService.instance.stop();
     NotificationPermission.instance.stop();
     super.dispose();
   }

@@ -7,6 +7,7 @@ import '../models/enums.dart';
 import '../models/escape_sound.dart';
 import '../models/exit_category.dart';
 import '../state/app_state.dart';
+import '../widgets/ad_banner.dart';
 import '../widgets/confirm.dart';
 import '../widgets/slot_picker_sheet.dart';
 import '../widgets/sound_row.dart';
@@ -127,6 +128,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
                 },
               ),
             ),
+            const AdBannerSlot(),
           ],
         ),
       ),

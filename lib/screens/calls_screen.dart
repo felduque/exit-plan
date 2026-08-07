@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../core/premium_config.dart';
 import '../models/call_preset.dart';
 import '../state/app_state.dart';
+import '../widgets/ad_banner.dart';
 import '../widgets/call_preset_card.dart';
+import '../widgets/premium_gate_sheet.dart';
 import '../widgets/tip_banner.dart';
 import 'call_preset_editor_screen.dart';
 import 'incoming_call_screen.dart';
@@ -55,6 +58,7 @@ class CallsScreen extends StatelessWidget {
                         },
                       ),
               ),
+              const AdBannerSlot(),
             ],
           ),
         ),
@@ -62,8 +66,23 @@ class CallsScreen extends StatelessWidget {
     );
   }
 
-  void _newPreset(BuildContext context) {
-    Navigator.of(context).push<void>(
+  /// The gate lives here, at the point the user's intent starts, rather than
+  /// inside `AppState.addCallPreset`. Refusing at save time would mean letting
+  /// someone name a caller, pick a photo and choose a ringtone before telling
+  /// them it cannot be kept.
+  Future<void> _newPreset(BuildContext context) async {
+    final AppState state = AppScope.read(context);
+    if (!state.canAddCallPreset) {
+      await showPremiumGate(
+        context,
+        kind: PremiumGateKind.callPresets,
+        cap: state.callPresetCap,
+        freeLimit: FreeLimits.callPresets,
+      );
+      return;
+    }
+    if (!context.mounted) return;
+    await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(builder: (_) => const CallPresetEditorScreen()),
     );
   }

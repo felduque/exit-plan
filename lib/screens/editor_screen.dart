@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../audio/preview_player.dart';
 import '../core/icons.dart';
+import '../core/premium_config.dart';
 import '../core/theme.dart';
 import '../data/system_catalog.dart';
 import '../data/user_files.dart';
@@ -13,6 +14,8 @@ import '../models/escape_sound.dart';
 import '../models/exit_category.dart';
 import '../state/app_state.dart';
 import '../state/ui_flags.dart';
+import '../widgets/ad_banner.dart';
+import '../widgets/premium_gate_sheet.dart';
 import '../widgets/tip_banner.dart';
 import '../widgets/trim_timeline.dart';
 import 'category_detail_screen.dart';
@@ -220,14 +223,29 @@ class _EditorScreenState extends State<EditorScreen> {
                   ],
                 ),
               ),
+              // This screen ends in a primary filled action rather than a
+              // footer or a list, which is the one shape the banner's placement
+              // contract warns about: an ad directly under a Save button is the
+              // accidental-click layout AdMob treats as invalid traffic.
+              //
+              // It carries one anyway, with the risk bought down two ways:
+              //
+              // * The bottom padding is 28 rather than the usual 14, so there
+              //   is double the dead space between the button and the ad's
+              //   hairline. Nothing else in the app uses 28 here; it is not a
+              //   style choice and should not be "tidied" back to 14.
+              // * AdBannerSlot yields entirely while the keyboard is open (see
+              //   rule 5 there), which matters because the label field on this
+              //   screen would otherwise push the ad up against the button.
               Padding(
-                padding: const EdgeInsets.fromLTRB(22, 8, 22, 14),
+                padding: const EdgeInsets.fromLTRB(22, 8, 22, 28),
                 child: PrimaryButton(
                   label: 'Save exit',
                   enabled: _canSave,
                   onTap: _canSave ? () => _save(state) : null,
                 ),
               ),
+              const AdBannerSlot(),
             ],
           ),
         ),
@@ -289,6 +307,22 @@ class _EditorScreenState extends State<EditorScreen> {
   Future<void> _createCategory(AppState state) async {
     final String name = _newCategory.text.trim();
     if (name.isEmpty) return;
+
+    // The one gate that cannot sit at the start of the flow: making a category
+    // is a step *inside* saving a sound, not a journey of its own. So it is
+    // checked at the moment of creation — and it costs the user nothing,
+    // because the sound they are editing is unaffected and every existing
+    // category is still there to file it under.
+    if (!state.canAddUserCategory) {
+      await showPremiumGate(
+        context,
+        kind: PremiumGateKind.userCategories,
+        cap: state.userCategoryCap,
+        freeLimit: FreeLimits.userCategories,
+      );
+      return;
+    }
+    if (!mounted) return;
     final ExitCategory category = ExitCategory(
       id: 'usercat-${DateTime.now().microsecondsSinceEpoch}',
       label: name,

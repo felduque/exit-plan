@@ -4,12 +4,14 @@ import '../core/theme.dart';
 import '../models/enums.dart';
 import '../state/app_state.dart';
 import '../state/permissions.dart';
+import '../widgets/ad_banner.dart';
 import '../widgets/browse_row.dart';
 import '../widgets/quick_slot_button.dart';
 import '../widgets/selectors.dart';
 import 'blackout_screen.dart';
 import 'browse_screen.dart';
 import 'calls_screen.dart';
+import 'premium_screen.dart';
 import 'settings_screen.dart';
 
 /// The heart of the app, and the only screen that has to work in a hurry:
@@ -47,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _Masthead(
                       exits: state.quickAccess.length,
                       wantsNotifications: state.settings.lockScreenControls,
+                      premium: state.isPremium,
                     ),
                     const SizedBox(height: 20),
                     Text(
@@ -117,6 +120,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const FooterNote('TAP AN EXIT · SCREEN GOES DARK · SOUND FIRES'),
+            // Last child, below everything, and deliberately as far from the
+            // quick-exit grid as this screen allows — the grid is up inside the
+            // scroll view. See ad_banner.dart for why that distance is the
+            // whole safety argument for having an ad here at all.
+            const AdBannerSlot(),
           ],
         ),
       ),
@@ -191,17 +199,27 @@ class _CallsRow extends StatelessWidget {
 /// dialog or a red banner on the home screen is exactly what somebody glancing
 /// over a shoulder would notice.
 class _Masthead extends StatelessWidget {
-  const _Masthead({required this.exits, required this.wantsNotifications});
+  const _Masthead({
+    required this.exits,
+    required this.wantsNotifications,
+    required this.premium,
+  });
 
   final int exits;
 
   /// Whether the missing permission would actually cost the user anything.
   final bool wantsNotifications;
 
+  /// Hides the premium affordance once there is nothing left to sell.
+  final bool premium;
+
   @override
   Widget build(BuildContext context) {
     void openSettings() => Navigator.of(context).push<void>(
       MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+    );
+    void openPremium() => Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const PremiumScreen()),
     );
 
     return Row(
@@ -264,6 +282,19 @@ class _Masthead extends StatelessWidget {
             ],
           ),
         ),
+        // Renders nothing at all once the user has paid — the same rule
+        // NotificationPermissionNotice follows: an affordance that no longer
+        // applies is not dimmed or ticked, it is gone. It also gives the status
+        // line, which already ellipsises on a narrow phone, its width back.
+        if (!premium) ...<Widget>[
+          IconTile(
+            icon: Icons.workspace_premium_outlined,
+            semanticLabel: 'Premium',
+            color: ExitColors.amber,
+            onTap: openPremium,
+          ),
+          const SizedBox(width: 9),
+        ],
         IconTile(
           icon: Icons.settings_outlined,
           semanticLabel: 'Settings',

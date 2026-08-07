@@ -96,15 +96,27 @@ class _TipBannerState extends State<TipBanner> {
       return;
     }
 
-    final String next = kTips[state.tipIndex % kTips.length];
+    // A Premium nudge is not an extra banner — it is this one, showing
+    // something else. Every gate above already applied, the app's total
+    // interruption budget does not rise, and the `inAppTips` switch the user
+    // already knows about silences it too. See lib/core/premium_cadence.dart.
+    final String? promo = state.premiumNudge(DateTime.now());
+    final String next = promo ?? kTips[state.tipIndex % kTips.length];
+
     setState(() {
       _lastText = next;
       _text = next;
       _dragY = 0;
     });
-    // Remembering the index means reopening the app does not always show the
-    // same first tip.
-    await state.advanceTip(kTips.length);
+
+    if (promo != null) {
+      await state.markPremiumNudge(DateTime.now());
+    } else {
+      // Remembering the index means reopening the app does not always show the
+      // same first tip. Deliberately not advanced on a promo tick: a nudge must
+      // not cost the user a tip they would otherwise have seen.
+      await state.advanceTip(kTips.length);
+    }
 
     _hideTimer?.cancel();
     _hideTimer = Timer(TipBanner.visible, _hide);

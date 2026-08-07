@@ -16,6 +16,23 @@ val keystoreProperties = Properties().apply {
 }
 val hasUploadKey = keystoreProperties.getProperty("storeFile") != null
 
+// The same exitplan.env that --dart-define-from-file reads, parsed here too.
+//
+// The AdMob app id cannot travel by --dart-define: MobileAds.initialize()
+// crashes outright without it in the manifest, which is decided long before any
+// Dart runs. Reading it from the one credentials file — rather than a separate
+// -P flag — means there is a single thing to remember on a release build
+// instead of two that fail in different ways when forgotten.
+//
+// KEY=VALUE with # comments parses identically as a .env and as a Java
+// properties file, which is the only reason this works.
+val envFile = rootProject.file("../exitplan.env")
+val env = Properties().apply {
+    if (envFile.exists()) {
+        envFile.inputStream().use { load(it) }
+    }
+}
+
 android {
     namespace = "com.dg.developer.exitplan"
     compileSdk = flutter.compileSdkVersion
@@ -36,6 +53,14 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Same discipline as the upload key above: a checkout without the
+        // credentials file still builds, and the fallback is Google's public
+        // *test* app id — inert rather than wrong. Set ADMOB_APP_ID in
+        // exitplan.env to ship real ads.
+        manifestPlaceholders["admobAppId"] =
+            env.getProperty("ADMOB_APP_ID")?.takeIf { it.isNotBlank() }
+                ?: "ca-app-pub-3940256099942544~3347511713"
     }
 
     signingConfigs {
@@ -58,8 +83,23 @@ android {
                 // `flutter run --release` still works locally.
                 signingConfigs.getByName("debug")
             }
+            // proguard-rules.pro exists solely to stop R8 failing on the
+            // unused halves of the TikTok SDK. See the file for the reasoning.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
+}
+
+dependencies {
+    // The Play Install Referrer library. Not optional despite being an explicit
+    // extra: it is how the TikTok SDK learns which ad click led to the install,
+    // which is the only reason that SDK is in this app. Without it the SDK still
+    // runs, still sends its events, and attributes almost nothing — a silent
+    // failure rather than a loud one.
+    implementation("com.android.installreferrer:installreferrer:2.2")
 }
 
 kotlin {

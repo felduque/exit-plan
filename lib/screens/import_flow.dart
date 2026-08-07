@@ -1,7 +1,10 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../core/premium_config.dart';
 import '../data/user_files.dart';
+import '../state/app_state.dart';
+import '../widgets/premium_gate_sheet.dart';
 import 'editor_screen.dart';
 
 /// Picks an audio file, copies it somewhere permanent, and opens the editor.
@@ -9,10 +12,28 @@ import 'editor_screen.dart';
 /// The copy matters: the path the picker returns usually lives in a cache the OS
 /// may purge, so the app keeps its own copy and references only that. If the user
 /// backs out of the editor without saving, that copy is deleted again.
+///
+/// The free-tier check lives here rather than at the three places that call
+/// this, and rather than inside `AppState.addUserSound`. This function *is* the
+/// boundary of the user's intent: it is what opens the file picker. Checking
+/// later would mean letting someone browse their music, pick a track, watch it
+/// copy to storage and trim it, only to be told at the end that it cannot be
+/// kept — and leaving an orphaned copy on disk in the process.
 Future<void> startImport(
   BuildContext context, {
   String? targetCategoryId,
 }) async {
+  final AppState state = AppScope.read(context);
+  if (!state.canAddUserSound) {
+    await showPremiumGate(
+      context,
+      kind: PremiumGateKind.userSounds,
+      cap: state.userSoundCap,
+      freeLimit: FreeLimits.userSounds,
+    );
+    return;
+  }
+
   final FilePickerResult? result = await FilePicker.pickFiles(
     type: FileType.audio,
   );

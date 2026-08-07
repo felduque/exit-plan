@@ -167,7 +167,12 @@ class _AnimatedSplashState extends State<AnimatedSplash>
                     child: Opacity(
                       opacity: _seg(t, 0.84, 1, Curves.easeOut),
                       child: Text(
-                        '100% OFFLINE · NO ACCOUNTS',
+                        // Was "100% OFFLINE · NO ACCOUNTS" until the TikTok
+                        // Events SDK made the unqualified claim untrue. What it
+                        // now says is the part that is still exactly true, and
+                        // is the part users actually care about; Settings
+                        // carries the full note.
+                        'YOUR SOUNDS · 100% OFFLINE',
                         style: mono(8, color: ExitColors.dim, letterSpacing: 3),
                       ),
                     ),

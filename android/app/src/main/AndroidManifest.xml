@@ -4,8 +4,7 @@
          foreground service. POST_NOTIFICATIONS only exists so the media controls
          can be shown; it is asked for after boot, never during a firing.
 
-         There is deliberately no INTERNET permission and deliberately no
-         RECORD_AUDIO: the app never records and never talks to a network, and
+         There is still deliberately no RECORD_AUDIO: the app never records, and
          asking for a permission it does not use is a red flag in store review. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
@@ -13,17 +12,43 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
-    <!-- The audio libraries pull these in for streaming, which this app never
-         does. Stripping them keeps the shipped build genuinely offline: a
-         release APK that cannot reach the network at all. (Debug builds still
-         get INTERNET from src/debug — the tool needs it for hot reload.) -->
-    <uses-permission android:name="android.permission.INTERNET" tools:node="remove"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
+    <!-- These used to be stripped with tools:node="remove", because nothing in
+         the app could reach a network and the build was offline in the
+         strongest sense the platform allows.
+
+         Two separate things now need them:
+
+         * The TikTok Events SDK, so paid installs can be attributed to the
+           campaign that produced them. It posts an install/launch event and
+           reads the advertising ID TikTok matches the ad click against.
+         * AdMob, which requests a banner on the six screens that own no firing
+           control and reads the same advertising ID.
+
+         What did NOT change: no audio, no imported file, no call preset and no
+         usage data ever leaves the device. The app logs no events of its own —
+         see lib/services/tiktok_analytics.dart and lib/widgets/ad_banner.dart.
+
+         Play Data Safety must declare "Device or other IDs" as collected, for
+         both "Advertising or marketing" and "Analytics", while these are
+         present. Both SDKs would have to go before the tools:node="remove"
+         lines and that declaration could be restored together. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
 
     <application
         android:label="ExitPlan"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- Required by the Google Mobile Ads SDK; its absence is a hard crash
+             on startup, not a degraded ad experience. The value comes from the
+             admobAppId gradle property, which falls back to Google's public
+             test app id — see android/app/build.gradle.kts. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

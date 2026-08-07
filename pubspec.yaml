@@ -1,5 +1,5 @@
 name: exitplan
-description: "Excuse sounds that get you out of a room or off a call. 100% offline."
+description: "Excuse sounds that get you out of a room or off a call. Your sounds never leave the device."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -21,8 +21,20 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # any upload whose versionCode is not strictly higher than the last one it has.
 #
 # Last version published by the Expo build: versionCode 2 (1.0.0), 13 jul.
+# Last version published by this Flutter build: versionCode 3 (1.1.0).
 # Bump the +N on every upload to Play; it can never repeat or go down.
-version: 1.1.0+3
+#
+# 1.2.0 was a minor rather than a patch because the app gained a capability it
+# never had: it now reaches the network, to report installs to TikTok for ad
+# attribution. The splash and settings copy changed with it.
+#
+# 1.3.0 adds AdMob banners, a Premium tier over Play Billing, free-tier limits
+# with grandfathering, and a throttled upsell. Note that the work is arranged as
+# four separable commits (groundwork / ads / billing / limits+nudges) precisely
+# so it does not all have to reach Play in one upload — an ads SDK, a new
+# billing integration and a fake-call feature in a single review is a much
+# larger surface than any of them alone.
+version: 1.3.0+5
 
 environment:
   sdk: ^3.12.2
@@ -49,6 +61,22 @@ dependencies:
   shared_preferences: ^2.5.5
   wakelock_plus: ">=1.3.0 <1.6.0"
   permission_handler: ^12.0.3
+
+  # The three dependencies that touch a network, all of them for revenue and
+  # none for the product. Everything above this line works entirely on device.
+  #
+  # Reports installs so a TikTok ad campaign can be told which ones it paid for.
+  # See lib/services/tiktok_analytics.dart for exactly what leaves the device
+  # and what deliberately does not.
+  tiktok_events_sdk: ^1.3.0
+  # Banner ads, on the five screens that own no firing control and end in a
+  # footer or a list. Never on the blackout, fake-call or incoming-call screens,
+  # and never on the editor, whose bottom is a primary button — see
+  # lib/widgets/ad_banner.dart for the placement contract.
+  google_mobile_ads: ^9.0.0
+  # Play Billing, for the premium tier that removes those ads. No backend and no
+  # account: the entitlement is local, and Play is the only source of truth.
+  in_app_purchase: ^3.3.0
 
 dev_dependencies:
   flutter_test:

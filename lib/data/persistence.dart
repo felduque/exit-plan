@@ -4,11 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/call_preset.dart';
 import 'app_settings.dart';
+import 'entitlement.dart';
+import 'gate_baseline.dart';
 import 'system_catalog.dart';
 import 'user_library.dart';
 
-/// Local key-value storage. Nothing leaves the device: there is no backend, no
-/// account and no network call anywhere in this app.
+/// Local key-value storage. Nothing here leaves the device: there is no
+/// backend, no account and no sync anywhere in this app.
 ///
 /// Every read is defensive. A corrupt value returns the default rather than
 /// throwing, because a bad byte on disk must never stop the app from starting.
@@ -22,6 +24,10 @@ class Persistence {
   static const String _kTipIndex = 'exitplan.tips';
   static const String _kNotificationsAsked = 'exitplan.notificationsAsked';
   static const String _kCallPresets = 'exitplan.callPresets';
+  static const String _kEntitlement = 'exitplan.premium';
+  static const String _kGateBaseline = 'exitplan.gateBaseline';
+  static const String _kNudgedAt = 'exitplan.premium.nudgedAt';
+  static const String _kNudgeCount = 'exitplan.premium.nudgeCount';
 
   final SharedPreferences _prefs;
 
@@ -127,4 +133,43 @@ class Persistence {
     _kCallPresets,
     presets.map((CallPreset p) => p.toJson()).toList(),
   );
+
+  // --- premium ---------------------------------------------------------------
+
+  /// Kept out of [_kSettings] on purpose: purchases arrive asynchronously and
+  /// would race the read-modify-write of the settings blob. See [Entitlement].
+  Entitlement loadEntitlement() => Entitlement.fromJson(_decode(_kEntitlement));
+
+  Future<void> saveEntitlement(Entitlement value) =>
+      _encode(_kEntitlement, value.toJson());
+
+  /// `null` means "never captured on this device", which is the signal for
+  /// [AppState] to take the snapshot. It is not the same as a baseline of zero,
+  /// which is a real answer meaning "this install started with nothing".
+  GateBaseline? loadGateBaseline() =>
+      GateBaseline.tryFromJson(_decode(_kGateBaseline));
+
+  Future<void> saveGateBaseline(GateBaseline value) =>
+      _encode(_kGateBaseline, value.toJson());
+
+  /// Plain ints rather than JSON, same as the tip cursor: two counters that are
+  /// read on every banner tick and must never be the reason one is slow.
+  ///
+  /// Zero means "never nudged", which is also what an absent or corrupt value
+  /// reads as — erring toward showing the user one more nudge than they were
+  /// owed, never toward showing them a seventh.
+  int loadNudgedAtMs() {
+    final int? value = _prefs.getInt(_kNudgedAt);
+    return value == null || value < 0 ? 0 : value;
+  }
+
+  int loadNudgeCount() {
+    final int? value = _prefs.getInt(_kNudgeCount);
+    return value == null || value < 0 ? 0 : value;
+  }
+
+  Future<void> saveNudge({required int atMs, required int count}) async {
+    await _prefs.setInt(_kNudgedAt, atMs);
+    await _prefs.setInt(_kNudgeCount, count);
+  }
 }

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Keeps the media-control icons alive through resource shrinking.
+
+  audio_service names its notification icons as strings from Dart —
+  'drawable/audio_service_play_arrow', '…_pause', '…_stop' — and resolves them
+  at runtime with Resources.getIdentifier. A reference expressed as a string is
+  invisible to the shrinker, so a release build drops them, getIdentifier
+  returns 0, and building the media session throws:
+
+      java.lang.IllegalArgumentException:
+      You must specify an icon resource id to build a CustomAction
+
+  The failure is quiet and badly disguised. Audio still plays and the blackout
+  screen still works, so nothing looks broken from inside the app — but the
+  media session never activates, so there is no notification, no lock-screen
+  controls, and on Android the OS is free to kill the playback after a few
+  minutes. Debug builds are fine, because nothing is shrunk there.
+
+  Same class of bug as the Room rule in proguard-rules.pro: a dependency the
+  tooling cannot see because it is spelled as text.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/audio_service_*" />

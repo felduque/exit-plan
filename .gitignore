@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Every build-time credential, in one file: the TikTok access token plus the
+# AdMob ids. Read by --dart-define-from-file and, for ADMOB_APP_ID, by gradle.
+# See exitplan.env.example for the shape, and lib/core/tiktok_config.dart for
+# why the token in particular must never be committed.
+/exitplan.env
