@@ -11,8 +11,12 @@ import '../models/escape_sound.dart';
 import '../models/exit_category.dart';
 import '../state/app_state.dart';
 import '../state/ui_flags.dart';
-import '../widgets/call_themes/call_visuals.dart';
+import '../themes/call_theme.dart';
+import '../themes/call_theme_registry.dart';
+import '../themes/call_visuals.dart';
+import '../widgets/call_theme_picker.dart';
 import '../widgets/confirm.dart';
+import '../widgets/premium_gate_sheet.dart';
 import '../widgets/selectors.dart';
 import '../widgets/tip_banner.dart';
 
@@ -46,10 +50,13 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
   /// is untouched until a save actually replaces it.
   String? _pendingNewAvatarPath;
 
-  late CallPlatform _platform = widget.preset?.platform ?? CallPlatform.ios;
+  late String _themeId = widget.preset?.themeId ?? kDefaultCallThemeId;
   late String _ringtoneSoundId =
       widget.preset?.ringtoneSoundId ?? kFallbackSoundId;
   late int _delay = widget.preset?.delaySeconds ?? 0;
+  late int _ringSeconds = widget.preset?.ringSeconds ?? 30;
+  late int? _autoEndSeconds = widget.preset?.autoEndSeconds;
+  late bool _vibrate = widget.preset?.vibrate ?? true;
 
   bool _saved = false;
 
@@ -136,13 +143,15 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 20),
-                    SegmentedRow<CallPlatform>(
-                      caption: 'SCREEN STYLE',
-                      options: CallPlatform.values,
-                      selected: _platform,
-                      labelOf: (CallPlatform p) => p.label,
-                      onChanged: (CallPlatform p) =>
-                          setState(() => _platform = p),
+                    CallThemePicker(
+                      selectedId: _themeId,
+                      premium: state.isPremium,
+                      name: _name.text,
+                      avatarPath: _avatarPath,
+                      onSelect: (CallTheme t) =>
+                          setState(() => _themeId = t.id),
+                      onLocked: (CallTheme t) =>
+                          showPremiumThemeGate(context, t.name),
                     ),
                     const SizedBox(height: 20),
                     const _FieldCaption('RINGTONE'),
@@ -154,6 +163,29 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                     DelayFuseSelector(
                       seconds: _delay,
                       onChanged: (int value) => setState(() => _delay = value),
+                    ),
+                    const SizedBox(height: 20),
+                    SegmentedRow<int>(
+                      caption: 'RING FOR',
+                      options: kRingSecondsOptions,
+                      selected: _ringSeconds,
+                      labelOf: _ringLabel,
+                      onChanged: (int value) =>
+                          setState(() => _ringSeconds = value),
+                    ),
+                    const SizedBox(height: 20),
+                    SegmentedRow<int?>(
+                      caption: 'HANG UP AFTER',
+                      options: kAutoEndOptions,
+                      selected: _autoEndSeconds,
+                      labelOf: _autoEndLabel,
+                      onChanged: (int? value) =>
+                          setState(() => _autoEndSeconds = value),
+                    ),
+                    const SizedBox(height: 20),
+                    _VibrateToggle(
+                      value: _vibrate,
+                      onChanged: (bool v) => setState(() => _vibrate = v),
                     ),
                   ],
                 ),
@@ -249,18 +281,25 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
             name: name,
             number: number,
             avatarPath: _avatarPath,
-            platform: _platform,
+            themeId: _themeId,
             ringtoneSoundId: _ringtoneSoundId,
             delaySeconds: _delay,
+            ringSeconds: _ringSeconds,
+            autoEndSeconds: _autoEndSeconds,
+            vibrate: _vibrate,
           )
         : existing.copyWith(
             name: name,
             number: number,
             avatarPath: _avatarPath,
             clearAvatar: _avatarPath == null,
-            platform: _platform,
+            themeId: _themeId,
             ringtoneSoundId: _ringtoneSoundId,
             delaySeconds: _delay,
+            ringSeconds: _ringSeconds,
+            autoEndSeconds: _autoEndSeconds,
+            clearAutoEnd: _autoEndSeconds == null,
+            vibrate: _vibrate,
           );
 
     _saved = true;
@@ -291,6 +330,57 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
 
 extension on List<PlatformFile> {
   PlatformFile? get firstOrNull => isEmpty ? null : first;
+}
+
+/// `0` is the "rings until you deal with it" cell, which is what every template
+/// did before this control existed. It reads as a word rather than a number
+/// because "0" in a row of durations looks like a mistake.
+String _ringLabel(int seconds) => seconds == 0 ? 'ON' : '${seconds}s';
+
+/// Null is "never hangs up", and the rest are shown in whichever unit reads
+/// shorter — a segmented cell has room for three characters, not for "120s".
+String _autoEndLabel(int? seconds) {
+  if (seconds == null) return 'OFF';
+  if (seconds < 60) return '${seconds}s';
+  return '${seconds ~/ 60}m';
+}
+
+/// The one switch in this editor. A [Panel] with an [ExitSwitch] rather than a
+/// segmented row, matching how settings draws a boolean — a two-cell segmented
+/// control for on/off would be a second grammar for the same idea.
+class _VibrateToggle extends StatelessWidget {
+  const _VibrateToggle({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      toggled: value,
+      label: 'Vibrate while ringing',
+      child: Panel(
+        onTap: () => onChanged(!value),
+        radius: ExitRadius.tile,
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text('Vibrate', style: ExitText.row),
+                  const SizedBox(height: 3),
+                  Text('Buzz along with the ringtone', style: ExitText.bodySmall),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            ExitSwitch(value: value),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// The circular photo field: tap to pick, tap the small badge to clear.

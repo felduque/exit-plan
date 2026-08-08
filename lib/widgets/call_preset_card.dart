@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 import '../models/call_preset.dart';
-import 'call_themes/call_visuals.dart';
+import '../themes/call_theme_registry.dart';
+import '../themes/call_visuals.dart';
 
 /// One saved template on `CallsScreen`: photo, name, number, the OS it
 /// imitates, and the two things you can do with it — ring it, or edit it.
@@ -56,7 +57,7 @@ class CallPresetCard extends StatelessWidget {
                         ),
                       ),
                     if (preset.number.isNotEmpty) const SizedBox(width: 8),
-                    TagChip(preset.platform.label),
+                    TagChip(callThemeFor(preset.themeId).name),
                   ],
                 ),
               ],

@@ -1,9 +1,11 @@
 import 'package:exitplan/core/theme.dart';
 import 'package:exitplan/models/escape_sound.dart';
+import 'package:exitplan/screens/call_preset_editor_screen.dart';
 import 'package:exitplan/screens/home_screen.dart';
 import 'package:exitplan/screens/settings_screen.dart';
 import 'package:exitplan/state/app_state.dart';
 import 'package:exitplan/widgets/browse_row.dart';
+import 'package:exitplan/widgets/call_theme_picker.dart';
 import 'package:exitplan/widgets/intro_overlay.dart';
 import 'package:exitplan/widgets/quick_slot_button.dart';
 import 'package:exitplan/widgets/sound_row.dart';
@@ -65,6 +67,22 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(ExitSwitch), findsNWidgets(6));
     });
+
+    testWidgets(
+      'the call template editor fits '
+      '${size.width.toInt()}x${size.height.toInt()}',
+      (WidgetTester tester) async {
+        // This screen owns no player, so unlike the audio editor it can be
+        // pumped whole — and it is the one that grew most when themes,
+        // the ring window, auto-end and vibrate arrived. Its theme strip also
+        // builds real call screens, which is the most expensive thing any
+        // editor in this app draws.
+        await pump(tester, const CallPresetEditorScreen(), size);
+        expect(tester.takeException(), isNull);
+        expect(find.byType(CallThemePicker), findsOneWidget);
+        expect(find.text('Save template'), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'every intro step fits ${size.width.toInt()}x${size.height.toInt()}',

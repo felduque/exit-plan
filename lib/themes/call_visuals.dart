@@ -4,10 +4,38 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-/// Shared pieces every fake-call screen — whichever OS it imitates — is built
+/// Shared pieces every fake-call theme — whichever OS it evokes — is built
 /// from: the status bar, the caller photo, and the round action buttons. Kept
 /// out of `core/theme.dart` on purpose: nothing here may leak into the rest of
 /// the app, the same way `BlackoutScreen` never borrows the app's own look.
+///
+/// The inverse rule matters just as much and is the one a future edit is
+/// likeliest to break: **nothing in `lib/themes/` may import
+/// `core/theme.dart`.** These screens have to look like somebody else's phone,
+/// so the moment an `ExitColors` constant appears here the illusion starts
+/// leaking.
+
+/// Marks a subtree as a *preview* rather than a live call.
+///
+/// The theme picker renders the real incoming layout, scaled down, so a preview
+/// can never drift from what the call actually looks like. But six live call
+/// screens in one sheet would mean six forever-repeating [AnimationController]s
+/// and six one-second [Timer]s, which is a lot of machinery to run behind a
+/// bottom sheet.
+///
+/// So the two widgets that animate ask this instead of taking a flag threaded
+/// through every theme's constructor — a theme author cannot forget to pass it
+/// on, because there is nothing to pass.
+class CallPreviewScope extends InheritedWidget {
+  const CallPreviewScope({super.key, required super.child});
+
+  /// False everywhere except inside a picker tile.
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<CallPreviewScope>() != null;
+
+  @override
+  bool updateShouldNotify(CallPreviewScope oldWidget) => false;
+}
 
 /// The system status bar every real call screen sits under: time on the left,
 /// signal/wifi/battery glyphs on the right. Drawn rather than left to the OS
@@ -27,9 +55,12 @@ class _CallStatusBarState extends State<CallStatusBar> {
   Timer? _timer;
 
   @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 15), (_) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // A preview does not need a ticking clock, and starting one per tile in a
+    // picker of six is six timers behind a sheet nobody is reading the time on.
+    if (CallPreviewScope.of(context)) return;
+    _timer ??= Timer.periodic(const Duration(seconds: 15), (_) {
       if (mounted) setState(() => _time = _now());
     });
   }
@@ -79,8 +110,8 @@ class _CallStatusBarState extends State<CallStatusBar> {
 
 /// The caller's photo, as a plain circle for the incoming-call header, the
 /// in-call header and cards. Falls back to a soft initial when there is no
-/// photo — or, when [fallbackIcon] is given (WhatsApp's own default avatar is
-/// a generic silhouette rather than an initial), that icon instead.
+/// photo — or, when [fallbackIcon] is given (some themes default to a generic
+/// silhouette rather than an initial), that icon instead.
 class CallAvatar extends StatelessWidget {
   const CallAvatar({
     super.key,
@@ -218,6 +249,11 @@ class _CallActionButtonState extends State<CallActionButton>
   // ticker against an element that is already being torn down.
   late final AnimationController _c;
 
+  /// Whether the ring is actually animating. A preview draws the pulse ring at
+  /// rest instead of repeating forever — six looping controllers behind a
+  /// bottom sheet is machinery nobody asked for.
+  bool _animating = false;
+
   @override
   void initState() {
     super.initState();
@@ -225,7 +261,20 @@ class _CallActionButtonState extends State<CallActionButton>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
-    if (widget.pulse) _c.repeat(reverse: true);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final bool shouldAnimate = widget.pulse && !CallPreviewScope.of(context);
+    if (shouldAnimate == _animating) return;
+    _animating = shouldAnimate;
+    if (shouldAnimate) {
+      _c.repeat(reverse: true);
+    } else {
+      _c.stop();
+      _c.value = 0;
+    }
   }
 
   @override
@@ -311,9 +360,9 @@ class _CallActionButtonState extends State<CallActionButton>
 }
 
 /// Wraps a [CallActionButton] with the real "drag up to confirm" gesture used
-/// by iOS's and stock Android's own incoming-call screens: the button follows
-/// the finger upward, [onConfirm] fires once it clears [threshold], and it
-/// springs back to rest on an early release.
+/// by several real incoming-call screens: the button follows the finger
+/// upward, [onConfirm] fires once it clears [threshold], and it springs back to
+/// rest on an early release.
 class DragUpToConfirm extends StatefulWidget {
   const DragUpToConfirm({
     super.key,
@@ -322,13 +371,29 @@ class DragUpToConfirm extends StatefulWidget {
     this.threshold = 64,
     this.hint,
     this.hintColor = Colors.white70,
+    this.width = _defaultButtonFootprint,
   });
+
+  /// A default [CallActionButton]'s outer box: `size * 1.6` at the default
+  /// size of 66.
+  static const double _defaultButtonFootprint = 66 * 1.6;
 
   final Widget child;
   final VoidCallback onConfirm;
   final double threshold;
   final String? hint;
   final Color hintColor;
+
+  /// The footprint of [child], used to bound the hint.
+  ///
+  /// The hint is a caption for the circle above it, so it has no business being
+  /// wider than that circle — and when it was unbounded it *was*, because two
+  /// of these sit in a `spaceBetween` row and "Swipe up to decline" is a long
+  /// string. At the default text scale a real face keeps it under the button by
+  /// a hair, which is why the overflow never showed up on a phone; raise the
+  /// system font size and both sides push outward until the row breaks. Pass
+  /// this when the child is not a default-sized button.
+  final double width;
 
   @override
   State<DragUpToConfirm> createState() => _DragUpToConfirmState();
@@ -419,12 +484,22 @@ class _DragUpToConfirmState extends State<DragUpToConfirm>
         ),
         if (widget.hint != null) ...<Widget>[
           const SizedBox(height: 6),
-          Text(
-            widget.hint!,
-            style: TextStyle(
-              color: widget.hintColor,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
+          SizedBox(
+            width: widget.width,
+            child: Text(
+              widget.hint!,
+              textAlign: TextAlign.center,
+              // Wraps onto a second line before it ever widens the column.
+              // Ellipsis is the last resort rather than the plan: losing the
+              // end of "Slide up to answer" is bad, but pushing the accept
+              // circle off the edge of the screen is worse.
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: widget.hintColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -492,3 +567,14 @@ class CallGridButton extends StatelessWidget {
     );
   }
 }
+
+/// The generic default avatar for themes whose real-world counterpart shows a
+/// silhouette rather than the caller's initial.
+const IconData kSilhouetteAvatar = Icons.person;
+
+/// A named no-op for a circle whose real gesture is the drag, not the tap.
+///
+/// [CallActionButton] always takes an `onTap`; a drag-only circle has to pass
+/// something. A named function says "this does nothing on purpose", where an
+/// inline `() {}` leaves the next reader deciding whether it was a stub.
+void callNoop() {}

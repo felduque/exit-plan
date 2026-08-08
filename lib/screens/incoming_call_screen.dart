@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../audio/audio_boot.dart';
+import '../audio/call_ring_engine.dart';
 import '../models/call_preset.dart';
 import '../models/escape_sound.dart';
 import '../state/app_state.dart';
-import '../widgets/call_themes/android_call_widgets.dart';
-import '../widgets/call_themes/call_visuals.dart';
-import '../widgets/call_themes/ios_call_widgets.dart';
-import '../widgets/call_themes/whatsapp_call_widgets.dart';
+import '../themes/call_theme.dart';
+import '../themes/call_theme_registry.dart';
 import '../widgets/tip_banner.dart';
 import 'fake_call_screen.dart';
 
@@ -30,7 +29,11 @@ Future<void> fireCall(BuildContext context, CallPreset preset) {
 
 /// The screen that imitates a real incoming call. Deliberately outside the
 /// app's own visual language, the same way `BlackoutScreen` is — this has to
-/// look like iOS, Android or WhatsApp, not like ExitPlan.
+/// look like somebody else's phone, not like ExitPlan.
+///
+/// Which look is not decided here: the preset names a theme, the registry
+/// resolves it, and this screen only owns the engine, the phases and the two
+/// outcomes.
 class IncomingCallScreen extends StatefulWidget {
   const IncomingCallScreen({super.key, required this.preset});
 
@@ -41,8 +44,14 @@ class IncomingCallScreen extends StatefulWidget {
 }
 
 class _IncomingCallScreenState extends State<IncomingCallScreen> {
+  /// How long the missed-call notice stays up before the screen leaves by
+  /// itself. Long enough to read, short enough that a phone left on a table
+  /// does not sit there advertising a call that never happened.
+  static const Duration _missedLinger = Duration(seconds: 3);
+
   bool _handedOff = false;
   StreamSubscription<void>? _engineSub;
+  Timer? _missedExit;
 
   @override
   void initState() {
@@ -61,11 +70,29 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
     final EscapeSound sound = state.library.resolveOrFallback(
       widget.preset.ringtoneSoundId,
     );
-    await callRingEngine.arm(sound, delaySeconds: widget.preset.delaySeconds);
+    await callRingEngine.arm(
+      sound,
+      delaySeconds: widget.preset.delaySeconds,
+      ringSeconds: widget.preset.ringSeconds,
+      autoEndSeconds: widget.preset.autoEndSeconds,
+      vibrate: widget.preset.vibrate,
+    );
   }
 
   void _onEngine(void _) {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    // Nobody answered. The engine has already silenced everything; all that is
+    // left is to show it happened and then get off the screen.
+    if (callRingEngine.phase == CallEnginePhase.missed) {
+      _missedExit ??= Timer(_missedLinger, _leaveAfterMissed);
+    }
+  }
+
+  void _leaveAfterMissed() {
+    if (!mounted || _handedOff) return;
+    _handedOff = true;
+    Navigator.of(context).pop();
   }
 
   Future<void> _decline() async {
@@ -91,6 +118,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
   void dispose() {
     _engineSub?.cancel();
     _engineSub = null;
+    _missedExit?.cancel();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     // Belt and braces, mirroring BlackoutScreen: leaving this route must never
     // leave the ring running.
@@ -100,266 +128,29 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final CallTheme theme = callThemeFor(widget.preset.themeId);
+
     // A tip banner popping up mid-call would give the whole thing away — this
     // screen exists to be believed.
     return TipsSuppressor(
       child: PopScope(
         // A stray back gesture must not silently kill the excuse.
         canPop: false,
-        child: switch (widget.preset.platform) {
-          CallPlatform.ios => _IosIncoming(
-            preset: widget.preset,
-            onDecline: _decline,
-            onAccept: _accept,
-          ),
-          CallPlatform.android => _AndroidIncoming(
-            preset: widget.preset,
-            onDecline: _decline,
-            onAccept: _accept,
-          ),
-          CallPlatform.whatsapp => _WhatsAppIncoming(
-            preset: widget.preset,
-            onDecline: _decline,
-            onAccept: _accept,
-          ),
-        },
-      ),
-    );
-  }
-}
-
-class _IosIncoming extends StatelessWidget {
-  const _IosIncoming({
-    required this.preset,
-    required this.onDecline,
-    required this.onAccept,
-  });
-
-  final CallPreset preset;
-  final VoidCallback onDecline;
-  final VoidCallback onAccept;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: IosCallColors.base,
-      body: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          CallBackdrop(
-            avatarPath: preset.avatarPath,
-            name: preset.name,
-            baseColor: IosCallColors.base,
-            scrim: IosCallColors.scrim,
-          ),
-          const SafeArea(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: CallStatusBar(color: IosCallColors.text),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 30),
-              child: Column(
-                children: <Widget>[
-                  const Spacer(),
-                  Text(
-                    'incoming call',
-                    style: TextStyle(
-                      color: IosCallColors.subtext,
-                      fontSize: 15,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    preset.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: IosCallColors.text,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (preset.number.isNotEmpty) ...<Widget>[
-                    const SizedBox(height: 6),
-                    Text(
-                      preset.number,
-                      style: TextStyle(
-                        color: IosCallColors.subtext,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                  const Spacer(flex: 2),
-                  IosIncomingActions(onDecline: onDecline, onAccept: onAccept),
-                  const SizedBox(height: 18),
-                ],
+        child: callRingEngine.phase == CallEnginePhase.missed
+            ? CallMissedView(
+                palette: theme.palette,
+                name: widget.preset.name,
+                avatarPath: widget.preset.avatarPath,
+              )
+            : theme.buildIncoming(
+                CallIncomingContext(
+                  name: widget.preset.name,
+                  number: widget.preset.number,
+                  avatarPath: widget.preset.avatarPath,
+                  onAccept: _accept,
+                  onDecline: _decline,
+                ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AndroidIncoming extends StatelessWidget {
-  const _AndroidIncoming({
-    required this.preset,
-    required this.onDecline,
-    required this.onAccept,
-  });
-
-  final CallPreset preset;
-  final VoidCallback onDecline;
-  final VoidCallback onAccept;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AndroidCallColors.base,
-      body: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          CallBackdrop(
-            avatarPath: preset.avatarPath,
-            name: preset.name,
-            baseColor: AndroidCallColors.base,
-            scrim: AndroidCallColors.scrim,
-          ),
-          const SafeArea(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: CallStatusBar(color: AndroidCallColors.text),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 34),
-              child: Column(
-                children: <Widget>[
-                  const SizedBox(height: 26),
-                  Text(
-                    'Incoming call',
-                    style: TextStyle(
-                      color: AndroidCallColors.subtext,
-                      fontSize: 14,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  const Spacer(),
-                  CallAvatar(
-                    avatarPath: preset.avatarPath,
-                    name: preset.name,
-                    diameter: 118,
-                    tint: const Color(0xFF3C4043),
-                  ),
-                  const SizedBox(height: 22),
-                  Text(
-                    preset.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AndroidCallColors.text,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (preset.number.isNotEmpty) ...<Widget>[
-                    const SizedBox(height: 6),
-                    Text(
-                      preset.number,
-                      style: TextStyle(
-                        color: AndroidCallColors.subtext,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ],
-                  const Spacer(flex: 2),
-                  AndroidIncomingActions(
-                    onDecline: onDecline,
-                    onAccept: onAccept,
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WhatsAppIncoming extends StatelessWidget {
-  const _WhatsAppIncoming({
-    required this.preset,
-    required this.onDecline,
-    required this.onAccept,
-  });
-
-  final CallPreset preset;
-  final VoidCallback onDecline;
-  final VoidCallback onAccept;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: WhatsAppCallColors.base,
-      body: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          const WhatsAppDoodleBackground(),
-          const SafeArea(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: CallStatusBar(color: WhatsAppCallColors.text),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 34),
-              child: Column(
-                children: <Widget>[
-                  const SizedBox(height: 40),
-                  Text(
-                    preset.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: WhatsAppCallColors.text,
-                      fontSize: 25,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'WhatsApp voice call…',
-                    style: TextStyle(
-                      color: WhatsAppCallColors.subtext,
-                      fontSize: 14.5,
-                    ),
-                  ),
-                  const Spacer(),
-                  CallAvatar(
-                    avatarPath: preset.avatarPath,
-                    name: preset.name,
-                    diameter: 128,
-                    tint: const Color(0xFFCFD7DB),
-                    textColor: const Color(0xFF8696A0),
-                    fallbackIcon: kWhatsAppAvatarFallback,
-                  ),
-                  const Spacer(flex: 2),
-                  WhatsAppIncomingActions(
-                    onDecline: onDecline,
-                    onAccept: onAccept,
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

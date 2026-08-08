@@ -4,6 +4,7 @@ import '../core/theme.dart';
 import '../data/system_catalog.dart';
 import '../models/call_preset.dart';
 import '../state/app_state.dart';
+import '../themes/call_theme_registry.dart';
 import 'browse_row.dart';
 import 'call_preset_card.dart';
 import 'quick_slot_button.dart';
@@ -202,7 +203,7 @@ class _IntroOverlayState extends State<IntroOverlay> {
             id: 'intro-demo',
             name: 'Mom',
             number: '+1 555 0100',
-            platform: CallPlatform.ios,
+            themeId: kDefaultCallThemeId,
             ringtoneSoundId: kFallbackSoundId,
           ),
           onCall: _next,
@@ -233,8 +234,8 @@ class _IntroOverlayState extends State<IntroOverlay> {
     'The home grid holds four sounds. Change any slot while browsing: tap the '
         'star on a sound and choose which slot it replaces.',
     'Build a caller under Fake calls: a name, a photo from your gallery, and '
-        'whether it should look like iOS, Android or WhatsApp. Ring it, '
-        'answer for real, hang up when you are ready to go. No new '
-        'permission — the photo never leaves your phone.',
+        'one of six call screens to draw it. Ring it, answer for real, hang up '
+        'when you are ready to go — or let it ring out as a missed call. The '
+        'photo never leaves your phone.',
   ];
 }
