@@ -1,3 +1,4 @@
+import '../calls/call_schedule.dart';
 import '../themes/call_theme_registry.dart';
 
 /// How long the phone rings before the call gives up and is recorded as missed.
@@ -32,6 +33,7 @@ class CallPreset {
     this.ringSeconds = 30,
     this.autoEndSeconds,
     this.vibrate = true,
+    this.schedule = const ImmediateSchedule(),
   });
 
   final String id;
@@ -68,6 +70,18 @@ class CallPreset {
   /// Whether the phone buzzes along with the ringtone.
   final bool vibrate;
 
+  /// When the call arrives.
+  ///
+  /// [ImmediateSchedule] — the default, and what every template did before this
+  /// existed — rings here and now with the app open, and is the only one that
+  /// needs no permission at all. The other two book a real alarm, which is what
+  /// makes a call arrive with the phone locked in a pocket.
+  ///
+  /// Distinct from [delaySeconds], which is a fuse *inside* an already-started
+  /// call: the incoming screen is up, armed, counting down. This decides
+  /// whether that screen appears at all without the user opening the app.
+  final CallSchedule schedule;
+
   CallPreset copyWith({
     String? name,
     String? number,
@@ -80,6 +94,7 @@ class CallPreset {
     int? autoEndSeconds,
     bool clearAutoEnd = false,
     bool? vibrate,
+    CallSchedule? schedule,
   }) {
     return CallPreset(
       id: id,
@@ -94,6 +109,7 @@ class CallPreset {
           ? null
           : (autoEndSeconds ?? this.autoEndSeconds),
       vibrate: vibrate ?? this.vibrate,
+      schedule: schedule ?? this.schedule,
     );
   }
 
@@ -115,6 +131,7 @@ class CallPreset {
     'ringSeconds': ringSeconds,
     'autoEndSeconds': autoEndSeconds,
     'vibrate': vibrate,
+    'schedule': schedule.toJson(),
   };
 
   /// Tolerant parse: a structurally broken entry returns null so the caller
@@ -166,6 +183,7 @@ class CallPreset {
       ringSeconds: ringSeconds,
       autoEndSeconds: autoEndSeconds,
       vibrate: vibrate,
+      schedule: CallSchedule.fromJson(raw['schedule']),
     );
   }
 

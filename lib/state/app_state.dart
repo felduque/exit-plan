@@ -316,6 +316,13 @@ class AppState extends ChangeNotifier {
   }
 
   /// Removes a call template and deletes its photo from storage.
+  ///
+  /// Cancelling the booked alarm is the caller's job — see
+  /// [CallDispatcher.unschedule], which every delete path goes through before
+  /// this. It is not done here for the same reason the premium caps are not
+  /// enforced here: this class owns state and storage, and reaching into the
+  /// platform's alarm manager from a setter would put a `MissingPluginException`
+  /// in the path of every widget test that happens to delete a template.
   Future<void> deleteCallPreset(String presetId) async {
     final CallPreset? preset = _callPresets
         .cast<CallPreset?>()

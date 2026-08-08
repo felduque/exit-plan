@@ -1,6 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../calls/call_dispatcher.dart';
+import '../calls/call_schedule.dart';
+import '../calls/call_scheduler.dart';
 import '../core/icons.dart';
 import '../core/theme.dart';
 import '../data/call_avatar_files.dart';
@@ -16,7 +19,9 @@ import '../themes/call_theme_registry.dart';
 import '../themes/call_visuals.dart';
 import '../widgets/call_theme_picker.dart';
 import '../widgets/confirm.dart';
+import '../widgets/feature_state_banner.dart';
 import '../widgets/premium_gate_sheet.dart';
+import '../widgets/schedule_picker.dart';
 import '../widgets/selectors.dart';
 import '../widgets/tip_banner.dart';
 
@@ -57,6 +62,8 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
   late int _ringSeconds = widget.preset?.ringSeconds ?? 30;
   late int? _autoEndSeconds = widget.preset?.autoEndSeconds;
   late bool _vibrate = widget.preset?.vibrate ?? true;
+  late CallSchedule _schedule =
+      widget.preset?.schedule ?? const ImmediateSchedule();
 
   bool _saved = false;
 
@@ -183,6 +190,29 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                           setState(() => _autoEndSeconds = value),
                     ),
                     const SizedBox(height: 20),
+                    SchedulePicker(
+                      schedule: _schedule,
+                      premium: state.isPremium,
+                      onChanged: (CallSchedule s) =>
+                          setState(() => _schedule = s),
+                      onLocked: () => showPremiumSheet(
+                        context,
+                        title: 'Scheduling further ahead is Premium',
+                        body:
+                            'The free version schedules a call up to '
+                            '$kFreeScheduleMaxMinutes minutes ahead. Premium '
+                            'removes the limit and adds a set time of day.',
+                        footnote:
+                            'Ringing a call right now stays free, always.',
+                      ),
+                    ),
+                    // Only worth saying once the call actually has to survive
+                    // the app closing. An immediate call needs none of this.
+                    if (_schedule is! ImmediateSchedule) ...<Widget>[
+                      const SizedBox(height: 14),
+                      const ScheduleReadinessNotice(),
+                    ],
+                    const SizedBox(height: 20),
                     _VibrateToggle(
                       value: _vibrate,
                       onChanged: (bool v) => setState(() => _vibrate = v),
@@ -287,6 +317,7 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
             ringSeconds: _ringSeconds,
             autoEndSeconds: _autoEndSeconds,
             vibrate: _vibrate,
+            schedule: _schedule,
           )
         : existing.copyWith(
             name: name,
@@ -300,6 +331,7 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
             autoEndSeconds: _autoEndSeconds,
             clearAutoEnd: _autoEndSeconds == null,
             vibrate: _vibrate,
+            schedule: _schedule,
           );
 
     _saved = true;
@@ -308,7 +340,41 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
     } else {
       await state.updateCallPreset(preset);
     }
-    if (mounted) Navigator.of(context).pop();
+
+    // After the save, never before: an alarm booked for a template that then
+    // failed to persist would ring for something the user cannot find, edit or
+    // cancel. Cancels first internally, so editing a scheduled call does not
+    // leave the previous booking behind — and editing one back to "now" simply
+    // cancels and books nothing.
+    final ScheduleOutcome? outcome = await CallDispatcher.reschedule(preset);
+
+    if (!mounted) return;
+    if (outcome != null) _reportBooking(outcome);
+    Navigator.of(context).pop();
+  }
+
+  /// Tells the user what the device is actually going to do.
+  ///
+  /// Not a celebration — a receipt. The two degraded cases are the ones worth
+  /// the line: an inexact alarm and a call that will arrive as a banner are
+  /// both perfectly usable, and both are things somebody should learn now
+  /// rather than while waiting for a call that is running four minutes behind.
+  void _reportBooking(ScheduleOutcome outcome) {
+    final String when =
+        '${outcome.at.hour.toString().padLeft(2, '0')}:'
+        '${outcome.at.minute.toString().padLeft(2, '0')}';
+
+    final String message = switch ((outcome.exact, outcome.fullScreen)) {
+      (true, true) => 'Call scheduled for $when.',
+      (false, true) => 'Call scheduled for around $when.',
+      (true, false) => 'Call scheduled for $when. It will arrive as a banner.',
+      (false, false) =>
+        'Call scheduled for around $when. It will arrive as a banner.',
+    };
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message, style: ExitText.bodySmall)),
+    );
   }
 
   Future<void> _delete(AppState state) async {
@@ -323,6 +389,10 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
     if (!ok || !mounted) return;
 
     _saved = true;
+    // Before the delete, not after: once the template is gone there is nothing
+    // left to derive the alarm id from, and an orphaned alarm survives reboots
+    // to ring for a contact the user has already forgotten creating.
+    await CallDispatcher.unschedule(preset.id);
     await state.deleteCallPreset(preset.id);
     if (mounted) Navigator.of(context).pop();
   }

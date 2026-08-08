@@ -41,6 +41,11 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Required by flutter_local_notifications, which uses java.time to work
+        // out when a scheduled call should fire. minSdk here is 23 and
+        // java.time only exists from 26, so without this the build fails
+        // outright on :app:checkDebugAarMetadata rather than at runtime.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -94,6 +99,11 @@ android {
 }
 
 dependencies {
+    // The other half of isCoreLibraryDesugaringEnabled above: the flag turns
+    // the rewriting on, this supplies the backported java.time classes it
+    // rewrites calls into.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
     // The Play Install Referrer library. Not optional despite being an explicit
     // extra: it is how the TikTok SDK learns which ad click led to the install,
     // which is the only reason that SDK is in this app. Without it the SDK still

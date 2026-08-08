@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../calls/call_dispatcher.dart';
 import '../core/theme.dart';
 import '../core/premium_config.dart';
 import '../models/call_preset.dart';
@@ -9,7 +10,6 @@ import '../widgets/call_preset_card.dart';
 import '../widgets/premium_gate_sheet.dart';
 import '../widgets/tip_banner.dart';
 import 'call_preset_editor_screen.dart';
-import 'incoming_call_screen.dart';
 
 /// Every saved fake-call template, plus the way to make another.
 ///
@@ -52,7 +52,13 @@ class CallsScreen extends StatelessWidget {
                           final CallPreset preset = presets[index];
                           return CallPresetCard(
                             preset: preset,
-                            onCall: () => fireCall(context, preset),
+                            // Through the dispatcher, not straight to
+                            // `fireCall`: a template whose schedule says "in
+                            // five minutes" must book an alarm here too, not
+                            // ring instantly because this happens to be the
+                            // list screen.
+                            onCall: () =>
+                                CallDispatcher.dispatch(context, preset),
                             onEdit: () => _editPreset(context, preset),
                           );
                         },

@@ -91,12 +91,82 @@ Two rules the code is built around:
   *after* the screen had already marked the new sound as playing — the icon
   reset itself and never came back, while audio kept coming out of the speaker.
 
+### Fake calls
+
+A template names a caller, a **theme**, a ringtone and how the call behaves.
+Themes live in `lib/themes/`: `call_theme_registry.dart` is the list, and each
+one is a single file under `calls/`. **Adding a theme is one file plus one line**
+— nothing else in the app counts them, and `call_screen_layout_test` picks up
+whatever it finds, at both screen sizes, incoming and in-call.
+
+Three are free (`classic-light`, `material`, `chat-green`) and three are Premium
+(`chat-blue`, `minimal-dark`, `business`). The gate is consulted **only where a
+theme is picked**, never where one is drawn — a template saved with a Premium
+theme keeps rendering it if the subscription lapses, exactly as the creation caps
+never hide anything already made.
+
+Theme ids are **frozen**: they are persisted in every template. Templates written
+before the registry stored `platform: ios | android | whatsapp` instead, and
+`kLegacyPlatformThemeIds` still maps those onto themes — that table is live data
+migration, not history, and must not be deleted. `toJson` also keeps writing the
+old `platform` field so a rollback stays lossless.
+
+**No theme is named after a real product, and none ships anyone's logo.** The
+theme now called `chat-green` used to carry a real messaging brand in its label,
+its palette class and its background widget. Evoking a look is fine; a
+third-party mark in the UI is an impersonation report against the developer
+account, which is a bigger loss than any feature. `test/branding_test.dart` greps
+`lib/` to keep it that way.
+
+### Scheduled calls
+
+A call can arrive with the app closed and the phone locked. There is exactly one
+legitimate route on Android and `lib/calls/call_scheduler.dart` documents it:
+
+```
+AlarmManager (exact, allow-while-idle)
+  └→ notification, IMPORTANCE_MAX, category "call", full-screen intent
+       ├─ screen locked or off → Android launches the activity full-screen
+       └─ phone in use          → heads-up banner; tapping it opens the call
+```
+
+`ConnectionService` — the API behind the real system call UI — is deliberately
+not used: it requires declaring the app as a telephony app, which it is not.
+
+**Both degradations are told to the user before they save, not discovered
+afterwards** (`ScheduleReadinessNotice`):
+
+- no `SCHEDULE_EXACT_ALARM` → an inexact alarm; it arrives, possibly minutes late
+- no `USE_FULL_SCREEN_INTENT` (Android 14+ withholds it from non-phone apps) → it
+  arrives as a banner that still rings, instead of taking the screen
+
+Refusing outright would withhold a feature the device can mostly perform, and a
+call two minutes late still gets somebody out of a meeting.
+
 ### Permissions
 
-The app asks for exactly one thing, `POST_NOTIFICATIONS`, and only because
-**lock-screen controls** rest on it: without the media notification there is no
-way to pause a firing except reopening the app, and Android will eventually kill
-background playback that has no foreground service notification.
+`POST_NOTIFICATIONS` is still the only one with a runtime dialog, and it now
+carries two jobs: **lock-screen controls** (without the media notification there
+is no way to pause a firing except reopening the app, and Android will eventually
+kill background playback that has no foreground service notification) and
+**scheduled calls**, which arrive *as* a notification.
+
+Three more were added for scheduling, and none of them has a dialog —
+`SCHEDULE_EXACT_ALARM`, `USE_FULL_SCREEN_INTENT` and the battery-optimisation
+exemption are granted on a settings page or not at all. That is why
+`PermissionCenter` is a lifecycle observer: noticing the app was resumed is the
+*only* way it can ever learn one of them was granted.
+
+Two deliberate omissions:
+
+- **`USE_EXACT_ALARM`** is granted automatically, which is why it is tempting,
+  and Play restricts it to alarm-clock and calendar apps. This is neither.
+- **`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`** is never prompted for. The app
+  offers a shortcut to the battery settings *list* instead: calls are late
+  without an exemption, not absent, and that does not meet Play's bar.
+
+`state/permissions.dart` still owns `POST_NOTIFICATIONS` alone; `PermissionCenter`
+delegates to it rather than keeping a second copy that would eventually disagree.
 
 The system dialog is shown once, from `app.dart`, after the splash and intro have
 cleared — never during a firing, where a system dialog would wreck the excuse.
@@ -205,6 +275,33 @@ On a real device, with the volume up:
       system page and come back → both are gone without restarting the app.
 - [ ] Restart: slots, settings and library persist, and the intro stays away.
 - [ ] Each generated sound loops without an audible click at the seam.
+
+### Fake calls and scheduling (needs at least three phones)
+
+The scheduling half touches alarms, the keyguard and the OS scheduler, and none
+of it is reachable from a widget test. Test on a Samsung or Xiaomi and on
+something running Android 14+, not just a Pixel.
+
+- [ ] All six themes: incoming and in-call, nothing clipped, the declared
+      gesture works and the *other* one does nothing.
+- [ ] A Premium theme on a free account shows a padlock and opens the paywall.
+- [ ] Save a template with a Premium theme, then clear the entitlement → it
+      **still renders that theme**. Nothing is taken away.
+- [ ] Answer a call → the ringtone stops in the same instant, not a beat later.
+- [ ] Let it ring out → missed-call screen, and the phone has stopped buzzing.
+- [ ] Hang up after → auto-end at 30s ends the call by itself, audio and
+      vibration stopping together.
+- [ ] Schedule +2 min → close the app → lock the phone → **the screen lights up
+      with the call.**
+- [ ] Android 14 with the full-screen-intent permission denied → it arrives as a
+      heads-up that rings, and the editor said so before saving.
+- [ ] Exact alarms off → it still arrives, late, and the editor said so.
+- [ ] Reboot the phone with a call scheduled → it still arrives.
+- [ ] Delete a scheduled template → nothing rings at its time.
+- [ ] Edit a scheduled template's time → it rings once, at the new time.
+- [ ] Do Not Disturb on → note what actually happens; the ringtone channel is
+      `USAGE_ALARM` but OEMs differ.
+- [ ] An immediate call still rings instantly with no notification left behind.
 
 ## Design doc deltas
 

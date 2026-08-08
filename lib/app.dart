@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'calls/call_launch.dart';
 import 'core/theme.dart';
 import 'data/entitlement.dart';
+import 'permissions/permission_center.dart';
 import 'screens/home_screen.dart';
 import 'services/billing_service.dart';
 import 'services/tiktok_analytics.dart';
@@ -36,6 +38,15 @@ class _ExitAppState extends State<ExitApp> {
   /// Kept only so it can be disposed; nothing reads it.
   late final AppLifecycleListener _lifecycle;
 
+  /// A scheduled call has to be able to push a route from outside the widget
+  /// tree — the alarm arrives with no BuildContext attached to it.
+  final GlobalKey<NavigatorState> _navigator = GlobalKey<NavigatorState>();
+
+  late final CallLaunchRouter _calls = CallLaunchRouter(
+    navigatorKey: _navigator,
+    state: widget.state,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +56,15 @@ class _ExitAppState extends State<ExitApp> {
     NotificationPermission.instance.start(
       alreadyAsked: widget.state.notificationsAsked,
     );
+    // The other three permissions, on the same resume-and-recheck cycle. For
+    // exact alarms and full-screen intents that cycle is the *only* way the
+    // answer ever changes: neither has a runtime dialog, so the app learns it
+    // was granted by noticing it has come back from a settings page.
+    PermissionCenter.instance.start();
+    // Picks up a call that arrived while the app was closed, and listens for
+    // the ones that arrive while it is open. Not awaited: a scheduled call is
+    // never the reason the first frame is late.
+    unawaited(_calls.start());
     // The TikTok SDK batches on a timer, so an install recorded moments before
     // the user leaves can otherwise sit in the queue unsent. Leaving is exactly
     // when this app expects to be dismissed mid-use, so the flush matters more
@@ -63,7 +83,9 @@ class _ExitAppState extends State<ExitApp> {
   @override
   void dispose() {
     _lifecycle.dispose();
+    _calls.stop();
     BillingService.instance.stop();
+    PermissionCenter.instance.stop();
     NotificationPermission.instance.stop();
     super.dispose();
   }
@@ -101,6 +123,7 @@ class _ExitAppState extends State<ExitApp> {
         title: 'EXITPLAN',
         debugShowCheckedModeBanner: false,
         theme: buildExitTheme(),
+        navigatorKey: _navigator,
         home: const HomeScreen(),
         builder: (BuildContext context, Widget? child) {
           return Stack(

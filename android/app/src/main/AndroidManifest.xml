@@ -12,6 +12,36 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
+    <!-- Scheduled fake calls. A call the user set for "in five minutes" has to
+         arrive with the app closed and the phone locked, which on Android means
+         exactly one legitimate route: an exact alarm posts a notification
+         carrying a full-screen intent, and the system launches the activity
+         over the keyguard.
+
+         SCHEDULE_EXACT_ALARM, not USE_EXACT_ALARM. The latter is granted
+         automatically, which is why it is tempting, and is restricted by Play
+         policy to alarm-clock and calendar apps — which this is not. This one
+         the user grants, and when they do not, the app falls back to an inexact
+         alarm and says so before they rely on it.
+
+         USE_FULL_SCREEN_INTENT is granted at install below Android 14. From 14
+         the system withholds it from apps that are not phone or alarm apps, so
+         it has to be requested from a settings page, and a refusal degrades the
+         call to a heads-up banner rather than breaking it. See
+         lib/permissions/ for both fallbacks.
+
+         RECEIVE_BOOT_COMPLETED reinstates pending alarms after a restart:
+         Android drops every alarm on reboot, and a call scheduled for tomorrow
+         morning must survive the phone being turned off tonight.
+
+         Deliberately NOT requested: REQUEST_IGNORE_BATTERY_OPTIMIZATIONS. The
+         app offers a shortcut to the battery settings *list* from its
+         permission centre instead — calls are late without an exemption, not
+         absent, and that does not meet Play's bar for the prompt. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
     <!-- These used to be stripped with tools:node="remove", because nothing in
          the app could reach a network and the build was offline in the
          strongest sense the platform allows.
@@ -92,6 +122,35 @@
                 <action android:name="android.intent.action.MEDIA_BUTTON"/>
             </intent-filter>
         </receiver>
+
+        <!-- flutter_local_notifications: the two receivers that make a
+             scheduled call actually arrive.
+
+             The first is what the AlarmManager wakes; without it the alarm
+             fires into nothing. The second re-registers every pending alarm
+             after a reboot or an app update, because Android discards them all
+             on both — a call scheduled for the morning would otherwise be lost
+             by a phone restarted overnight, silently and with no error
+             anywhere. Neither is exported: only the system talks to them. -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false"/>
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+
+        <!-- The action buttons on an incoming-call notification. Answering or
+             declining from the banner must not have to open the app first. -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"
+            android:exported="false"/>
 
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
