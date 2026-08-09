@@ -5,6 +5,7 @@ import '../data/app_settings.dart';
 import '../l10n/app_localizations.dart';
 import '../state/app_state.dart';
 import '../state/permissions.dart';
+import '../state/ui_flags.dart';
 import '../widgets/ad_banner.dart';
 import '../widgets/permission_notice.dart';
 import 'premium_screen.dart';
@@ -194,9 +195,18 @@ class _PremiumRow extends StatelessWidget {
 }
 
 /// A [Panel] with a chevron, same shape as [_PremiumRow] — not [_Toggle]:
-/// there are only two languages, so a bottom sheet picker fits better than a
+/// there are only two languages, so a picker dialog fits better than a
 /// switch, and `layout_test` asserts this screen holds exactly six
 /// [ExitSwitch]es, which a language toggle must not become a seventh of.
+///
+/// A centered dialog rather than a bottom sheet, deliberately: this screen
+/// ends in [AdBannerSlot], and a sheet rising from the bottom sits right on
+/// top of it — worse, `bottomSheetTheme` makes every sheet's own background
+/// transparent (every other sheet in the app supplies its own opaque
+/// `Container`; this row's picker did not), so it visually dissolved into
+/// whatever was already at the bottom of the screen. A dialog opens in the
+/// middle, nowhere near the banner, and gets the app's dark surface and
+/// rounded border for free from `dialogTheme` — no manual background needed.
 class _LanguageRow extends StatelessWidget {
   const _LanguageRow({required this.state});
 
@@ -240,33 +250,62 @@ class _LanguageRow extends StatelessWidget {
     );
   }
 
-  void _showPicker(BuildContext context, AppState state) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (BuildContext sheetContext) {
-        final AppLocalizations sheetLoc = AppLocalizations.of(sheetContext);
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                title: Text(sheetLoc.settingsLanguageValueEnglish),
+  Future<void> _showPicker(BuildContext context, AppState state) {
+    return withModal(
+      () => showDialog<void>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          final AppLocalizations loc = AppLocalizations.of(dialogContext);
+          final String current =
+              state.languageCode ??
+              Localizations.localeOf(dialogContext).languageCode;
+
+          Widget option(String code, String label) {
+            final bool selected = current == code;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Panel(
                 onTap: () {
-                  state.setLanguageCode('en');
-                  Navigator.of(sheetContext).pop();
+                  state.setLanguageCode(code);
+                  Navigator.of(dialogContext).pop();
                 },
+                radius: ExitRadius.field,
+                color: selected ? ExitColors.raise : ExitColors.surf,
+                borderColor: selected ? ExitColors.line2 : ExitColors.line,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(child: Text(label, style: sans(14, weight: 600))),
+                    if (selected)
+                      const Icon(
+                        Icons.check_circle,
+                        size: 18,
+                        color: ExitColors.hi,
+                      ),
+                  ],
+                ),
               ),
-              ListTile(
-                title: Text(sheetLoc.settingsLanguageValueSpanish),
-                onTap: () {
-                  state.setLanguageCode('es');
-                  Navigator.of(sheetContext).pop();
-                },
-              ),
-            ],
-          ),
-        );
-      },
+            );
+          }
+
+          return AlertDialog(
+            title: Text(
+              loc.settingsLanguageTitle,
+              style: sans(16, weight: 600, letterSpacing: -0.3),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                option('en', loc.settingsLanguageValueEnglish),
+                option('es', loc.settingsLanguageValueSpanish),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -274,16 +313,19 @@ class _LanguageRow extends StatelessWidget {
 /// The honest version of the footer line above it.
 ///
 /// The app once claimed "100% OFFLINE · NO ACCOUNTS" outright, and that was
-/// true. Two things have since made the unqualified claim false: the TikTok
-/// Events SDK, so ad campaigns can tell which installs they paid for, and now
-/// AdMob banners. Each time, the claim gets narrowed here rather than quietly
-/// left standing.
+/// true. Several things have since made the unqualified claim false: the
+/// TikTok Events SDK, so ad campaigns can tell which installs they paid for;
+/// AdMob banners; and now Firebase Analytics, plus a Remote Config check that
+/// only ever reads one number, never writes or sends anything. Each time, the
+/// claim gets narrowed here rather than quietly left standing.
 ///
 /// The first paragraph is the part that is still exactly true and is what
 /// people actually care about. The second says plainly what leaves, in the
 /// specific terms Play's Data Safety form uses, and points at the control the
 /// user actually has — Android's own advertising ID reset, which works whether
-/// or not this app cooperates.
+/// or not this app cooperates. The third names Firebase specifically, since
+/// "aggregate usage" is a different promise from "which sound you played" and
+/// deserves its own sentence rather than being folded into the ad paragraph.
 ///
 /// Shown to every build, including ones compiled without ad ids where nothing
 /// is served at all. Over-disclosing costs nothing; the reverse is a lie in the
@@ -305,6 +347,8 @@ class _PrivacyNote extends StatelessWidget {
           Text(loc.settingsPrivacyParagraph1, style: ExitText.bodySmall),
           const SizedBox(height: 6),
           Text(loc.settingsPrivacyParagraph2, style: ExitText.bodySmall),
+          const SizedBox(height: 6),
+          Text(loc.settingsPrivacyParagraph3, style: ExitText.bodySmall),
         ],
       ),
     );

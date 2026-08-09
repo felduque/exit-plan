@@ -110,6 +110,24 @@ abstract class AppLocalizations {
   /// **'STEP 0{step} · {kicker}'**
   String introStepLabel(int step, String kicker);
 
+  /// No description provided for @introLanguageKicker.
+  ///
+  /// In en, this message translates to:
+  /// **'LANGUAGE'**
+  String get introLanguageKicker;
+
+  /// No description provided for @introLanguageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your\nlanguage.'**
+  String get introLanguageTitle;
+
+  /// No description provided for @introLanguageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'English or Spanish, for now. Change it anytime later from Settings.'**
+  String get introLanguageBody;
+
   /// No description provided for @introKicker0.
   ///
   /// In en, this message translates to:
@@ -349,6 +367,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ads and install measurement use your device advertising ID. The app sends no record of which sounds you play or when. You can reset or delete that ID in Android settings.'**
   String get settingsPrivacyParagraph2;
+
+  /// No description provided for @settingsPrivacyParagraph3.
+  ///
+  /// In en, this message translates to:
+  /// **'Firebase Analytics reports aggregate usage — which screens get opened, how often the app is used — never which sound, excuse or call preset you named. A remote check also reads one number, the lowest version this app still supports, to know if an update is required; it sends nothing back.'**
+  String get settingsPrivacyParagraph3;
 
   /// No description provided for @settingsFooter.
   ///
@@ -1549,6 +1573,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'contacts'**
   String get callClassicContacts;
+
+  /// No description provided for @forceUpdateCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'UPDATE REQUIRED'**
+  String get forceUpdateCaption;
+
+  /// No description provided for @forceUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This version is too old to keep using safely.'**
+  String get forceUpdateTitle;
+
+  /// No description provided for @forceUpdateBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A required update is available. Install it to keep using the app — this screen won\'t go away on its own.'**
+  String get forceUpdateBody;
+
+  /// No description provided for @forceUpdateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get forceUpdateButton;
 }
 
 class _AppLocalizationsDelegate

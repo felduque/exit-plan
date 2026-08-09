@@ -6,6 +6,15 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Firebase Analytics + Remote Config need this plugin to inject
+// google-services.json into the build. Applied only when the file exists —
+// same discipline as the upload key and exitplan.env elsewhere in this file:
+// a checkout without Firebase credentials still builds, just with Firebase
+// silently absent rather than a hard Gradle failure.
+if (rootProject.file("app/google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // The upload key EAS generated for @felduque27/exitplan. Kept out of the repo,
 // so a checkout without it still builds — release just falls back to debug keys.
 val keystorePropertiesFile = rootProject.file("key.properties")

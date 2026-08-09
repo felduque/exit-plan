@@ -12,6 +12,10 @@
     }
   },
 
+  "introLanguageKicker": "LANGUAGE",
+  "introLanguageTitle": "Pick your\nlanguage.",
+  "introLanguageBody": "English or Spanish, for now. Change it anytime later from Settings.",
+
   "introKicker0": "THE EXIT",
   "introKicker1": "DELAY FUSE",
   "introKicker2": "FOUR SLOTS",
@@ -61,6 +65,7 @@
   "settingsPrivacyTitle": "Privacy",
   "settingsPrivacyParagraph1": "Your sounds, imported files and call presets never leave this device. No account, no sync, no recording.",
   "settingsPrivacyParagraph2": "Ads and install measurement use your device advertising ID. The app sends no record of which sounds you play or when. You can reset or delete that ID in Android settings.",
+  "settingsPrivacyParagraph3": "Firebase Analytics reports aggregate usage — which screens get opened, how often the app is used — never which sound, excuse or call preset you named. A remote check also reads one number, the lowest version this app still supports, to know if an update is required; it sends nothing back.",
 
   "settingsFooter": "YOUR SOUNDS · 100% OFFLINE",
 
@@ -428,5 +433,10 @@
   "callClassicIncomingCall": "incoming call",
   "callClassicSlideUpToAnswer": "Slide up to answer",
   "callClassicAddCall": "add call",
-  "callClassicContacts": "contacts"
+  "callClassicContacts": "contacts",
+
+  "forceUpdateCaption": "UPDATE REQUIRED",
+  "forceUpdateTitle": "This version is too old to keep using safely.",
+  "forceUpdateBody": "A required update is available. Install it to keep using the app — this screen won't go away on its own.",
+  "forceUpdateButton": "Update now"
 }

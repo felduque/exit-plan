@@ -82,9 +82,9 @@ void main() {
         await pump(tester, IntroOverlay(onDone: () {}), size);
         expect(tester.takeException(), isNull);
 
-        // Four steps now that the intro also covers fake calls: three "Next"
-        // taps to reach the last one.
-        for (int step = 0; step < 3; step++) {
+        // Five steps now that the intro opens on language: four "Next" taps
+        // to reach the last one.
+        for (int step = 0; step < 4; step++) {
           await tester.tap(find.text('Next'));
           await tester.pump(const Duration(milliseconds: 300));
           expect(tester.takeException(), isNull);

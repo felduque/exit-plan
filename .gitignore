@@ -49,3 +49,9 @@ app.*.map.json
 # See exitplan.env.example for the shape, and lib/core/tiktok_config.dart for
 # why the token in particular must never be committed.
 /exitplan.env
+
+# Firebase project config for Analytics/Remote Config. Same discipline as
+# exitplan.env above: a checkout without it still builds (see the file-exists
+# guard around the google-services Gradle plugin in android/app/build.gradle.kts)
+# — it just runs with Firebase silently disabled instead of failing.
+/android/app/google-services.json

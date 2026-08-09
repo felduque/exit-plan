@@ -170,11 +170,16 @@ class _GateSheet extends StatelessWidget {
                     border: Border.all(color: ExitColors.line),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    child: Text(
-                      loc.premiumGateNotNow,
-                      textAlign: TextAlign.center,
-                      style: sans(13, weight: 500, color: ExitColors.mid),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 13,
+                      horizontal: 14,
+                    ),
+                    child: Center(
+                      child: Text(
+                        loc.premiumGateNotNow,
+                        textAlign: TextAlign.center,
+                        style: sans(13, weight: 500, color: ExitColors.mid),
+                      ),
                     ),
                   ),
                 ),

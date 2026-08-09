@@ -5,6 +5,10 @@
 
   "introStepLabel": "PASO 0{step} · {kicker}",
 
+  "introLanguageKicker": "IDIOMA",
+  "introLanguageTitle": "Elige tu\nidioma.",
+  "introLanguageBody": "Por ahora, inglés o español. Puedes cambiarlo cuando quieras desde Ajustes.",
+
   "introKicker0": "LA SALIDA",
   "introKicker1": "MECHA CON RETARDO",
   "introKicker2": "CUATRO RANURAS",
@@ -54,6 +58,7 @@
   "settingsPrivacyTitle": "Privacidad",
   "settingsPrivacyParagraph1": "Tus sonidos, archivos importados y contactos falsos nunca salen de este dispositivo. Sin cuenta, sin sincronización, sin grabación.",
   "settingsPrivacyParagraph2": "Los anuncios y la medición de instalaciones usan el ID de publicidad de tu dispositivo. La app no envía ningún registro de qué sonidos reproduces ni cuándo. Puedes restablecer o eliminar ese ID en los ajustes de Android.",
+  "settingsPrivacyParagraph3": "Firebase Analytics reporta uso agregado — qué pantallas se abren, con qué frecuencia se usa la app — nunca qué sonido, excusa o contacto falso nombraste. Una comprobación remota también lee un número, la versión mínima que esta app sigue soportando, para saber si hace falta actualizar; no envía nada de vuelta.",
 
   "settingsFooter": "TUS SONIDOS · 100% SIN CONEXIÓN",
 
@@ -285,5 +290,10 @@
   "callClassicIncomingCall": "llamada entrante",
   "callClassicSlideUpToAnswer": "Desliza hacia arriba para contestar",
   "callClassicAddCall": "añadir llamada",
-  "callClassicContacts": "contactos"
+  "callClassicContacts": "contactos",
+
+  "forceUpdateCaption": "ACTUALIZACIÓN REQUERIDA",
+  "forceUpdateTitle": "Esta versión es demasiado antigua para seguir usándola con seguridad.",
+  "forceUpdateBody": "Hay una actualización obligatoria disponible. Instálala para seguir usando la app — esta pantalla no desaparecerá sola.",
+  "forceUpdateButton": "Actualizar ahora"
 }

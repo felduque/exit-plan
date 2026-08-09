@@ -10,10 +10,13 @@ import 'l10n/app_localizations.dart';
 import 'permissions/permission_center.dart';
 import 'screens/home_screen.dart';
 import 'services/billing_service.dart';
+import 'services/firebase_analytics_service.dart';
+import 'services/force_update_service.dart';
 import 'services/tiktok_analytics.dart';
 import 'state/app_state.dart';
 import 'state/permissions.dart';
 import 'widgets/animated_splash.dart';
+import 'widgets/force_update_screen.dart';
 import 'widgets/intro_overlay.dart';
 import 'widgets/tip_banner.dart';
 
@@ -62,6 +65,15 @@ class _ExitAppState extends State<ExitApp> {
   @override
   void initState() {
     super.initState();
+    // `MaterialApp`'s `locale:` is computed from `widget.state.languageCode`
+    // (see `_locale` above) at *this* widget's build time — but this widget
+    // never reads `AppState` through `AppScope.of`, since it is the one
+    // constructing `AppScope`. Without this listener, `setLanguageCode`
+    // calling `notifyListeners()` would rebuild every screen below `AppScope`
+    // (they do read through it) while `MaterialApp` itself kept the stale
+    // `Locale` it was built with — the language would only actually change
+    // on the next cold start.
+    widget.state.addListener(_onStateChanged);
     // Starts watching POST_NOTIFICATIONS, including re-checking it every time
     // the app comes back to the foreground — which is how the app notices that
     // the user granted it from the system settings page.
@@ -94,12 +106,17 @@ class _ExitAppState extends State<ExitApp> {
 
   @override
   void dispose() {
+    widget.state.removeListener(_onStateChanged);
     _lifecycle.dispose();
     _calls.stop();
     BillingService.instance.stop();
     PermissionCenter.instance.stop();
     NotificationPermission.instance.stop();
     super.dispose();
+  }
+
+  void _onStateChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onSplashDone() {
@@ -136,6 +153,10 @@ class _ExitAppState extends State<ExitApp> {
         debugShowCheckedModeBanner: false,
         theme: buildExitTheme(),
         navigatorKey: _navigator,
+        navigatorObservers: <NavigatorObserver>[
+          if (FirebaseAnalyticsService.observer != null)
+            FirebaseAnalyticsService.observer!,
+        ],
         locale: _locale,
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -155,6 +176,15 @@ class _ExitAppState extends State<ExitApp> {
                   color: ExitColors.bg,
                   child: IntroOverlay(onDone: _onIntroDone),
                 ),
+              // Topmost, deliberately: a build the Remote Config check has
+              // flagged as dangerously outdated must not be reachable through
+              // the intro or the splash either, not just through home.
+              ValueListenableBuilder<bool>(
+                valueListenable: ForceUpdateService.updateRequired,
+                builder: (BuildContext context, bool required, _) => required
+                    ? const ForceUpdateScreen()
+                    : const SizedBox.shrink(),
+              ),
             ],
           );
         },

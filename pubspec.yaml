@@ -34,7 +34,24 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # so it does not all have to reach Play in one upload — an ads SDK, a new
 # billing integration and a fake-call feature in a single review is a much
 # larger surface than any of them alone.
-version: 1.4.0+6
+#
+# 1.4.0 adds Spanish, selectable from the intro header or Settings; the app
+# still defaults to whatever the system locale resolves to on first run.
+#
+# 1.5.0 adds Firebase: Analytics for aggregate usage (screen views, sessions),
+# and Remote Config for exactly one number — the minimum accepted build — so a
+# version that has fallen badly behind can be forced to update rather than
+# silently misbehave. Both are network-optional the same way TikTok/AdMob are:
+# unreachable Firebase must never be the reason the app fails to open, and a
+# forced-update check that cannot complete must fail open (no block), never
+# closed.
+#
+# 1.5.1 is a patch on 1.5.0, not a new capability: language selection moved
+# from a header toggle to its own first intro step, a locale change now takes
+# effect immediately instead of needing a restart, the Settings language
+# picker moved from a bottom sheet (which rendered transparent over the ad
+# banner) to a dialog, and a stray secondary button lost its missing padding.
+version: 1.5.1+8
 
 environment:
   sdk: ^3.12.2
@@ -69,8 +86,9 @@ dependencies:
     sdk: flutter
   intl: any
 
-  # The three dependencies that touch a network, all of them for revenue and
-  # none for the product. Everything above this line works entirely on device.
+  # The dependencies that touch a network, all of them for revenue, product
+  # health or distribution — none of them read or send what the user actually
+  # says or plays. Everything above this line works entirely on device.
   #
   # Reports installs so a TikTok ad campaign can be told which ones it paid for.
   # See lib/services/tiktok_analytics.dart for exactly what leaves the device
@@ -84,6 +102,19 @@ dependencies:
   # Play Billing, for the premium tier that removes those ads. No backend and no
   # account: the entitlement is local, and Play is the only source of truth.
   in_app_purchase: ^3.3.0
+  # Aggregate usage metrics (screen views, sessions, active users) — no backend
+  # of our own, Google's. See lib/services/firebase_analytics_service.dart.
+  firebase_core: ^4.13.0
+  firebase_analytics: ^12.4.6
+  # Reads exactly one remote number (the minimum accepted app version) so a
+  # build that has fallen dangerously behind can be forced to update instead
+  # of quietly misbehaving. See lib/services/force_update_service.dart.
+  firebase_remote_config: ^6.5.6
+  # Reads this build's own version code, to compare against the Remote Config
+  # minimum above.
+  package_info_plus: ^9.0.1
+  # Opens the Play Store listing from the forced-update screen.
+  url_launcher: ^6.3.2
 
   # Scheduled fake calls, and the only reason any of these three are here.
   #
@@ -116,6 +147,11 @@ dev_dependencies:
   # call that hangs itself up after five minutes — and the alternative to a
   # virtual clock is a test suite that genuinely sits and waits.
   fake_async: ^1.3.3
+
+  # Already present transitively under url_launcher; declared explicitly so
+  # `force_update_test` can swap in a fake platform instance instead of
+  # touching the real platform channel.
+  url_launcher_platform_interface: ^2.3.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

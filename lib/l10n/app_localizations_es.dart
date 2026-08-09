@@ -17,6 +17,16 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get introLanguageKicker => 'IDIOMA';
+
+  @override
+  String get introLanguageTitle => 'Elige tu\nidioma.';
+
+  @override
+  String get introLanguageBody =>
+      'Por ahora, inglés o español. Puedes cambiarlo cuando quieras desde Ajustes.';
+
+  @override
   String get introKicker0 => 'LA SALIDA';
 
   @override
@@ -148,6 +158,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settingsPrivacyParagraph2 =>
       'Los anuncios y la medición de instalaciones usan el ID de publicidad de tu dispositivo. La app no envía ningún registro de qué sonidos reproduces ni cuándo. Puedes restablecer o eliminar ese ID en los ajustes de Android.';
+
+  @override
+  String get settingsPrivacyParagraph3 =>
+      'Firebase Analytics reporta uso agregado — qué pantallas se abren, con qué frecuencia se usa la app — nunca qué sonido, excusa o contacto falso nombraste. Una comprobación remota también lee un número, la versión mínima que esta app sigue soportando, para saber si hace falta actualizar; no envía nada de vuelta.';
 
   @override
   String get settingsFooter => 'TUS SONIDOS · 100% SIN CONEXIÓN';
@@ -838,4 +852,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get callClassicContacts => 'contactos';
+
+  @override
+  String get forceUpdateCaption => 'ACTUALIZACIÓN REQUERIDA';
+
+  @override
+  String get forceUpdateTitle =>
+      'Esta versión es demasiado antigua para seguir usándola con seguridad.';
+
+  @override
+  String get forceUpdateBody =>
+      'Hay una actualización obligatoria disponible. Instálala para seguir usando la app — esta pantalla no desaparecerá sola.';
+
+  @override
+  String get forceUpdateButton => 'Actualizar ahora';
 }
