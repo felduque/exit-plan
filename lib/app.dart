@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
 import 'calls/call_launch.dart';
 import 'core/theme.dart';
 import 'data/entitlement.dart';
+import 'l10n/app_localizations.dart';
 import 'permissions/permission_center.dart';
 import 'screens/home_screen.dart';
 import 'services/billing_service.dart';
@@ -34,6 +36,16 @@ class _ExitAppState extends State<ExitApp> {
 
   /// True once the user is sitting quietly on the home screen.
   bool get _settled => _splashDone && _introDone;
+
+  /// Read directly off [widget.state], never via `AppScope.of` — at the point
+  /// `MaterialApp` is built below, `context` is still above [AppScope], since
+  /// `AppScope` wraps `MaterialApp` as its child rather than the reverse.
+  Locale get _locale {
+    final String? saved = widget.state.languageCode;
+    if (saved != null) return Locale(saved);
+    final String system = ui.PlatformDispatcher.instance.locale.languageCode;
+    return Locale(system == 'es' ? 'es' : 'en');
+  }
 
   /// Kept only so it can be disposed; nothing reads it.
   late final AppLifecycleListener _lifecycle;
@@ -124,6 +136,9 @@ class _ExitAppState extends State<ExitApp> {
         debugShowCheckedModeBanner: false,
         theme: buildExitTheme(),
         navigatorKey: _navigator,
+        locale: _locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: const HomeScreen(),
         builder: (BuildContext context, Widget? child) {
           return Stack(

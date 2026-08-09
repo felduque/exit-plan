@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../screens/premium_screen.dart';
 import '../state/ui_flags.dart';
 
 /// Which limit the user just met.
-enum PremiumGateKind {
-  callPresets('fake call templates', 'template'),
-  userSounds('imported sounds', 'sound'),
-  userCategories('categories of your own', 'category');
+enum PremiumGateKind { callPresets, userSounds, userCategories }
 
-  const PremiumGateKind(this.plural, this.singular);
+String _plural(PremiumGateKind kind, AppLocalizations loc) => switch (kind) {
+  PremiumGateKind.callPresets => loc.premiumGateCallPresetsPlural,
+  PremiumGateKind.userSounds => loc.premiumGateUserSoundsPlural,
+  PremiumGateKind.userCategories => loc.premiumGateUserCategoriesPlural,
+};
 
-  final String plural;
-  final String singular;
-}
+String _singular(PremiumGateKind kind, AppLocalizations loc) => switch (kind) {
+  PremiumGateKind.callPresets => loc.premiumGateCallPresetsSingular,
+  PremiumGateKind.userSounds => loc.premiumGateUserSoundsSingular,
+  PremiumGateKind.userCategories => loc.premiumGateUserCategoriesSingular,
+};
 
 /// The sheet shown when a free user asks for one more than they can have.
 ///
@@ -40,15 +44,15 @@ Future<void> showPremiumGate(
   /// True when this device kept an allowance larger than the free tier because
   /// it held that much before the limits shipped.
   final bool grandfathered = cap > freeLimit;
+  final AppLocalizations loc = AppLocalizations.of(context);
+  final String unit = cap == 1 ? _singular(kind, loc) : _plural(kind, loc);
 
   return showPremiumSheet(
     context,
-    title: 'That is $cap ${cap == 1 ? kind.singular : kind.plural}',
+    title: loc.premiumGateTitle(cap, unit),
     body: grandfathered
-        ? 'You had $cap before this version added limits, so you kept them '
-              'all. Premium removes the ceiling entirely.'
-        : 'The free version covers $freeLimit. Premium removes the limit on '
-              '${kind.plural}, and the ads with it.',
+        ? loc.premiumGateGrandfatheredBody(cap)
+        : loc.premiumGateLimitBody(freeLimit, _plural(kind, loc)),
   );
 }
 
@@ -59,12 +63,12 @@ Future<void> showPremiumGate(
 /// the free themes remain, because "this one costs money" and "you now have
 /// fewer than you did" are very different messages and only the first is true.
 Future<void> showPremiumThemeGate(BuildContext context, String themeName) {
+  final AppLocalizations loc = AppLocalizations.of(context);
   return showPremiumSheet(
     context,
-    title: '$themeName is a Premium theme',
-    body: 'Premium unlocks every call screen, and removes the ads. The free '
-        'themes stay exactly where they are.',
-    footnote: 'Templates you already saved keep the theme they were saved with.',
+    title: loc.premiumGateThemeTitle(themeName),
+    body: loc.premiumGateThemeBody,
+    footnote: loc.premiumGateThemeFootnote,
   );
 }
 
@@ -74,15 +78,17 @@ Future<void> showPremiumSheet(
   BuildContext context, {
   required String title,
   required String body,
-  String footnote = 'Nothing you already made is affected.',
+  String? footnote,
 }) {
+  final String resolvedFootnote =
+      footnote ?? AppLocalizations.of(context).premiumGateDefaultFootnote;
   return withModal(
     () => showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: const Color(0x9E000000),
       builder: (BuildContext sheetContext) =>
-          _GateSheet(title: title, body: body, footnote: footnote),
+          _GateSheet(title: title, body: body, footnote: resolvedFootnote),
     ),
   );
 }
@@ -100,6 +106,8 @@ class _GateSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Container(
       decoration: const BoxDecoration(
         color: ExitColors.surf2,
@@ -142,7 +150,7 @@ class _GateSheet extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               PrimaryButton(
-                label: 'See Premium',
+                label: loc.premiumGateSeePremium,
                 onTap: () {
                   Navigator.of(context).pop();
                   Navigator.of(context).push<void>(
@@ -164,7 +172,7 @@ class _GateSheet extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     child: Text(
-                      'Not now',
+                      loc.premiumGateNotNow,
                       textAlign: TextAlign.center,
                       style: sans(13, weight: 500, color: ExitColors.mid),
                     ),

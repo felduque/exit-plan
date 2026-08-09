@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/enums.dart';
 
 /// A row of mutually exclusive cells inside one enclosing track.
@@ -133,7 +134,7 @@ class DelayFuseSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SegmentedRow<int>(
-      caption: 'FUSE',
+      caption: AppLocalizations.of(context).selectorFuseCaption,
       options: kDelayFuseOptions,
       selected: seconds,
       compact: compact,
@@ -163,7 +164,7 @@ class LoopLengthSelector extends StatelessWidget {
     const List<LoopChoice> options = kLoopOptions;
 
     return SegmentedRow<LoopChoice>(
-      caption: 'LOOP',
+      caption: AppLocalizations.of(context).selectorLoopCaption,
       // A loop restored from settings can be missing here; showing it as
       // unselected would be a lie, so fall back to the nearest cell.
       selected: options.contains(loop) ? loop : LoopChoice.infinite,

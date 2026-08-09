@@ -62,6 +62,13 @@ dependencies:
   wakelock_plus: ">=1.3.0 <1.6.0"
   permission_handler: ^12.0.3
 
+  # English + Spanish UI strings, generated from lib/l10n/*.arb — see
+  # l10n.yaml for the codegen config and lib/l10n/app_localizations.dart for
+  # the generated output.
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+
   # The three dependencies that touch a network, all of them for revenue and
   # none for the product. Everything above this line works entirely on device.
   #
@@ -120,6 +127,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Generates lib/l10n/app_localizations.dart from lib/l10n/*.arb on every
+  # `flutter pub get` / build. See l10n.yaml for the codegen config.
+  generate: true
 
   # Real, free-licence audio (Edwin Arenas pack + Pixabay) — see
   # assets/audio/README.md for the origin and licence note. `tool/gen_audio.dart`

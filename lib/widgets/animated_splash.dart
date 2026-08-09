@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 
 /// Short brand animation over the app, mounted as an overlay rather than a
 /// route so nothing underneath needs a guard.
@@ -91,6 +92,8 @@ class _AnimatedSplashState extends State<AnimatedSplash>
           math.max(cy, constraints.maxHeight - cy) / (_Doorway.frameH / 2),
         );
 
+        final AppLocalizations loc = AppLocalizations.of(context);
+
         return AnimatedBuilder(
           animation: _controller,
           builder: (BuildContext context, _) {
@@ -153,8 +156,12 @@ class _AnimatedSplashState extends State<AnimatedSplash>
                       _Rise(
                         value: _seg(t, 0.80, 0.97, Curves.easeOut),
                         child: Text(
-                          'THERE IS ALWAYS A WAY OUT',
-                          style: mono(9, color: ExitColors.dim, letterSpacing: 2),
+                          loc.splashTagline,
+                          style: mono(
+                            9,
+                            color: ExitColors.dim,
+                            letterSpacing: 2,
+                          ),
                         ),
                       ),
                     ],
@@ -172,7 +179,7 @@ class _AnimatedSplashState extends State<AnimatedSplash>
                         // now says is the part that is still exactly true, and
                         // is the part users actually care about; Settings
                         // carries the full note.
-                        'YOUR SOUNDS · 100% OFFLINE',
+                        loc.settingsFooter,
                         style: mono(8, color: ExitColors.dim, letterSpacing: 3),
                       ),
                     ),

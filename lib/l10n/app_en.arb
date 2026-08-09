@@ -1,0 +1,432 @@
+{
+  "@@locale": "en",
+
+  "introSkip": "SKIP",
+
+  "introStepLabel": "STEP 0{step} · {kicker}",
+  "@introStepLabel": {
+    "description": "Chip above each intro step's title.",
+    "placeholders": {
+      "step": {"type": "int"},
+      "kicker": {"type": "String"}
+    }
+  },
+
+  "introKicker0": "THE EXIT",
+  "introKicker1": "DELAY FUSE",
+  "introKicker2": "FOUR SLOTS",
+  "introKicker3": "FAKE CALLS",
+
+  "introTitle0": "Tap it and\nthe room\nchanges.",
+  "introTitle1": "Arm it, then\npocket the\nphone.",
+  "introTitle2": "Four exits,\nalways one\ntap away.",
+  "introTitle3": "A call\nthat looks\nreal.",
+
+  "introBody0": "The screen goes completely black and the sound fires in a loop. It looks like the phone is in your pocket and the noise is real.",
+  "introBody1": "Set a fuse of 5, 10 or 30 seconds. Fire it, put the phone away, and let the noise go off on its own — completely hands free.",
+  "introBody2": "The home grid holds four sounds. Change any slot while browsing: tap the star on a sound and choose which slot it replaces.",
+  "introBody3": "Build a caller under Fake calls: a name, a photo from your gallery, and one of six call screens to draw it. Ring it, answer for real, hang up when you are ready to go — or let it ring out as a missed call. The photo never leaves your phone.",
+
+  "introNext": "Next",
+  "introStart": "Start",
+
+  "introDemoCallerName": "Mom",
+
+  "settingsTitle": "Settings",
+
+  "settingsLoopSoundLabel": "Loop sound",
+  "settingsLoopSoundDetail": "Default loop = repeat until stopped",
+  "settingsHapticSupportLabel": "Haptic support",
+  "settingsHapticSupportDetail": "Vibrate on fire, per category",
+  "settingsMaxVolumeLabel": "Max volume override",
+  "settingsMaxVolumeDetail": "Force player to 100% on fire",
+  "settingsDarkScreenHintsLabel": "Dark screen hints",
+  "settingsDarkScreenHintsDetail": "Very faint status on blackout",
+  "settingsLockScreenControlsLabel": "Lock-screen controls",
+  "settingsLockScreenControlsDetail": "Neutral controls · keeps audio alive",
+  "settingsInAppTipsLabel": "In-app tips",
+  "settingsInAppTipsDetail": "Occasional reminders while open",
+
+  "settingsLanguageTitle": "Language",
+  "settingsLanguageValueEnglish": "English",
+  "settingsLanguageValueSpanish": "Español",
+
+  "settingsPremiumRowSemanticsActive": "Premium, active",
+  "settingsPremiumRowSemanticsInactive": "Get Premium",
+  "settingsPremiumRowTitleActive": "Premium",
+  "settingsPremiumRowTitleInactive": "Get Premium",
+  "settingsPremiumRowSubtitleActive": "No ads · no limits",
+  "settingsPremiumRowSubtitleInactive": "Remove ads · unlimited calls and imports",
+
+  "settingsPrivacyTitle": "Privacy",
+  "settingsPrivacyParagraph1": "Your sounds, imported files and call presets never leave this device. No account, no sync, no recording.",
+  "settingsPrivacyParagraph2": "Ads and install measurement use your device advertising ID. The app sends no record of which sounds you play or when. You can reset or delete that ID in Android settings.",
+
+  "settingsFooter": "YOUR SOUNDS · 100% OFFLINE",
+
+  "homeQuickExitsLabel": "QUICK EXITS",
+  "homeFakeCallsLabel": "Fake calls",
+  "homeTemplateCount": "{count, plural, =0{NO TEMPLATES YET} =1{1 TEMPLATE} other{{count} TEMPLATES}}",
+  "@homeTemplateCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "homeFooter": "TAP AN EXIT · SCREEN GOES DARK · SOUND FIRES",
+  "homeNotificationsBlocked": "NO NOTIFICATIONS · TAP TO FIX",
+  "homeStandby": "STANDBY · {exits} EXITS READY",
+  "@homeStandby": {
+    "placeholders": {
+      "exits": {"type": "int"}
+    }
+  },
+  "homePremiumIconLabel": "Premium",
+  "homeSettingsIconLabel": "Settings",
+
+  "browseTitle": "All exits",
+  "browseDeleteSoundTitle": "Delete sound",
+  "browseDeleteSoundMessage": "{label} and its audio file will be removed.",
+  "@browseDeleteSoundMessage": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "browseFilterAll": "ALL",
+  "browseOpenCategory": "Open {label}",
+  "@browseOpenCategory": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "browseImportAudio": "Import audio",
+  "browseImport": "IMPORT",
+
+  "categoryDetailNotFound": "Category not found",
+  "categoryDetailDeleteCategoryTitle": "Delete category",
+  "categoryDetailDeleteCategoryMessage": "{label} and every sound in it will be removed, files included.",
+  "@categoryDetailDeleteCategoryMessage": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "categoryDetailSoundCount": "{count, plural, =1{1 SOUND} other{{count} SOUNDS}}",
+  "@categoryDetailSoundCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "premiumTitle": "Premium",
+  "premiumFooter": "ONE DEVICE · NO ACCOUNT",
+  "premiumBillingUnavailable": "Play Billing is not available on this device, so Premium cannot be bought here. Everything else in the app works as it always has.",
+  "premiumErrorGeneric": "Something went wrong.",
+  "premiumTryAgain": "Try again",
+  "premiumCheckingPrices": "Checking prices…",
+  "premiumNoPlans": "No plans available right now.",
+  "premiumBenefitsCaption": "PREMIUM",
+  "premiumBenefitNoAds": "No ads, anywhere in the app",
+  "premiumBenefitUnlimitedCalls": "Unlimited fake call templates",
+  "premiumBenefitUnlimitedSounds": "Unlimited imported sounds",
+  "premiumBenefitUnlimitedCategories": "Unlimited categories of your own",
+  "premiumBenefitsFooter": "The 47 built-in sounds and the four quick exits are free, and always will be. Premium only lifts the limits on what you add.",
+  "premiumPlanMonthly": "Monthly",
+  "premiumPlanYearly": "Yearly",
+  "premiumPlanLifetime": "One payment",
+  "premiumNoteMonthly": "Renews every month · cancel anytime",
+  "premiumNoteYearly": "Renews every year · cancel anytime",
+  "premiumNoteLifetime": "Yours for good · nothing renews",
+  "premiumPlanSemantics": "{label}, {price}",
+  "@premiumPlanSemantics": {
+    "placeholders": {
+      "label": {"type": "String"},
+      "price": {"type": "String"}
+    }
+  },
+  "premiumBestValue": "BEST VALUE",
+  "premiumActiveLifetime": "Premium — one payment",
+  "premiumActiveSubscription": "Premium — active",
+  "premiumActiveLifetimeDetail": "No ads and no limits, for good. Nothing renews and there is nothing to cancel.",
+  "premiumActiveSubscriptionDetail": "No ads and no limits. Manage or cancel it any time in the Play Store, under Subscriptions.",
+  "premiumRestorePurchase": "Restore a previous purchase",
+
+  "importCouldNotReadFile": "Could not read that file.",
+  "importDefaultLabel": "My audio",
+
+  "editorTitle": "New exit",
+  "editorFileUnreadable": "This file could not be read.",
+  "editorFieldLabel": "LABEL",
+  "editorNameHint": "Name it",
+  "editorFieldIcon": "ICON",
+  "editorFieldTargetCategory": "TARGET CATEGORY",
+  "editorSaveExit": "Save exit",
+  "editorStopPreview": "Stop preview",
+  "editorPreviewWindow": "Preview window",
+  "editorSaveItWhere": "Save it where?",
+  "editorNewCategory": "New category",
+  "editorTargetCategory": "Target category",
+  "editorPickOne": "Pick one",
+  "editorChange": "CHANGE ▾",
+  "editorNewCategoryCaption": "NEW CATEGORY",
+  "editorCategoryNameHint": "Name",
+  "editorCancel": "Cancel",
+  "editorCreate": "Create",
+  "editorNewCategoryDescription": "Your own category.",
+
+  "callsScreenTitle": "Fake calls",
+  "callsAddTemplate": "Add template",
+  "callsNew": "NEW",
+  "callsEmptyTitle": "No call templates yet",
+  "callsEmptyBody": "Save a name, a photo and a screen style, and ring it whenever you need a way out.",
+
+  "callEditorTitleEdit": "Edit template",
+  "callEditorTitleNew": "New template",
+  "callEditorDeleteTemplate": "Delete template",
+  "callEditorDeleteTemplateMessage": "{name} will be removed, along with its photo.",
+  "@callEditorDeleteTemplateMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "callEditorNameCaption": "NAME",
+  "callEditorNameHint": "Caller name",
+  "callEditorNumberCaption": "NUMBER",
+  "callEditorRingtoneCaption": "RINGTONE",
+  "callEditorRingForCaption": "RING FOR",
+  "callEditorHangUpAfterCaption": "HANG UP AFTER",
+  "callEditorSchedulingPremiumTitle": "Scheduling further ahead is Premium",
+  "callEditorSchedulingPremiumBody": "The free version schedules a call up to {minutes} minutes ahead. Premium removes the limit and adds a set time of day.",
+  "@callEditorSchedulingPremiumBody": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "callEditorSchedulingPremiumFootnote": "Ringing a call right now stays free, always.",
+  "callEditorSaveTemplate": "Save template",
+  "callEditorPhotoUnreadable": "Could not read that photo.",
+  "callEditorScheduledExact": "Call scheduled for {when}.",
+  "@callEditorScheduledExact": {
+    "placeholders": {
+      "when": {"type": "String"}
+    }
+  },
+  "callEditorScheduledApprox": "Call scheduled for around {when}.",
+  "@callEditorScheduledApprox": {
+    "placeholders": {
+      "when": {"type": "String"}
+    }
+  },
+  "callEditorScheduledExactBanner": "Call scheduled for {when}. It will arrive as a banner.",
+  "@callEditorScheduledExactBanner": {
+    "placeholders": {
+      "when": {"type": "String"}
+    }
+  },
+  "callEditorScheduledApproxBanner": "Call scheduled for around {when}. It will arrive as a banner.",
+  "@callEditorScheduledApproxBanner": {
+    "placeholders": {
+      "when": {"type": "String"}
+    }
+  },
+  "callEditorRingOn": "ON",
+  "callEditorAutoEndOff": "OFF",
+  "callEditorVibrateSemantics": "Vibrate while ringing",
+  "callEditorVibrateLabel": "Vibrate",
+  "callEditorVibrateDetail": "Buzz along with the ringtone",
+  "callEditorPickPhoto": "Pick a photo",
+  "callEditorRemovePhoto": "Remove photo",
+  "callEditorPickRingtone": "Pick a ringtone",
+
+  "blackoutHoldToAbort": "HOLD ANYWHERE TO ABORT",
+  "blackoutHoldToExit": "HOLD ANYWHERE TO EXIT",
+  "blackoutArmed": "ARMED",
+  "blackoutFiringIn": "FIRING IN…",
+  "blackoutStandby": "STANDBY",
+  "blackoutLive": "LIVE",
+  "blackoutPaused": "PAUSED",
+  "blackoutDone": "DONE",
+  "blackoutGetOutLine": "YOUR GET-OUT LINE",
+
+  "browseRowSemantics": "Browse all sounds",
+  "browseRowTitle": "Browse all",
+  "browseRowCounts": "{categories} CATEGORIES · {sounds} SOUNDS",
+  "@browseRowCounts": {
+    "placeholders": {
+      "categories": {"type": "int"},
+      "sounds": {"type": "int"}
+    }
+  },
+
+  "quickSlotFireSemantics": "Fire {label}",
+  "@quickSlotFireSemantics": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "quickSlotTapToFire": "TAP TO FIRE →",
+
+  "confirmCancel": "Cancel",
+  "confirmDelete": "Delete",
+
+  "selectorFuseCaption": "FUSE",
+  "selectorLoopCaption": "LOOP",
+
+  "slotPickerTitle": "Pin to which slot?",
+  "slotPickerPinningPrefix": "Pinning ",
+  "slotPickerReplaceSlot": "Replace slot 0{slot}, {label}",
+  "@slotPickerReplaceSlot": {
+    "placeholders": {
+      "slot": {"type": "int"},
+      "label": {"type": "String"}
+    }
+  },
+  "slotPickerSlotBadge": "SLOT 0{slot}",
+  "@slotPickerSlotBadge": {
+    "placeholders": {
+      "slot": {"type": "int"}
+    }
+  },
+
+  "soundRowStopPreview": "Stop preview",
+  "soundRowPreview": "Preview",
+  "soundRowPinToSlot": "Pin to a slot",
+  "soundRowFullLength": "Full length",
+  "soundRowTrimRange": "Trim {start}–{end}",
+  "@soundRowTrimRange": {
+    "placeholders": {
+      "start": {"type": "String"},
+      "end": {"type": "String"}
+    }
+  },
+  "soundRowHoldToDelete": "{window} · hold to delete",
+  "@soundRowHoldToDelete": {
+    "placeholders": {
+      "window": {"type": "String"}
+    }
+  },
+  "soundRowAddYourAudio": "Add your audio",
+  "soundRowAddYourAudioCaption": "ADD YOUR AUDIO",
+
+  "trimTimelineCaption": "TRIM WINDOW",
+
+  "permissionNoticeBlockedTitle": "Notifications are blocked",
+  "permissionNoticeBody": "Lock-screen controls need permission to post one neutral notification. Without it the sound still fires, but you cannot pause it without reopening the app — and Android may stop the audio on its own after a few minutes. Fake calls do not need this: they ring while you have the app open.",
+  "permissionNoticeOpenAppSettings": "Open app settings",
+  "permissionNoticeAllowNotifications": "Allow notifications",
+  "permissionNoticeOpenSettings": "Open settings",
+  "permissionNoticeAllow": "Allow",
+
+  "splashTagline": "THERE IS ALWAYS A WAY OUT",
+
+  "scheduleNoticeNotificationsTitle": "Scheduled calls need notifications",
+  "scheduleNoticeNotificationsBody": "A call that arrives while ExitPlan is closed arrives as a notification. Without permission, nothing will come through — ringing a call from inside the app still works.",
+  "scheduleNoticeExactAlarmTitle": "The call may arrive late",
+  "scheduleNoticeExactAlarmBody": "Android needs permission to wake the phone at an exact moment. Without it the call still arrives, but a few minutes after the time you set.",
+  "scheduleNoticeFullScreenTitle": "The call will not take over the screen",
+  "scheduleNoticeFullScreenBody": "Without this the call arrives as a banner at the top of the screen instead of filling it. It still rings and vibrates, and tapping it opens the call.",
+
+  "scheduleCaption": "SCHEDULE",
+  "scheduleInCaption": "IN",
+  "scheduleArrivesWhenClosed": "The call arrives even if ExitPlan is closed and the phone is locked.",
+  "scheduleModeNow": "NOW",
+  "scheduleModeInMinutes": "IN…",
+  "scheduleModeAtTime": "AT…",
+
+  "callThemePickerCaption": "CALL SCREEN",
+  "callThemePickerLockedSemantics": "{name}, Premium",
+  "@callThemePickerLockedSemantics": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "callThemePickerDefaultCaller": "Caller",
+
+  "premiumGateCallPresetsPlural": "fake call templates",
+  "premiumGateCallPresetsSingular": "template",
+  "premiumGateUserSoundsPlural": "imported sounds",
+  "premiumGateUserSoundsSingular": "sound",
+  "premiumGateUserCategoriesPlural": "categories of your own",
+  "premiumGateUserCategoriesSingular": "category",
+  "premiumGateTitle": "That is {cap} {unit}",
+  "@premiumGateTitle": {
+    "placeholders": {
+      "cap": {"type": "int"},
+      "unit": {"type": "String"}
+    }
+  },
+  "premiumGateGrandfatheredBody": "You had {cap} before this version added limits, so you kept them all. Premium removes the ceiling entirely.",
+  "@premiumGateGrandfatheredBody": {
+    "placeholders": {
+      "cap": {"type": "int"}
+    }
+  },
+  "premiumGateLimitBody": "The free version covers {freeLimit}. Premium removes the limit on {plural}, and the ads with it.",
+  "@premiumGateLimitBody": {
+    "placeholders": {
+      "freeLimit": {"type": "int"},
+      "plural": {"type": "String"}
+    }
+  },
+  "premiumGateThemeTitle": "{themeName} is a Premium theme",
+  "@premiumGateThemeTitle": {
+    "placeholders": {
+      "themeName": {"type": "String"}
+    }
+  },
+  "premiumGateThemeBody": "Premium unlocks every call screen, and removes the ads. The free themes stay exactly where they are.",
+  "premiumGateThemeFootnote": "Templates you already saved keep the theme they were saved with.",
+  "premiumGateDefaultFootnote": "Nothing you already made is affected.",
+  "premiumGateSeePremium": "See Premium",
+  "premiumGateNotNow": "Not now",
+
+  "callPresetCardEdit": "Edit {name}",
+  "@callPresetCardEdit": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "callPresetCardRing": "Ring {name}",
+  "@callPresetCardRing": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "callThemeMissedCall": "Missed call",
+
+  "callActionDecline": "Decline",
+  "callActionDeclineCall": "Decline call",
+  "callActionAccept": "Accept",
+  "callActionAcceptCall": "Accept call",
+  "callActionEndCall": "End call",
+  "callGridMute": "Mute",
+  "callGridKeypad": "Keypad",
+  "callGridSpeaker": "Speaker",
+  "callGridMuteLower": "mute",
+  "callGridKeypadLower": "keypad",
+  "callGridSpeakerLower": "speaker",
+
+  "callBusinessBadge": "WORK",
+  "callBusinessIncomingCall": "Incoming call",
+  "callBusinessAnswer": "Answer",
+
+  "callMinimalIncoming": "Incoming",
+  "callMinimalSlideUp": "Slide up",
+
+  "callChatGreenVoiceCall": "Voice call…",
+  "callChatGreenMoreOptions": "More options",
+  "callChatGreenToggleVideo": "Toggle video",
+  "callChatGreenToggleSpeaker": "Toggle speaker",
+  "callChatGreenToggleMute": "Toggle mute",
+
+  "callMaterialIncomingCall": "Incoming call",
+  "callMaterialSwipeUpDecline": "Swipe up to decline",
+  "callMaterialSwipeUpAnswer": "Swipe up to answer",
+
+  "callChatBlueIncomingVoiceCall": "Incoming voice call",
+  "callChatBlueVideo": "Video",
+
+  "callClassicIncomingCall": "incoming call",
+  "callClassicSlideUpToAnswer": "Slide up to answer",
+  "callClassicAddCall": "add call",
+  "callClassicContacts": "contacts"
+}

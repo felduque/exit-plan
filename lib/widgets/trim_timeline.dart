@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 
 /// A timeline with two draggable handles.
 ///
@@ -50,7 +51,10 @@ class _TrimTimelineState extends State<TrimTimeline> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Text('TRIM WINDOW', style: ExitText.caption),
+            Text(
+              AppLocalizations.of(context).trimTimelineCaption,
+              style: ExitText.caption,
+            ),
             Text(
               '${_clock(widget.start)} → ${_clock(widget.end)}',
               style: mono(9, color: ExitColors.hi),

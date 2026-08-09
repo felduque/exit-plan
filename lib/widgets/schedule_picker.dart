@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../calls/call_schedule.dart';
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../state/ui_flags.dart';
 import 'selectors.dart';
 
@@ -42,20 +43,22 @@ class SchedulePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         SegmentedRow<_Mode>(
-          caption: 'SCHEDULE',
+          caption: loc.scheduleCaption,
           options: _Mode.values,
           selected: _mode,
-          labelOf: (_Mode m) => m.label,
+          labelOf: (_Mode m) => _modeLabel(m, loc),
           onChanged: (_Mode m) => _pickMode(context, m),
         ),
         if (_mode == _Mode.inMinutes) ...<Widget>[
           const SizedBox(height: 14),
           SegmentedRow<int>(
-            caption: 'IN',
+            caption: loc.scheduleInCaption,
             options: kScheduleMinuteOptions,
             selected: schedule is InMinutesSchedule
                 ? (schedule as InMinutesSchedule).minutes
@@ -79,11 +82,7 @@ class SchedulePicker extends StatelessWidget {
         ],
         if (_mode != _Mode.now) ...<Widget>[
           const SizedBox(height: 8),
-          Text(
-            'The call arrives even if ExitPlan is closed and the phone is '
-            'locked.',
-            style: ExitText.bodySmall,
-          ),
+          Text(loc.scheduleArrivesWhenClosed, style: ExitText.bodySmall),
         ],
       ],
     );
@@ -127,15 +126,13 @@ class SchedulePicker extends StatelessWidget {
   }
 }
 
-enum _Mode {
-  now('NOW'),
-  inMinutes('IN…'),
-  atTime('AT…');
+enum _Mode { now, inMinutes, atTime }
 
-  const _Mode(this.label);
-
-  final String label;
-}
+String _modeLabel(_Mode mode, AppLocalizations loc) => switch (mode) {
+  _Mode.now => loc.scheduleModeNow,
+  _Mode.inMinutes => loc.scheduleModeInMinutes,
+  _Mode.atTime => loc.scheduleModeAtTime,
+};
 
 /// `60` reads as an hour, because a row of minute counts ending in a
 /// three-digit number is a row nobody scans correctly.
@@ -162,14 +159,10 @@ class _TimeField extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       child: Row(
         children: <Widget>[
-          const Icon(
-            Icons.schedule_rounded,
-            size: 16,
-            color: ExitColors.mid,
-          ),
+          const Icon(Icons.schedule_rounded, size: 16, color: ExitColors.mid),
           const SizedBox(width: 11),
           Expanded(child: Text(_formatted, style: sans(15, weight: 600))),
-          Text('CHANGE ▾', style: mono(11)),
+          Text(AppLocalizations.of(context).editorChange, style: mono(11)),
         ],
       ),
     );

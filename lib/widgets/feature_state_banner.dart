@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../permissions/app_permission.dart';
 import '../permissions/permission_center.dart';
 
@@ -108,7 +109,10 @@ class _FixButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String label = _canPrompt ? 'Allow' : 'Open settings';
+    final AppLocalizations loc = AppLocalizations.of(context);
+    final String label = _canPrompt
+        ? loc.permissionNoticeAllow
+        : loc.permissionNoticeOpenSettings;
 
     return Semantics(
       button: true,
@@ -126,11 +130,7 @@ class _FixButton extends StatelessWidget {
             child: Center(
               child: Text(
                 label,
-                style: sans(
-                  13,
-                  weight: 600,
-                  color: const Color(0xFF1A1206),
-                ),
+                style: sans(13, weight: 600, color: const Color(0xFF1A1206)),
               ),
             ),
           ),
@@ -151,33 +151,26 @@ class ScheduleReadinessNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    final AppLocalizations loc = AppLocalizations.of(context);
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         PermissionNotice(
           permission: AppPermission.notifications,
-          title: 'Scheduled calls need notifications',
-          explanation:
-              'A call that arrives while ExitPlan is closed arrives as a '
-              'notification. Without permission, nothing will come through — '
-              'ringing a call from inside the app still works.',
+          title: loc.scheduleNoticeNotificationsTitle,
+          explanation: loc.scheduleNoticeNotificationsBody,
           blocking: true,
         ),
         PermissionNotice(
           permission: AppPermission.exactAlarm,
-          title: 'The call may arrive late',
-          explanation:
-              'Android needs permission to wake the phone at an exact moment. '
-              'Without it the call still arrives, but a few minutes after the '
-              'time you set.',
+          title: loc.scheduleNoticeExactAlarmTitle,
+          explanation: loc.scheduleNoticeExactAlarmBody,
         ),
         PermissionNotice(
           permission: AppPermission.fullScreenIntent,
-          title: 'The call will not take over the screen',
-          explanation:
-              'Without this the call arrives as a banner at the top of the '
-              'screen instead of filling it. It still rings and vibrates, and '
-              'tapping it opens the call.',
+          title: loc.scheduleNoticeFullScreenTitle,
+          explanation: loc.scheduleNoticeFullScreenBody,
         ),
       ],
     );

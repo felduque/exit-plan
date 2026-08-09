@@ -13,6 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/pump_localized.dart';
+
 /// The layout is dense — fixed tile heights, two selectors side by side, a
 /// 2x2 grid above the fold — and every one of those is a way to overflow on a
 /// screen shorter than the design doc's. These tests pump the screens that own
@@ -36,16 +38,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     final AppState state = await AppState.bootstrap();
-    await tester.pumpWidget(
-      AppScope(
-        state: state,
-        child: MaterialApp(
-          theme: buildExitTheme(),
-          debugShowCheckedModeBanner: false,
-          home: screen,
-        ),
-      ),
-    );
+    await pumpLocalized(tester, state, screen);
     await tester.pump(const Duration(milliseconds: 300));
   }
 
@@ -68,21 +61,20 @@ void main() {
       expect(find.byType(ExitSwitch), findsNWidgets(6));
     });
 
-    testWidgets(
-      'the call template editor fits '
-      '${size.width.toInt()}x${size.height.toInt()}',
-      (WidgetTester tester) async {
-        // This screen owns no player, so unlike the audio editor it can be
-        // pumped whole — and it is the one that grew most when themes,
-        // the ring window, auto-end and vibrate arrived. Its theme strip also
-        // builds real call screens, which is the most expensive thing any
-        // editor in this app draws.
-        await pump(tester, const CallPresetEditorScreen(), size);
-        expect(tester.takeException(), isNull);
-        expect(find.byType(CallThemePicker), findsOneWidget);
-        expect(find.text('Save template'), findsOneWidget);
-      },
-    );
+    testWidgets('the call template editor fits '
+        '${size.width.toInt()}x${size.height.toInt()}', (
+      WidgetTester tester,
+    ) async {
+      // This screen owns no player, so unlike the audio editor it can be
+      // pumped whole — and it is the one that grew most when themes,
+      // the ring window, auto-end and vibrate arrived. Its theme strip also
+      // builds real call screens, which is the most expensive thing any
+      // editor in this app draws.
+      await pump(tester, const CallPresetEditorScreen(), size);
+      expect(tester.takeException(), isNull);
+      expect(find.byType(CallThemePicker), findsOneWidget);
+      expect(find.text('Save template'), findsOneWidget);
+    });
 
     testWidgets(
       'every intro step fits ${size.width.toInt()}x${size.height.toInt()}',
@@ -119,31 +111,29 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: buildExitTheme(),
-        home: Scaffold(
-          body: ListView(
-            padding: const EdgeInsets.all(22),
-            children: <Widget>[
-              SoundRow(
-                sound: wordy,
-                pinned: true,
-                previewing: false,
-                onFire: () {},
-                onPreview: () {},
-                onPin: () {},
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 150,
-                width: 160,
-                child: QuickSlotButton(slot: 0, sound: wordy, onFire: () {}),
-              ),
-              const SizedBox(height: 8),
-              AddYourAudioRow(onTap: () {}),
-            ],
-          ),
+    await pumpLocalizedApp(
+      tester,
+      Scaffold(
+        body: ListView(
+          padding: const EdgeInsets.all(22),
+          children: <Widget>[
+            SoundRow(
+              sound: wordy,
+              pinned: true,
+              previewing: false,
+              onFire: () {},
+              onPreview: () {},
+              onPin: () {},
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 150,
+              width: 160,
+              child: QuickSlotButton(slot: 0, sound: wordy, onFire: () {}),
+            ),
+            const SizedBox(height: 8),
+            AddYourAudioRow(onTap: () {}),
+          ],
         ),
       ),
     );

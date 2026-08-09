@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../themes/call_theme.dart';
 import '../themes/call_theme_registry.dart';
 import '../themes/call_visuals.dart';
@@ -62,7 +63,10 @@ class CallThemePicker extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text('CALL SCREEN', style: ExitText.caption),
+        Text(
+          AppLocalizations.of(context).callThemePickerCaption,
+          style: ExitText.caption,
+        ),
         const SizedBox(height: 8),
         SizedBox(
           height: _tileHeight + 26,
@@ -109,10 +113,14 @@ class _ThemeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Semantics(
       button: true,
       selected: selected,
-      label: locked ? '${theme.name}, Premium' : theme.name,
+      label: locked
+          ? loc.callThemePickerLockedSemantics(theme.name)
+          : theme.name,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -135,11 +143,7 @@ class _ThemeTile extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: <Widget>[
-                    _Preview(
-                      theme: theme,
-                      name: name,
-                      avatarPath: avatarPath,
-                    ),
+                    _Preview(theme: theme, name: name, avatarPath: avatarPath),
                     if (locked)
                       const DecoratedBox(
                         decoration: BoxDecoration(color: Color(0xA6000000)),
@@ -214,7 +218,11 @@ class _Preview extends StatelessWidget {
             child: IgnorePointer(
               child: theme.buildIncoming(
                 CallIncomingContext(
-                  name: name.trim().isEmpty ? 'Caller' : name,
+                  name: name.trim().isEmpty
+                      ? AppLocalizations.of(
+                          context,
+                        ).callThemePickerDefaultCaller
+                      : name,
                   number: '',
                   avatarPath: avatarPath,
                   onAccept: callNoop,

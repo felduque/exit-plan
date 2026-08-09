@@ -4,6 +4,8 @@ import 'package:exitplan/themes/call_visuals.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/pump_localized.dart';
+
 /// Every theme in the registry, drawn at both ends of the device range.
 ///
 /// This iterates [kCallThemes] rather than naming three screens, which is the
@@ -54,15 +56,14 @@ void main() {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(home: child));
+    await pumpLocalizedApp(tester, child);
     // Not pumpAndSettle: the accept circle pulses forever, so settling would
     // never return.
     await tester.pump(const Duration(milliseconds: 100));
   }
 
-  Future<void> pumpBare(WidgetTester tester, Widget child) => tester.pumpWidget(
-    MaterialApp(home: Scaffold(body: Center(child: child))),
-  );
+  Future<void> pumpBare(WidgetTester tester, Widget child) =>
+      pumpLocalizedApp(tester, Scaffold(body: Center(child: child)));
 
   group('the registry itself', () {
     test('every id is unique — ids are persisted, so a collision would '
@@ -72,7 +73,9 @@ void main() {
     });
 
     test('every name is unique, or the picker shows two identical labels', () {
-      final Set<String> names = kCallThemes.map((CallTheme t) => t.name).toSet();
+      final Set<String> names = kCallThemes
+          .map((CallTheme t) => t.name)
+          .toSet();
       expect(names.length, kCallThemes.length);
     });
 
@@ -88,16 +91,20 @@ void main() {
       expect(callThemeFor('nope').premium, isFalse);
     });
 
-    test('at least one free theme exists, so the picker is never all padlocks',
-        () {
-      expect(kCallThemes.any((CallTheme t) => !t.premium), isTrue);
-    });
+    test(
+      'at least one free theme exists, so the picker is never all padlocks',
+      () {
+        expect(kCallThemes.any((CallTheme t) => !t.premium), isTrue);
+      },
+    );
 
     test('the free themes come first in the picker', () {
-      final int firstPremium =
-          kCallThemes.indexWhere((CallTheme t) => t.premium);
-      final int lastFree =
-          kCallThemes.lastIndexWhere((CallTheme t) => !t.premium);
+      final int firstPremium = kCallThemes.indexWhere(
+        (CallTheme t) => t.premium,
+      );
+      final int lastFree = kCallThemes.lastIndexWhere(
+        (CallTheme t) => !t.premium,
+      );
       expect(lastFree, lessThan(firstPremium));
     });
 
@@ -124,11 +131,7 @@ void main() {
         ) async {
           // The number line is conditional in most themes, so its absence is a
           // different layout rather than the same one with a gap.
-          await pumpAt(
-            tester,
-            size,
-            theme.buildIncoming(incoming(number: '')),
-          );
+          await pumpAt(tester, size, theme.buildIncoming(incoming(number: '')));
           expect(tester.takeException(), isNull);
         });
 
@@ -203,7 +206,8 @@ void main() {
           theme.buildIncoming(incoming(onDecline: () => declines++)),
         );
         // Minimal uses a cross rather than a handset for decline.
-        final Finder circle = find.byIcon(Icons.call_end_rounded).evaluate().isEmpty
+        final Finder circle =
+            find.byIcon(Icons.call_end_rounded).evaluate().isEmpty
             ? find.byIcon(Icons.close_rounded)
             : find.byIcon(Icons.call_end_rounded);
 

@@ -9,6 +9,7 @@ import '../core/theme.dart';
 import '../data/call_avatar_files.dart';
 import '../data/call_presets.dart';
 import '../data/system_catalog.dart';
+import '../l10n/app_localizations.dart';
 import '../models/call_preset.dart';
 import '../models/escape_sound.dart';
 import '../models/exit_category.dart';
@@ -91,6 +92,7 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final AppState state = AppScope.of(context);
+    final AppLocalizations loc = AppLocalizations.of(context);
 
     return TipsSuppressor(
       child: Scaffold(
@@ -107,14 +109,16 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                     ),
                     Expanded(
                       child: Text(
-                        _isEditing ? 'Edit template' : 'New template',
+                        _isEditing
+                            ? loc.callEditorTitleEdit
+                            : loc.callEditorTitleNew,
                         style: ExitText.title,
                       ),
                     ),
                     if (_isEditing)
                       IconTile(
                         icon: Icons.delete_outline,
-                        semanticLabel: 'Delete template',
+                        semanticLabel: loc.callEditorDeleteTemplate,
                         color: ExitColors.red,
                         borderColor: ExitColors.line,
                         onTap: () => _delete(state),
@@ -135,15 +139,15 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    const _FieldCaption('NAME'),
+                    _FieldCaption(loc.callEditorNameCaption),
                     _TextField(
                       controller: _name,
-                      hint: 'Caller name',
+                      hint: loc.callEditorNameHint,
                       textCapitalization: TextCapitalization.words,
                       onChanged: () => setState(() {}),
                     ),
                     const SizedBox(height: 18),
-                    const _FieldCaption('NUMBER'),
+                    _FieldCaption(loc.callEditorNumberCaption),
                     _TextField(
                       controller: _number,
                       hint: '+1 555 0100',
@@ -161,7 +165,7 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                           showPremiumThemeGate(context, t.name),
                     ),
                     const SizedBox(height: 20),
-                    const _FieldCaption('RINGTONE'),
+                    _FieldCaption(loc.callEditorRingtoneCaption),
                     _RingtoneField(
                       sound: state.library.resolveOrFallback(_ringtoneSoundId),
                       onTap: () => _pickRingtone(state),
@@ -173,19 +177,19 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                     ),
                     const SizedBox(height: 20),
                     SegmentedRow<int>(
-                      caption: 'RING FOR',
+                      caption: loc.callEditorRingForCaption,
                       options: kRingSecondsOptions,
                       selected: _ringSeconds,
-                      labelOf: _ringLabel,
+                      labelOf: (int s) => _ringLabel(s, loc),
                       onChanged: (int value) =>
                           setState(() => _ringSeconds = value),
                     ),
                     const SizedBox(height: 20),
                     SegmentedRow<int?>(
-                      caption: 'HANG UP AFTER',
+                      caption: loc.callEditorHangUpAfterCaption,
                       options: kAutoEndOptions,
                       selected: _autoEndSeconds,
-                      labelOf: _autoEndLabel,
+                      labelOf: (int? s) => _autoEndLabel(s, loc),
                       onChanged: (int? value) =>
                           setState(() => _autoEndSeconds = value),
                     ),
@@ -197,13 +201,11 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                           setState(() => _schedule = s),
                       onLocked: () => showPremiumSheet(
                         context,
-                        title: 'Scheduling further ahead is Premium',
-                        body:
-                            'The free version schedules a call up to '
-                            '$kFreeScheduleMaxMinutes minutes ahead. Premium '
-                            'removes the limit and adds a set time of day.',
-                        footnote:
-                            'Ringing a call right now stays free, always.',
+                        title: loc.callEditorSchedulingPremiumTitle,
+                        body: loc.callEditorSchedulingPremiumBody(
+                          kFreeScheduleMaxMinutes,
+                        ),
+                        footnote: loc.callEditorSchedulingPremiumFootnote,
                       ),
                     ),
                     // Only worth saying once the call actually has to survive
@@ -236,7 +238,7 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(22, 8, 22, 14),
                 child: PrimaryButton(
-                  label: 'Save template',
+                  label: loc.callEditorSaveTemplate,
                   enabled: _canSave,
                   onTap: _canSave ? () => _save(state) : null,
                 ),
@@ -260,9 +262,10 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
       newPath = await CallAvatarFiles.importCopy(sourcePath);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not read that photo.')),
-        );
+        final AppLocalizations loc = AppLocalizations.of(context);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(loc.callEditorPhotoUnreadable)));
       }
       return;
     }
@@ -360,31 +363,32 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
   /// both perfectly usable, and both are things somebody should learn now
   /// rather than while waiting for a call that is running four minutes behind.
   void _reportBooking(ScheduleOutcome outcome) {
+    final AppLocalizations loc = AppLocalizations.of(context);
     final String when =
         '${outcome.at.hour.toString().padLeft(2, '0')}:'
         '${outcome.at.minute.toString().padLeft(2, '0')}';
 
     final String message = switch ((outcome.exact, outcome.fullScreen)) {
-      (true, true) => 'Call scheduled for $when.',
-      (false, true) => 'Call scheduled for around $when.',
-      (true, false) => 'Call scheduled for $when. It will arrive as a banner.',
-      (false, false) =>
-        'Call scheduled for around $when. It will arrive as a banner.',
+      (true, true) => loc.callEditorScheduledExact(when),
+      (false, true) => loc.callEditorScheduledApprox(when),
+      (true, false) => loc.callEditorScheduledExactBanner(when),
+      (false, false) => loc.callEditorScheduledApproxBanner(when),
     };
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message, style: ExitText.bodySmall)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message, style: ExitText.bodySmall)));
   }
 
   Future<void> _delete(AppState state) async {
     final CallPreset? preset = widget.preset;
     if (preset == null) return;
 
+    final AppLocalizations loc = AppLocalizations.of(context);
     final bool ok = await confirmDestructive(
       context,
-      title: 'Delete template',
-      message: '${preset.name} will be removed, along with its photo.',
+      title: loc.callEditorDeleteTemplate,
+      message: loc.callEditorDeleteTemplateMessage(preset.name),
     );
     if (!ok || !mounted) return;
 
@@ -405,12 +409,13 @@ extension on List<PlatformFile> {
 /// `0` is the "rings until you deal with it" cell, which is what every template
 /// did before this control existed. It reads as a word rather than a number
 /// because "0" in a row of durations looks like a mistake.
-String _ringLabel(int seconds) => seconds == 0 ? 'ON' : '${seconds}s';
+String _ringLabel(int seconds, AppLocalizations loc) =>
+    seconds == 0 ? loc.callEditorRingOn : '${seconds}s';
 
 /// Null is "never hangs up", and the rest are shown in whichever unit reads
 /// shorter — a segmented cell has room for three characters, not for "120s".
-String _autoEndLabel(int? seconds) {
-  if (seconds == null) return 'OFF';
+String _autoEndLabel(int? seconds, AppLocalizations loc) {
+  if (seconds == null) return loc.callEditorAutoEndOff;
   if (seconds < 60) return '${seconds}s';
   return '${seconds ~/ 60}m';
 }
@@ -426,9 +431,11 @@ class _VibrateToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Semantics(
       toggled: value,
-      label: 'Vibrate while ringing',
+      label: loc.callEditorVibrateSemantics,
       child: Panel(
         onTap: () => onChanged(!value),
         radius: ExitRadius.tile,
@@ -438,9 +445,9 @@ class _VibrateToggle extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('Vibrate', style: ExitText.row),
+                  Text(loc.callEditorVibrateLabel, style: ExitText.row),
                   const SizedBox(height: 3),
-                  Text('Buzz along with the ringtone', style: ExitText.bodySmall),
+                  Text(loc.callEditorVibrateDetail, style: ExitText.bodySmall),
                 ],
               ),
             ),
@@ -469,9 +476,11 @@ class _AvatarPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Semantics(
       button: true,
-      label: 'Pick a photo',
+      label: loc.callEditorPickPhoto,
       child: GestureDetector(
         onTap: onPick,
         child: Stack(
@@ -499,7 +508,7 @@ class _AvatarPicker extends StatelessWidget {
                 bottom: -2,
                 child: Semantics(
                   button: true,
-                  label: 'Remove photo',
+                  label: loc.callEditorRemovePhoto,
                   child: GestureDetector(
                     onTap: onClear,
                     child: Container(
@@ -638,6 +647,7 @@ Future<String?> showRingtonePicker(
       barrierColor: const Color(0x9E000000),
       isScrollControlled: true,
       builder: (BuildContext sheetContext) {
+        final AppLocalizations loc = AppLocalizations.of(sheetContext);
         return FractionallySizedBox(
           heightFactor: 0.8,
           child: Container(
@@ -662,7 +672,7 @@ Future<String?> showRingtonePicker(
                       ),
                     ),
                     Text(
-                      'Pick a ringtone',
+                      loc.callEditorPickRingtone,
                       style: sans(17, weight: 600, letterSpacing: -0.3),
                     ),
                     const SizedBox(height: 16),

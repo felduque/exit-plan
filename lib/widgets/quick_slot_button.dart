@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/icons.dart';
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/escape_sound.dart';
 
 /// One cell of the 2x2 grid on the home screen. Tapping it fires.
@@ -27,6 +28,7 @@ class QuickSlotButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
     final String? excuse = sound.excuse;
     final Color accent = sound.isUser
         ? ExitColors.green
@@ -34,7 +36,7 @@ class QuickSlotButton extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: 'Fire ${sound.label}',
+      label: loc.quickSlotFireSemantics(sound.label),
       child: Panel(
         onTap: onFire,
         radius: ExitRadius.tile,
@@ -79,7 +81,7 @@ class QuickSlotButton extends StatelessWidget {
               ],
             ),
             Text(
-              'TAP TO FIRE →',
+              loc.quickSlotTapToFire,
               style: mono(9, color: accent, letterSpacing: 1),
             ),
           ],

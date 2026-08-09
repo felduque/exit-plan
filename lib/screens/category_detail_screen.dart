@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../audio/preview_player.dart';
 import '../core/icons.dart';
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/enums.dart';
 import '../models/escape_sound.dart';
 import '../models/exit_category.dart';
@@ -47,6 +48,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final AppState state = AppScope.of(context);
+    final AppLocalizations loc = AppLocalizations.of(context);
     final ExitCategory? category = state.library.categoryById(
       widget.categoryId,
     );
@@ -55,7 +57,9 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
       // The category was deleted while this screen was open.
       return TipsSuppressor(
         child: Scaffold(
-          body: Center(child: Text('Category not found', style: ExitText.body)),
+          body: Center(
+            child: Text(loc.categoryDetailNotFound, style: ExitText.body),
+          ),
         ),
       );
     }
@@ -101,7 +105,8 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                         if (category.isUser)
                           IconTile(
                             icon: Icons.delete_outline,
-                            semanticLabel: 'Delete category',
+                            semanticLabel:
+                                loc.categoryDetailDeleteCategoryTitle,
                             color: ExitColors.red,
                             size: 34,
                             iconSize: 17,
@@ -153,7 +158,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                _strapline(category),
+                                _strapline(category, loc),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: mono(10),
@@ -240,17 +245,18 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
 
   /// The mono line under the name. The description is written as sentences, so
   /// only its first clause survives being set in uppercase.
-  static String _strapline(ExitCategory category) {
+  static String _strapline(ExitCategory category, AppLocalizations loc) {
     final String lead = category.description.split('.').first.trim();
-    final String count = '${category.sounds.length} SOUNDS';
+    final String count = loc.categoryDetailSoundCount(category.sounds.length);
     return lead.isEmpty ? count : '${lead.toUpperCase()} · $count';
   }
 
   Future<void> _deleteSound(EscapeSound sound) async {
+    final AppLocalizations loc = AppLocalizations.of(context);
     final bool ok = await confirmDestructive(
       context,
-      title: 'Delete sound',
-      message: '${sound.label} and its audio file will be removed.',
+      title: loc.browseDeleteSoundTitle,
+      message: loc.browseDeleteSoundMessage(sound.label),
     );
     if (!ok || !mounted) return;
     await _preview.stop();
@@ -259,11 +265,11 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
   }
 
   Future<void> _deleteCategory(ExitCategory category) async {
+    final AppLocalizations loc = AppLocalizations.of(context);
     final bool ok = await confirmDestructive(
       context,
-      title: 'Delete category',
-      message:
-          '${category.label} and every sound in it will be removed, files included.',
+      title: loc.categoryDetailDeleteCategoryTitle,
+      message: loc.categoryDetailDeleteCategoryMessage(category.label),
     );
     if (!ok || !mounted) return;
     await _preview.stop();

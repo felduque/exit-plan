@@ -25,6 +25,7 @@ class AppState extends ChangeNotifier {
     this._quickAccess,
     this._tipIndex,
     this._onboardingDone,
+    this._languageCode,
     this._callPresets,
     this._entitlement,
     this._gateBaseline,
@@ -41,6 +42,7 @@ class AppState extends ChangeNotifier {
   List<String> _quickAccess;
   int _tipIndex;
   bool _onboardingDone;
+  String? _languageCode;
   List<CallPreset> _callPresets;
   Entitlement _entitlement;
 
@@ -58,7 +60,12 @@ class AppState extends ChangeNotifier {
   List<String> get quickAccess => List<String>.unmodifiable(_quickAccess);
   int get tipIndex => _tipIndex;
   bool get onboardingDone => _onboardingDone;
-  List<CallPreset> get callPresets => List<CallPreset>.unmodifiable(_callPresets);
+
+  /// `null` = following the system locale; a saved value overrides it. See
+  /// [setLanguageCode].
+  String? get languageCode => _languageCode;
+  List<CallPreset> get callPresets =>
+      List<CallPreset>.unmodifiable(_callPresets);
 
   /// The one library every screen reads from.
   MergedLibrary get library => _library;
@@ -118,6 +125,7 @@ class AppState extends ChangeNotifier {
       store.loadQuickAccess(),
       store.loadTipIndex(),
       store.onboardingDone,
+      store.languageCode,
       store.loadCallPresets(),
       store.loadEntitlement(),
       store.loadGateBaseline(),
@@ -197,6 +205,15 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> markNotificationsAsked() => _store.setNotificationsAsked();
+
+  // --- language --------------------------------------------------------------
+
+  Future<void> setLanguageCode(String code) async {
+    if (_languageCode == code) return;
+    _languageCode = code;
+    notifyListeners();
+    await _store.setLanguageCode(code);
+  }
 
   // --- quick access --------------------------------------------------------
 
@@ -324,9 +341,10 @@ class AppState extends ChangeNotifier {
   /// platform's alarm manager from a setter would put a `MissingPluginException`
   /// in the path of every widget test that happens to delete a template.
   Future<void> deleteCallPreset(String presetId) async {
-    final CallPreset? preset = _callPresets
-        .cast<CallPreset?>()
-        .firstWhere((CallPreset? p) => p?.id == presetId, orElse: () => null);
+    final CallPreset? preset = _callPresets.cast<CallPreset?>().firstWhere(
+      (CallPreset? p) => p?.id == presetId,
+      orElse: () => null,
+    );
     if (preset == null) return;
 
     _callPresets = _callPresets

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 
 /// The wide row at the bottom of the home screen that opens the whole library.
 ///
@@ -21,9 +22,11 @@ class BrowseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Semantics(
       button: true,
-      label: 'Browse all sounds',
+      label: loc.browseRowSemantics,
       child: Panel(
         onTap: onTap,
         radius: ExitRadius.tile,
@@ -36,10 +39,10 @@ class BrowseRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('Browse all', style: sans(13, weight: 600)),
+                  Text(loc.browseRowTitle, style: sans(13, weight: 600)),
                   const SizedBox(height: 3),
                   Text(
-                    '$categoryCount CATEGORIES · $soundCount SOUNDS',
+                    loc.browseRowCounts(categoryCount, soundCount),
                     style: mono(9, letterSpacing: 1),
                   ),
                 ],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../core/premium_config.dart';
 import '../data/user_files.dart';
+import '../l10n/app_localizations.dart';
 import '../state/app_state.dart';
 import '../widgets/premium_gate_sheet.dart';
 import 'editor_screen.dart';
@@ -48,20 +49,22 @@ Future<void> startImport(
     storedPath = await UserFiles.importCopy(sourcePath);
   } catch (_) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not read that file.')),
-      );
+      final AppLocalizations loc = AppLocalizations.of(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.importCouldNotReadFile)));
     }
     return;
   }
 
   if (!context.mounted) return;
 
+  final AppLocalizations loc = AppLocalizations.of(context);
   await Navigator.of(context).push<void>(
     MaterialPageRoute<void>(
       builder: (_) => EditorScreen(
         filePath: storedPath,
-        suggestedLabel: _labelFrom(picked.name),
+        suggestedLabel: _labelFrom(picked.name, loc),
         targetCategoryId: targetCategoryId,
       ),
     ),
@@ -70,10 +73,10 @@ Future<void> startImport(
 
 /// Sentence case, like every other name in the app: the file name is a
 /// suggestion the user is about to edit, not a label the app is asserting.
-String _labelFrom(String fileName) {
+String _labelFrom(String fileName, AppLocalizations loc) {
   final int dot = fileName.lastIndexOf('.');
   final String base = dot > 0 ? fileName.substring(0, dot) : fileName;
   final String cleaned = base.replaceAll(RegExp(r'[_\-]+'), ' ').trim();
-  if (cleaned.isEmpty) return 'My audio';
+  if (cleaned.isEmpty) return loc.importDefaultLabel;
   return cleaned[0].toUpperCase() + cleaned.substring(1);
 }

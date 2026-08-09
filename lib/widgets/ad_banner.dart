@@ -157,7 +157,8 @@ class _AdBannerSlotState extends State<AdBannerSlot>
     // display metrics rather than the network. Nothing waits on it: the space
     // was claimed synchronously, frames ago.
     final int width = MediaQuery.sizeOf(context).width.truncate();
-    final AdSize? size = await AdSize
+    final AdSize? size =
+        await AdSize
         // ignore: deprecated_member_use
         .getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
     if (!mounted || size == null || _ad != null) return;
@@ -253,9 +254,7 @@ class _AdBannerSlotState extends State<AdBannerSlot>
               decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: ExitColors.line)),
               ),
-              child: visible
-                  ? AdWidget(ad: _ad!)
-                  : const SizedBox.expand(),
+              child: visible ? AdWidget(ad: _ad!) : const SizedBox.expand(),
             );
           },
         );

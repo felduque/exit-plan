@@ -28,6 +28,7 @@ class Persistence {
   static const String _kGateBaseline = 'exitplan.gateBaseline';
   static const String _kNudgedAt = 'exitplan.premium.nudgedAt';
   static const String _kNudgeCount = 'exitplan.premium.nudgeCount';
+  static const String _kLanguage = 'exitplan.language';
 
   final SharedPreferences _prefs;
 
@@ -57,6 +58,15 @@ class Persistence {
   bool get onboardingDone => _prefs.getBool(_kOnboarding) ?? false;
 
   Future<void> setOnboardingDone() => _prefs.setBool(_kOnboarding, true);
+
+  // --- language --------------------------------------------------------------
+
+  /// `null` means "not chosen yet" — the app follows the system locale until
+  /// the user picks one explicitly, from the intro header or from Settings.
+  String? get languageCode => _prefs.getString(_kLanguage);
+
+  Future<void> setLanguageCode(String code) =>
+      _prefs.setString(_kLanguage, code);
 
   // --- settings ------------------------------------------------------------
 

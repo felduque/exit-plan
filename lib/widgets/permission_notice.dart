@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../state/permissions.dart';
 
 /// Says out loud that notifications are denied, what that costs, and offers the
@@ -27,6 +28,7 @@ class NotificationPermissionNotice extends StatelessWidget {
       builder: (BuildContext context, _) {
         if (!relevant || permission.granted) return const SizedBox.shrink();
 
+        final AppLocalizations loc = AppLocalizations.of(context);
         final bool settings = permission.needsSettings;
 
         return Padding(
@@ -48,25 +50,20 @@ class NotificationPermissionNotice extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Notifications are blocked',
+                        loc.permissionNoticeBlockedTitle,
                         style: sans(13, weight: 600, color: ExitColors.amber),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Lock-screen controls need permission to post one neutral '
-                  'notification. Without it the sound still fires, but you '
-                  'cannot pause it without reopening the app — and Android may '
-                  'stop the audio on its own after a few minutes. Fake calls '
-                  'do not need this: they ring while you have the app open.',
-                  style: ExitText.bodySmall,
-                ),
+                Text(loc.permissionNoticeBody, style: ExitText.bodySmall),
                 const SizedBox(height: 12),
                 Semantics(
                   button: true,
-                  label: settings ? 'Open app settings' : 'Allow notifications',
+                  label: settings
+                      ? loc.permissionNoticeOpenAppSettings
+                      : loc.permissionNoticeAllowNotifications,
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: permission.resolve,
@@ -83,7 +80,9 @@ class NotificationPermissionNotice extends StatelessWidget {
                             // "Allow" a second time would do nothing at all and
                             // look broken, so past that point this says where
                             // the switch actually lives.
-                            settings ? 'Open settings' : 'Allow',
+                            settings
+                                ? loc.permissionNoticeOpenSettings
+                                : loc.permissionNoticeAllow,
                             style: sans(
                               13,
                               weight: 600,

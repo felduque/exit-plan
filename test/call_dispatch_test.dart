@@ -73,9 +73,7 @@ void main() {
     test('editing a scheduled call replaces the booking rather than leaving '
         'the old one behind — two alarms for one template means the phone '
         'rings twice', () async {
-      final CallPreset first = preset(
-        schedule: const InMinutesSchedule(5),
-      );
+      final CallPreset first = preset(schedule: const InMinutesSchedule(5));
       await CallDispatcher.reschedule(
         first,
         scheduler: scheduler,
@@ -93,20 +91,22 @@ void main() {
       expect(await scheduler.pending(), <String>{'call-1'});
     });
 
-    test('editing a scheduled call back to "now" cancels the booking rather '
-        'than leaving an alarm for a call that is no longer scheduled',
-        () async {
-      final CallPreset p = preset(schedule: const InMinutesSchedule(5));
-      await CallDispatcher.reschedule(p, scheduler: scheduler);
-      expect(backend.scheduled, hasLength(1));
+    test(
+      'editing a scheduled call back to "now" cancels the booking rather '
+      'than leaving an alarm for a call that is no longer scheduled',
+      () async {
+        final CallPreset p = preset(schedule: const InMinutesSchedule(5));
+        await CallDispatcher.reschedule(p, scheduler: scheduler);
+        expect(backend.scheduled, hasLength(1));
 
-      await CallDispatcher.reschedule(
-        p.copyWith(schedule: const ImmediateSchedule()),
-        scheduler: scheduler,
-      );
-      expect(backend.scheduled, isEmpty);
-      expect(await scheduler.pending(), isEmpty);
-    });
+        await CallDispatcher.reschedule(
+          p.copyWith(schedule: const ImmediateSchedule()),
+          scheduler: scheduler,
+        );
+        expect(backend.scheduled, isEmpty);
+        expect(await scheduler.pending(), isEmpty);
+      },
+    );
 
     test('unschedule drops the booking', () async {
       await CallDispatcher.reschedule(
@@ -232,16 +232,18 @@ class _FakeBackend implements CallSchedulerBackend {
     required bool exact,
     required bool fullScreen,
   }) async {
-    scheduled.removeWhere((({int id, DateTime at, String payload}) b) =>
-        b.id == id);
+    scheduled.removeWhere(
+      (({int id, DateTime at, String payload}) b) => b.id == id,
+    );
     scheduled.add((id: id, at: at, payload: payload));
   }
 
   @override
   Future<void> cancel(int id) async {
     cancelled.add(id);
-    scheduled.removeWhere((({int id, DateTime at, String payload}) b) =>
-        b.id == id);
+    scheduled.removeWhere(
+      (({int id, DateTime at, String payload}) b) => b.id == id,
+    );
   }
 
   @override

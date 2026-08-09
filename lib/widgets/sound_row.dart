@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/icons.dart';
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/escape_sound.dart';
 
 /// One sound in a list, with its three actions: fire (the row body), preview,
@@ -35,6 +36,7 @@ class SoundRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
     final bool user = sound.isUser;
     final Color accent = user
         ? ExitColors.green
@@ -49,7 +51,7 @@ class SoundRow extends StatelessWidget {
           Expanded(
             child: Semantics(
               button: true,
-              label: 'Fire ${sound.label}',
+              label: loc.quickSlotFireSemantics(sound.label),
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: onFire,
@@ -93,7 +95,7 @@ class SoundRow extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 2),
-                            _subtitle(),
+                            _subtitle(loc),
                           ],
                         ),
                       ),
@@ -110,7 +112,7 @@ class SoundRow extends StatelessWidget {
             borderColor: previewing ? ExitColors.line2 : ExitColors.line,
             iconSize: previewing ? 12 : 13,
             onTap: onPreview,
-            tooltip: previewing ? 'Stop preview' : 'Preview',
+            tooltip: previewing ? loc.soundRowStopPreview : loc.soundRowPreview,
           ),
           const SizedBox(width: 8),
           _Action(
@@ -122,7 +124,7 @@ class SoundRow extends StatelessWidget {
             borderColor: pinned ? Colors.transparent : ExitColors.line,
             iconSize: 14,
             onTap: onPin,
-            tooltip: 'Pin to a slot',
+            tooltip: loc.soundRowPinToSlot,
           ),
           const SizedBox(width: 13),
         ],
@@ -132,7 +134,7 @@ class SoundRow extends StatelessWidget {
 
   /// A user sound has no excuse line, so its trim window takes that slot — and
   /// carries the hint that a long press deletes it, which is otherwise invisible.
-  Widget _subtitle() {
+  Widget _subtitle(AppLocalizations loc) {
     final String? excuse = sound.excuse;
     if (excuse != null) {
       return Text(
@@ -146,10 +148,10 @@ class SoundRow extends StatelessWidget {
     final TrimWindow? trim = sound.trim;
     if (sound.isUser) {
       final String window = trim == null
-          ? 'Full length'
-          : 'Trim ${_clock(trim.startMs)}–${_clock(trim.endMs)}';
+          ? loc.soundRowFullLength
+          : loc.soundRowTrimRange(_clock(trim.startMs), _clock(trim.endMs));
       return Text(
-        '$window · hold to delete',
+        loc.soundRowHoldToDelete(window),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: ExitText.bodySmall.copyWith(color: ExitColors.dim),
@@ -223,7 +225,7 @@ class AddYourAudioRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Add your audio',
+      label: AppLocalizations.of(context).soundRowAddYourAudio,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -250,8 +252,10 @@ class _AddLabel extends StatelessWidget {
   const _AddLabel();
 
   @override
-  Widget build(BuildContext context) =>
-      Text('ADD YOUR AUDIO', style: mono(10, letterSpacing: 1));
+  Widget build(BuildContext context) => Text(
+    AppLocalizations.of(context).soundRowAddYourAudioCaption,
+    style: mono(10, letterSpacing: 1),
+  );
 }
 
 /// Dashed outline for the import row: it reads as a placeholder rather than as

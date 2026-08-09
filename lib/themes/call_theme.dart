@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import 'call_visuals.dart';
 
 /// A fake-call theme: everything needed to draw one incoming call and one
@@ -200,7 +201,7 @@ class CallMissedView extends StatelessWidget {
                   Icon(Icons.call_missed, size: 17, color: palette.decline),
                   const SizedBox(width: 8),
                   Text(
-                    'Missed call',
+                    AppLocalizations.of(context).callThemeMissedCall,
                     style: TextStyle(
                       color: palette.decline,
                       fontSize: 15,

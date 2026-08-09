@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../call_theme.dart';
 import '../call_visuals.dart';
 
@@ -56,165 +57,179 @@ class _Rule extends StatelessWidget {
 }
 
 Widget _buildIncoming(CallIncomingContext ctx) {
-  return Scaffold(
-    backgroundColor: _base,
-    body: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
-        child: Column(
-          children: <Widget>[
-            const CallStatusBar(color: _subtext),
-            const Spacer(),
-            Text(
-              'Incoming',
-              style: TextStyle(
-                color: _subtext,
-                fontSize: 12,
-                letterSpacing: 3,
-              ),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              ctx.name,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: _text,
-                fontSize: 36,
-                fontWeight: FontWeight.w300,
-                letterSpacing: -0.5,
-              ),
-            ),
-            if (ctx.number.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 14),
-              const _Rule(),
-              const SizedBox(height: 14),
-              Text(
-                ctx.number,
-                style: TextStyle(
-                  color: _subtext,
-                  fontSize: 14,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-            const Spacer(flex: 2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
+  return Builder(
+    builder: (BuildContext context) {
+      final AppLocalizations loc = AppLocalizations.of(context);
+      return Scaffold(
+        backgroundColor: _base,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+            child: Column(
               children: <Widget>[
-                CallActionButton(
-                  icon: Icons.close_rounded,
-                  background: _decline,
-                  iconColor: Colors.white,
-                  onTap: ctx.onDecline,
-                  size: 58,
-                  iconSize: 24,
-                  semanticLabel: 'Decline call',
-                ),
-                DragUpToConfirm(
-                  onConfirm: ctx.onAccept,
-                  hint: 'Slide up',
-                  hintColor: _subtext,
-                  // This theme's circles are smaller than the default, so the
-                  // hint has to be told the narrower footprint to stay bounded
-                  // by the thing it labels.
-                  width: 58 * 1.6,
-                  child: CallActionButton(
-                    icon: Icons.call_rounded,
-                    background: _accept,
-                    iconColor: Colors.white,
-                    onTap: callNoop,
-                    size: 58,
-                    iconSize: 24,
-                    pulse: true,
-                    semanticLabel: 'Accept call',
+                const CallStatusBar(color: _subtext),
+                const Spacer(),
+                Text(
+                  loc.callMinimalIncoming,
+                  style: TextStyle(
+                    color: _subtext,
+                    fontSize: 12,
+                    letterSpacing: 3,
                   ),
                 ),
+                const SizedBox(height: 18),
+                Text(
+                  ctx.name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: _text,
+                    fontSize: 36,
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                if (ctx.number.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 14),
+                  const _Rule(),
+                  const SizedBox(height: 14),
+                  Text(
+                    ctx.number,
+                    style: TextStyle(
+                      color: _subtext,
+                      fontSize: 14,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
+                const Spacer(flex: 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    CallActionButton(
+                      icon: Icons.close_rounded,
+                      background: _decline,
+                      iconColor: Colors.white,
+                      onTap: ctx.onDecline,
+                      size: 58,
+                      iconSize: 24,
+                      semanticLabel: loc.callActionDeclineCall,
+                    ),
+                    DragUpToConfirm(
+                      onConfirm: ctx.onAccept,
+                      hint: loc.callMinimalSlideUp,
+                      hintColor: _subtext,
+                      // This theme's circles are smaller than the default, so the
+                      // hint has to be told the narrower footprint to stay bounded
+                      // by the thing it labels.
+                      width: 58 * 1.6,
+                      child: CallActionButton(
+                        icon: Icons.call_rounded,
+                        background: _accept,
+                        iconColor: Colors.white,
+                        onTap: callNoop,
+                        size: 58,
+                        iconSize: 24,
+                        pulse: true,
+                        semanticLabel: loc.callActionAcceptCall,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
               ],
             ),
-            const SizedBox(height: 10),
-          ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 }
 
 Widget _buildActive(CallActiveContext ctx) {
-  return Scaffold(
-    backgroundColor: _base,
-    body: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
-        child: Column(
-          children: <Widget>[
-            const Spacer(),
-            Text(
-              ctx.name,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: _text,
-                fontSize: 28,
-                fontWeight: FontWeight.w300,
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 14),
-            const _Rule(),
-            const SizedBox(height: 14),
-            Text(
-              ctx.timer,
-              style: TextStyle(
-                color: _subtext,
-                fontSize: 15,
-                letterSpacing: 2,
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-              ),
-            ),
-            const Spacer(flex: 2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  return Builder(
+    builder: (BuildContext context) {
+      final AppLocalizations loc = AppLocalizations.of(context);
+      return Scaffold(
+        backgroundColor: _base,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+            child: Column(
               children: <Widget>[
-                CallGridButton(
-                  icon: ctx.muted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                  label: 'mute',
-                  active: ctx.muted,
-                  onTap: ctx.onMute,
-                  tint: _base,
-                  inactiveBackground: const Color(0x14FFFFFF),
+                const Spacer(),
+                Text(
+                  ctx.name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: _text,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: -0.3,
+                  ),
                 ),
-                CallGridButton(
-                  icon: Icons.dialpad_rounded,
-                  label: 'keypad',
-                  active: ctx.keypadOpen,
-                  onTap: ctx.onKeypad,
-                  tint: _base,
-                  inactiveBackground: const Color(0x14FFFFFF),
+                const SizedBox(height: 14),
+                const _Rule(),
+                const SizedBox(height: 14),
+                Text(
+                  ctx.timer,
+                  style: TextStyle(
+                    color: _subtext,
+                    fontSize: 15,
+                    letterSpacing: 2,
+                    fontFeatures: const <FontFeature>[
+                      FontFeature.tabularFigures(),
+                    ],
+                  ),
                 ),
-                CallGridButton(
-                  icon: Icons.volume_up_rounded,
-                  label: 'speaker',
-                  active: ctx.speaker,
-                  onTap: ctx.onSpeaker,
-                  tint: _base,
-                  inactiveBackground: const Color(0x14FFFFFF),
+                const Spacer(flex: 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    CallGridButton(
+                      icon: ctx.muted
+                          ? Icons.mic_off_rounded
+                          : Icons.mic_rounded,
+                      label: loc.callGridMuteLower,
+                      active: ctx.muted,
+                      onTap: ctx.onMute,
+                      tint: _base,
+                      inactiveBackground: const Color(0x14FFFFFF),
+                    ),
+                    CallGridButton(
+                      icon: Icons.dialpad_rounded,
+                      label: loc.callGridKeypadLower,
+                      active: ctx.keypadOpen,
+                      onTap: ctx.onKeypad,
+                      tint: _base,
+                      inactiveBackground: const Color(0x14FFFFFF),
+                    ),
+                    CallGridButton(
+                      icon: Icons.volume_up_rounded,
+                      label: loc.callGridSpeakerLower,
+                      active: ctx.speaker,
+                      onTap: ctx.onSpeaker,
+                      tint: _base,
+                      inactiveBackground: const Color(0x14FFFFFF),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 30),
+                CallActionButton(
+                  icon: Icons.call_end_rounded,
+                  background: _decline,
+                  iconColor: Colors.white,
+                  onTap: ctx.onHangUp,
+                  size: 58,
+                  iconSize: 24,
+                  semanticLabel: loc.callActionEndCall,
+                ),
+                const SizedBox(height: 6),
               ],
             ),
-            const SizedBox(height: 30),
-            CallActionButton(
-              icon: Icons.call_end_rounded,
-              background: _decline,
-              iconColor: Colors.white,
-              onTap: ctx.onHangUp,
-              size: 58,
-              iconSize: 24,
-              semanticLabel: 'End call',
-            ),
-            const SizedBox(height: 6),
-          ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 }

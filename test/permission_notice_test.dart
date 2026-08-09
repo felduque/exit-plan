@@ -1,4 +1,3 @@
-import 'package:exitplan/core/theme.dart';
 import 'package:exitplan/screens/home_screen.dart';
 import 'package:exitplan/screens/settings_screen.dart';
 import 'package:exitplan/state/app_state.dart';
@@ -7,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/pump_localized.dart';
 
 /// A denied notification permission breaks lock-screen controls *silently* —
 /// the toggle stays on and nothing works. These tests pin the two things that
@@ -28,16 +29,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     final AppState state = await AppState.bootstrap();
-    await tester.pumpWidget(
-      AppScope(
-        state: state,
-        child: MaterialApp(
-          theme: buildExitTheme(),
-          debugShowCheckedModeBanner: false,
-          home: screen,
-        ),
-      ),
-    );
+    await pumpLocalized(tester, state, screen);
     await tester.pump(const Duration(milliseconds: 300));
   }
 
@@ -92,15 +84,7 @@ void main() {
       tester.view.physicalSize = const Size(394, 852);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(
-        AppScope(
-          state: state,
-          child: MaterialApp(
-            theme: buildExitTheme(),
-            home: const SettingsScreen(),
-          ),
-        ),
-      );
+      await pumpLocalized(tester, state, const SettingsScreen());
       await tester.pump(const Duration(milliseconds: 300));
 
       // Nothing is being taken from the user, so there is nothing to nag about.

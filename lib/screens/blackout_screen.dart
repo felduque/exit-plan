@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../audio/audio_boot.dart';
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/enums.dart';
 import '../models/escape_sound.dart';
 import '../state/app_state.dart';
@@ -166,6 +167,7 @@ class _BlackoutScreenState extends State<BlackoutScreen>
   @override
   Widget build(BuildContext context) {
     final bool hints = AppScope.of(context).settings.darkScreenHints;
+    final AppLocalizations loc = AppLocalizations.of(context);
     final FirePhase phase = fireEngine.phase;
     final bool armed = phase == FirePhase.armed;
 
@@ -187,19 +189,17 @@ class _BlackoutScreenState extends State<BlackoutScreen>
               const ColoredBox(color: ExitColors.black),
               if (hints) ...<Widget>[
                 if (armed)
-                  _ArmedBody(countdown: fireEngine.countdown)
+                  _ArmedBody(countdown: fireEngine.countdown, loc: loc)
                 else ...<Widget>[
-                  _PhaseMarker(phase: phase),
-                  _GetOutLine(excuse: fireEngine.sound?.excuse),
+                  _PhaseMarker(phase: phase, loc: loc),
+                  _GetOutLine(excuse: fireEngine.sound?.excuse, loc: loc),
                 ],
               ],
               _HoldRing(
                 progress: _hold,
                 // A held finger during the fuse aborts before anything sounds,
                 // which is a different promise from ending a live excuse.
-                label: armed
-                    ? 'HOLD ANYWHERE TO ABORT'
-                    : 'HOLD ANYWHERE TO EXIT',
+                label: armed ? loc.blackoutHoldToAbort : loc.blackoutHoldToExit,
                 visible: hints,
               ),
             ],
@@ -217,9 +217,10 @@ Color _red(double opacity) => ExitColors.red.withValues(alpha: opacity);
 
 /// The fuse: a big countdown, dim red, and nothing else.
 class _ArmedBody extends StatelessWidget {
-  const _ArmedBody({required this.countdown});
+  const _ArmedBody({required this.countdown, required this.loc});
 
   final int countdown;
+  final AppLocalizations loc;
 
   @override
   Widget build(BuildContext context) {
@@ -227,7 +228,10 @@ class _ArmedBody extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text('ARMED', style: mono(9, color: _red(0.5), letterSpacing: 5)),
+          Text(
+            loc.blackoutArmed,
+            style: mono(9, color: _red(0.5), letterSpacing: 5),
+          ),
           const SizedBox(height: 14),
           Text(
             '$countdown',
@@ -235,7 +239,7 @@ class _ArmedBody extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'FIRING IN…',
+            loc.blackoutFiringIn,
             style: mono(8, color: _grey(0.3), letterSpacing: 3),
           ),
         ],
@@ -247,19 +251,20 @@ class _ArmedBody extends StatelessWidget {
 /// The one-word state, top of the screen. Red once it is live, so a glance is
 /// enough to tell "it is running" from "it stopped".
 class _PhaseMarker extends StatelessWidget {
-  const _PhaseMarker({required this.phase});
+  const _PhaseMarker({required this.phase, required this.loc});
 
   final FirePhase phase;
+  final AppLocalizations loc;
 
   @override
   Widget build(BuildContext context) {
     final bool live = phase == FirePhase.live;
     final String text = switch (phase) {
-      FirePhase.idle => 'STANDBY',
-      FirePhase.armed => 'ARMED',
-      FirePhase.live => 'LIVE',
-      FirePhase.paused => 'PAUSED',
-      FirePhase.done => 'DONE',
+      FirePhase.idle => loc.blackoutStandby,
+      FirePhase.armed => loc.blackoutArmed,
+      FirePhase.live => loc.blackoutLive,
+      FirePhase.paused => loc.blackoutPaused,
+      FirePhase.done => loc.blackoutDone,
     };
 
     return Align(
@@ -294,9 +299,10 @@ class _PhaseMarker extends StatelessWidget {
 /// what you say in them decides whether it works. Having the line already in
 /// front of you turns a sound into a complete exit.
 class _GetOutLine extends StatelessWidget {
-  const _GetOutLine({required this.excuse});
+  const _GetOutLine({required this.excuse, required this.loc});
 
   final String? excuse;
+  final AppLocalizations loc;
 
   @override
   Widget build(BuildContext context) {
@@ -312,7 +318,7 @@ class _GetOutLine extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              'YOUR GET-OUT LINE',
+              loc.blackoutGetOutLine,
               style: mono(8, color: _grey(0.18), letterSpacing: 4),
             ),
             const SizedBox(height: 16),

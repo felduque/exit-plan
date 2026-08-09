@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../calls/call_dispatcher.dart';
 import '../core/theme.dart';
 import '../core/premium_config.dart';
+import '../l10n/app_localizations.dart';
 import '../models/call_preset.dart';
 import '../state/app_state.dart';
 import '../widgets/ad_banner.dart';
@@ -23,6 +24,7 @@ class CallsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppState state = AppScope.of(context);
+    final AppLocalizations loc = AppLocalizations.of(context);
     final List<CallPreset> presets = state.callPresets;
 
     return TipsSuppressor(
@@ -36,7 +38,9 @@ class CallsScreen extends StatelessWidget {
                 child: Row(
                   children: <Widget>[
                     const BackChevron(),
-                    Expanded(child: Text('Fake calls', style: ExitText.title)),
+                    Expanded(
+                      child: Text(loc.callsScreenTitle, style: ExitText.title),
+                    ),
                     _AddButton(onTap: () => _newPreset(context)),
                   ],
                 ),
@@ -109,9 +113,11 @@ class _AddButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Semantics(
       button: true,
-      label: 'Add template',
+      label: loc.callsAddTemplate,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -127,7 +133,7 @@ class _AddButton extends StatelessWidget {
             children: <Widget>[
               const Icon(Icons.add, size: 13, color: ExitColors.hi),
               const SizedBox(width: 7),
-              Text('NEW', style: mono(10, color: ExitColors.hi)),
+              Text(loc.callsNew, style: mono(10, color: ExitColors.hi)),
             ],
           ),
         ),
@@ -143,6 +149,8 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 22),
       child: Center(
@@ -152,18 +160,17 @@ class _EmptyState extends StatelessWidget {
             const Icon(Icons.call_rounded, size: 26, color: ExitColors.dim),
             const SizedBox(height: 14),
             Text(
-              'No call templates yet',
+              loc.callsEmptyTitle,
               style: sans(15, weight: 600, letterSpacing: -0.2),
             ),
             const SizedBox(height: 8),
             Text(
-              'Save a name, a photo and a screen style, and ring it '
-              'whenever you need a way out.',
+              loc.callsEmptyBody,
               textAlign: TextAlign.center,
               style: ExitText.body,
             ),
             const SizedBox(height: 18),
-            PrimaryButton(label: 'Add template', onTap: onTap),
+            PrimaryButton(label: loc.callsAddTemplate, onTap: onTap),
           ],
         ),
       ),

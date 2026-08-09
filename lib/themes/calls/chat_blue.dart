@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../call_theme.dart';
 import '../call_visuals.dart';
 
@@ -88,160 +89,173 @@ class _SquareAvatar extends StatelessWidget {
 }
 
 Widget _buildIncoming(CallIncomingContext ctx) {
-  return Scaffold(
-    backgroundColor: _base,
-    body: Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        const _Gradient(),
-        if (ctx.avatarPath != null)
-          CallBackdrop(
-            avatarPath: ctx.avatarPath,
-            name: ctx.name,
-            baseColor: _base,
-            scrim: _scrim,
-          ),
-        const SafeArea(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: CallStatusBar(color: _text),
-          ),
-        ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 34),
-            child: Column(
-              children: <Widget>[
-                const SizedBox(height: 34),
-                Text(
-                  'Incoming voice call',
-                  style: TextStyle(
-                    color: _subtext,
-                    fontSize: 13.5,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-                const Spacer(),
-                _SquareAvatar(
-                  avatarPath: ctx.avatarPath,
-                  name: ctx.name,
-                  diameter: 124,
-                ),
-                const SizedBox(height: 22),
-                Text(
-                  ctx.name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: _text,
-                    fontSize: 27,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (ctx.number.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 6),
-                  Text(
-                    ctx.number,
-                    style: TextStyle(color: _subtext, fontSize: 14.5),
-                  ),
-                ],
-                const Spacer(flex: 2),
-                _IncomingActions(
-                  onDecline: ctx.onDecline,
-                  onAccept: ctx.onAccept,
-                ),
-                const SizedBox(height: 10),
-              ],
+  return Builder(
+    builder: (BuildContext context) {
+      final AppLocalizations loc = AppLocalizations.of(context);
+      return Scaffold(
+        backgroundColor: _base,
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            const _Gradient(),
+            if (ctx.avatarPath != null)
+              CallBackdrop(
+                avatarPath: ctx.avatarPath,
+                name: ctx.name,
+                baseColor: _base,
+                scrim: _scrim,
+              ),
+            const SafeArea(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: CallStatusBar(color: _text),
+              ),
             ),
-          ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 34),
+                child: Column(
+                  children: <Widget>[
+                    const SizedBox(height: 34),
+                    Text(
+                      loc.callChatBlueIncomingVoiceCall,
+                      style: TextStyle(
+                        color: _subtext,
+                        fontSize: 13.5,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const Spacer(),
+                    _SquareAvatar(
+                      avatarPath: ctx.avatarPath,
+                      name: ctx.name,
+                      diameter: 124,
+                    ),
+                    const SizedBox(height: 22),
+                    Text(
+                      ctx.name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: _text,
+                        fontSize: 27,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (ctx.number.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 6),
+                      Text(
+                        ctx.number,
+                        style: TextStyle(color: _subtext, fontSize: 14.5),
+                      ),
+                    ],
+                    const Spacer(flex: 2),
+                    _IncomingActions(
+                      onDecline: ctx.onDecline,
+                      onAccept: ctx.onAccept,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
+      );
+    },
   );
 }
 
 Widget _buildActive(CallActiveContext ctx) {
-  return Scaffold(
-    backgroundColor: _base,
-    body: Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        const _Gradient(),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 26),
-            child: Column(
-              children: <Widget>[
-                const Spacer(),
-                _SquareAvatar(
-                  avatarPath: ctx.avatarPath,
-                  name: ctx.name,
-                  diameter: 96,
+  return Builder(
+    builder: (BuildContext context) {
+      final AppLocalizations loc = AppLocalizations.of(context);
+      return Scaffold(
+        backgroundColor: _base,
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            const _Gradient(),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 26,
+                  vertical: 26,
                 ),
-                const SizedBox(height: 18),
-                Text(
-                  ctx.name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: _text,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  ctx.timer,
-                  style: TextStyle(
-                    color: _subtext,
-                    fontSize: 14,
-                    fontFeatures: const <FontFeature>[
-                      FontFeature.tabularFigures(),
-                    ],
-                  ),
-                ),
-                const Spacer(flex: 2),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                child: Column(
                   children: <Widget>[
-                    CallGridButton(
-                      icon: ctx.muted
-                          ? Icons.mic_off_rounded
-                          : Icons.mic_rounded,
-                      label: 'Mute',
-                      active: ctx.muted,
-                      onTap: ctx.onMute,
-                      tint: _base,
+                    const Spacer(),
+                    _SquareAvatar(
+                      avatarPath: ctx.avatarPath,
+                      name: ctx.name,
+                      diameter: 96,
                     ),
-                    CallGridButton(
-                      icon: Icons.videocam_rounded,
-                      label: 'Video',
-                      active: ctx.videoOn,
-                      onTap: ctx.onVideo,
-                      tint: _base,
+                    const SizedBox(height: 18),
+                    Text(
+                      ctx.name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: _text,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    CallGridButton(
-                      icon: Icons.volume_up_rounded,
-                      label: 'Speaker',
-                      active: ctx.speaker,
-                      onTap: ctx.onSpeaker,
-                      tint: _base,
+                    const SizedBox(height: 6),
+                    Text(
+                      ctx.timer,
+                      style: TextStyle(
+                        color: _subtext,
+                        fontSize: 14,
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
                     ),
+                    const Spacer(flex: 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: <Widget>[
+                        CallGridButton(
+                          icon: ctx.muted
+                              ? Icons.mic_off_rounded
+                              : Icons.mic_rounded,
+                          label: loc.callGridMute,
+                          active: ctx.muted,
+                          onTap: ctx.onMute,
+                          tint: _base,
+                        ),
+                        CallGridButton(
+                          icon: Icons.videocam_rounded,
+                          label: loc.callChatBlueVideo,
+                          active: ctx.videoOn,
+                          onTap: ctx.onVideo,
+                          tint: _base,
+                        ),
+                        CallGridButton(
+                          icon: Icons.volume_up_rounded,
+                          label: loc.callGridSpeaker,
+                          active: ctx.speaker,
+                          onTap: ctx.onSpeaker,
+                          tint: _base,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    CallActionButton(
+                      icon: Icons.call_end_rounded,
+                      background: _decline,
+                      iconColor: Colors.white,
+                      onTap: ctx.onHangUp,
+                      semanticLabel: loc.callActionEndCall,
+                    ),
+                    const SizedBox(height: 6),
                   ],
                 ),
-                const SizedBox(height: 30),
-                CallActionButton(
-                  icon: Icons.call_end_rounded,
-                  background: _decline,
-                  iconColor: Colors.white,
-                  onTap: ctx.onHangUp,
-                  semanticLabel: 'End call',
-                ),
-                const SizedBox(height: 6),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
-      ],
-    ),
+      );
+    },
   );
 }
 
@@ -253,6 +267,8 @@ class _IncomingActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 44),
       child: Row(
@@ -263,9 +279,9 @@ class _IncomingActions extends StatelessWidget {
             background: _decline,
             iconColor: Colors.white,
             onTap: onDecline,
-            label: 'Decline',
+            label: loc.callActionDecline,
             labelColor: _subtext,
-            semanticLabel: 'Decline call',
+            semanticLabel: loc.callActionDeclineCall,
           ),
           CallActionButton(
             icon: Icons.call_rounded,
@@ -273,9 +289,9 @@ class _IncomingActions extends StatelessWidget {
             iconColor: Colors.white,
             onTap: onAccept,
             pulse: true,
-            label: 'Accept',
+            label: loc.callActionAccept,
             labelColor: _subtext,
-            semanticLabel: 'Accept call',
+            semanticLabel: loc.callActionAcceptCall,
           ),
         ],
       ),

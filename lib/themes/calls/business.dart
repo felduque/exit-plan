@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../call_theme.dart';
 import '../call_visuals.dart';
 
@@ -87,9 +88,9 @@ class _WorkBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(5),
         border: Border.all(color: _badge.withValues(alpha: 0.45)),
       ),
-      child: const Text(
-        'WORK',
-        style: TextStyle(
+      child: Text(
+        AppLocalizations.of(context).callBusinessBadge,
+        style: const TextStyle(
           color: Color(0xFF9CC0EA),
           fontSize: 10,
           fontWeight: FontWeight.w700,
@@ -101,145 +102,164 @@ class _WorkBadge extends StatelessWidget {
 }
 
 Widget _buildIncoming(CallIncomingContext ctx) {
-  return Scaffold(
-    backgroundColor: _base,
-    body: Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: <Color>[Color(0xFF1D2530), Color(0xFF12161C)],
+  return Builder(
+    builder: (BuildContext context) {
+      final AppLocalizations loc = AppLocalizations.of(context);
+      return Scaffold(
+        backgroundColor: _base,
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: <Color>[Color(0xFF1D2530), Color(0xFF12161C)],
+                ),
+              ),
+              child: SizedBox.expand(),
             ),
-          ),
-          child: SizedBox.expand(),
+            const SafeArea(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: CallStatusBar(color: _subtext),
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 26,
+                  vertical: 34,
+                ),
+                child: Column(
+                  children: <Widget>[
+                    const SizedBox(height: 34),
+                    const _WorkBadge(),
+                    const Spacer(),
+                    _Monogram(
+                      avatarPath: ctx.avatarPath,
+                      name: ctx.name,
+                      size: 112,
+                    ),
+                    const SizedBox(height: 22),
+                    Text(
+                      ctx.name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: _text,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      ctx.number.isEmpty
+                          ? loc.callBusinessIncomingCall
+                          : ctx.number,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: _subtext, fontSize: 14.5),
+                    ),
+                    const Spacer(flex: 2),
+                    _IncomingActions(
+                      onDecline: ctx.onDecline,
+                      onAccept: ctx.onAccept,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        const SafeArea(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: CallStatusBar(color: _subtext),
-          ),
-        ),
-        SafeArea(
+      );
+    },
+  );
+}
+
+Widget _buildActive(CallActiveContext ctx) {
+  return Builder(
+    builder: (BuildContext context) {
+      final AppLocalizations loc = AppLocalizations.of(context);
+      return Scaffold(
+        backgroundColor: _base,
+        body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 34),
+            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 28),
             child: Column(
               children: <Widget>[
-                const SizedBox(height: 34),
-                const _WorkBadge(),
                 const Spacer(),
-                _Monogram(
-                  avatarPath: ctx.avatarPath,
-                  name: ctx.name,
-                  size: 112,
-                ),
-                const SizedBox(height: 22),
+                _Monogram(avatarPath: ctx.avatarPath, name: ctx.name, size: 88),
+                const SizedBox(height: 18),
                 Text(
                   ctx.name,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: _text,
-                    fontSize: 26,
+                    fontSize: 23,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 6),
                 Text(
-                  ctx.number.isEmpty ? 'Incoming call' : ctx.number,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: _subtext, fontSize: 14.5),
+                  ctx.timer,
+                  style: TextStyle(
+                    color: _subtext,
+                    fontSize: 14.5,
+                    fontFeatures: const <FontFeature>[
+                      FontFeature.tabularFigures(),
+                    ],
+                  ),
                 ),
                 const Spacer(flex: 2),
-                _IncomingActions(
-                  onDecline: ctx.onDecline,
-                  onAccept: ctx.onAccept,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    CallGridButton(
+                      icon: ctx.muted
+                          ? Icons.mic_off_rounded
+                          : Icons.mic_rounded,
+                      label: loc.callGridMute,
+                      active: ctx.muted,
+                      onTap: ctx.onMute,
+                      tint: _base,
+                      inactiveBackground: _tile,
+                    ),
+                    CallGridButton(
+                      icon: Icons.dialpad_rounded,
+                      label: loc.callGridKeypad,
+                      active: ctx.keypadOpen,
+                      onTap: ctx.onKeypad,
+                      tint: _base,
+                      inactiveBackground: _tile,
+                    ),
+                    CallGridButton(
+                      icon: Icons.volume_up_rounded,
+                      label: loc.callGridSpeaker,
+                      active: ctx.speaker,
+                      onTap: ctx.onSpeaker,
+                      tint: _base,
+                      inactiveBackground: _tile,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 28),
+                CallActionButton(
+                  icon: Icons.call_end_rounded,
+                  background: _decline,
+                  iconColor: Colors.white,
+                  onTap: ctx.onHangUp,
+                  semanticLabel: loc.callActionEndCall,
+                ),
+                const SizedBox(height: 6),
               ],
             ),
           ),
         ),
-      ],
-    ),
-  );
-}
-
-Widget _buildActive(CallActiveContext ctx) {
-  return Scaffold(
-    backgroundColor: _base,
-    body: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 28),
-        child: Column(
-          children: <Widget>[
-            const Spacer(),
-            _Monogram(avatarPath: ctx.avatarPath, name: ctx.name, size: 88),
-            const SizedBox(height: 18),
-            Text(
-              ctx.name,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: _text,
-                fontSize: 23,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              ctx.timer,
-              style: TextStyle(
-                color: _subtext,
-                fontSize: 14.5,
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-              ),
-            ),
-            const Spacer(flex: 2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                CallGridButton(
-                  icon: ctx.muted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                  label: 'Mute',
-                  active: ctx.muted,
-                  onTap: ctx.onMute,
-                  tint: _base,
-                  inactiveBackground: _tile,
-                ),
-                CallGridButton(
-                  icon: Icons.dialpad_rounded,
-                  label: 'Keypad',
-                  active: ctx.keypadOpen,
-                  onTap: ctx.onKeypad,
-                  tint: _base,
-                  inactiveBackground: _tile,
-                ),
-                CallGridButton(
-                  icon: Icons.volume_up_rounded,
-                  label: 'Speaker',
-                  active: ctx.speaker,
-                  onTap: ctx.onSpeaker,
-                  tint: _base,
-                  inactiveBackground: _tile,
-                ),
-              ],
-            ),
-            const SizedBox(height: 28),
-            CallActionButton(
-              icon: Icons.call_end_rounded,
-              background: _decline,
-              iconColor: Colors.white,
-              onTap: ctx.onHangUp,
-              semanticLabel: 'End call',
-            ),
-            const SizedBox(height: 6),
-          ],
-        ),
-      ),
-    ),
+      );
+    },
   );
 }
 
@@ -251,6 +271,8 @@ class _IncomingActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       child: Row(
@@ -261,9 +283,9 @@ class _IncomingActions extends StatelessWidget {
             background: _decline,
             iconColor: Colors.white,
             onTap: onDecline,
-            label: 'Decline',
+            label: loc.callActionDecline,
             labelColor: _subtext,
-            semanticLabel: 'Decline call',
+            semanticLabel: loc.callActionDeclineCall,
           ),
           CallActionButton(
             icon: Icons.call_rounded,
@@ -271,9 +293,9 @@ class _IncomingActions extends StatelessWidget {
             iconColor: Colors.white,
             onTap: onAccept,
             pulse: true,
-            label: 'Answer',
+            label: loc.callBusinessAnswer,
             labelColor: _subtext,
-            semanticLabel: 'Accept call',
+            semanticLabel: loc.callActionAcceptCall,
           ),
         ],
       ),

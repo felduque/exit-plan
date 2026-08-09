@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/escape_sound.dart';
 import '../state/app_state.dart';
 import '../state/ui_flags.dart';
@@ -20,6 +21,7 @@ Future<void> showSlotPicker(BuildContext context, EscapeSound incoming) async {
       backgroundColor: Colors.transparent,
       barrierColor: const Color(0x9E000000),
       builder: (BuildContext sheetContext) {
+        final AppLocalizations loc = AppLocalizations.of(sheetContext);
         return Container(
           decoration: const BoxDecoration(
             color: ExitColors.surf2,
@@ -43,7 +45,7 @@ Future<void> showSlotPicker(BuildContext context, EscapeSound incoming) async {
                     ),
                   ),
                   Text(
-                    'Pin to which slot?',
+                    loc.slotPickerTitle,
                     style: sans(17, weight: 600, letterSpacing: -0.3),
                   ),
                   const SizedBox(height: 6),
@@ -51,7 +53,7 @@ Future<void> showSlotPicker(BuildContext context, EscapeSound incoming) async {
                     TextSpan(
                       style: ExitText.body,
                       children: <InlineSpan>[
-                        const TextSpan(text: 'Pinning '),
+                        TextSpan(text: loc.slotPickerPinningPrefix),
                         TextSpan(
                           text: incoming.label,
                           style: sans(11, weight: 500, height: 1.4),
@@ -90,7 +92,7 @@ Future<void> showSlotPicker(BuildContext context, EscapeSound incoming) async {
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         child: Center(
                           child: Text(
-                            'Cancel',
+                            loc.confirmCancel,
                             style: sans(13, weight: 500, color: ExitColors.mid),
                           ),
                         ),
@@ -123,9 +125,11 @@ class _SlotCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Semantics(
       button: true,
-      label: 'Replace slot 0${index + 1}, ${current.label}',
+      label: loc.slotPickerReplaceSlot(index + 1, current.label),
       child: Panel(
         onTap: onTap,
         radius: ExitRadius.tile,
@@ -134,7 +138,7 @@ class _SlotCell extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text('SLOT 0${index + 1}', style: ExitText.badge),
+            Text(loc.slotPickerSlotBadge(index + 1), style: ExitText.badge),
             const SizedBox(height: 6),
             Row(
               children: <Widget>[

@@ -9,6 +9,7 @@ import '../core/premium_config.dart';
 import '../core/theme.dart';
 import '../data/system_catalog.dart';
 import '../data/user_files.dart';
+import '../l10n/app_localizations.dart';
 import '../models/enums.dart';
 import '../models/escape_sound.dart';
 import '../models/exit_category.dart';
@@ -117,6 +118,7 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   Widget build(BuildContext context) {
     final AppState state = AppScope.of(context);
+    final AppLocalizations loc = AppLocalizations.of(context);
 
     return TipsSuppressor(
       child: Scaffold(
@@ -131,7 +133,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       icon: Icons.close,
                       onTap: () => Navigator.of(context).pop(),
                     ),
-                    Text('New exit', style: ExitText.title),
+                    Text(loc.editorTitle, style: ExitText.title),
                   ],
                 ),
               ),
@@ -143,7 +145,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       Panel(
                         borderColor: ExitColors.red,
                         child: Text(
-                          'This file could not be read.',
+                          loc.editorFileUnreadable,
                           style: ExitText.row.copyWith(color: ExitColors.red),
                         ),
                       )
@@ -175,7 +177,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       ),
                     ],
                     const SizedBox(height: 20),
-                    const _FieldCaption('LABEL'),
+                    _FieldCaption(loc.editorFieldLabel),
                     Panel(
                       radius: ExitRadius.field,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -187,21 +189,21 @@ class _EditorScreenState extends State<EditorScreen> {
                         cursorWidth: 2,
                         decoration: InputDecoration(
                           border: InputBorder.none,
-                          hintText: 'Name it',
+                          hintText: loc.editorNameHint,
                           hintStyle: sans(14, color: ExitColors.dim),
                         ),
                         onChanged: (_) => setState(() {}),
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const _FieldCaption('ICON'),
+                    _FieldCaption(loc.editorFieldIcon),
                     _IconPicker(
                       selected: _icon,
                       onSelected: (String value) =>
                           setState(() => _icon = value),
                     ),
                     const SizedBox(height: 20),
-                    const _FieldCaption('TARGET CATEGORY'),
+                    _FieldCaption(loc.editorFieldTargetCategory),
                     _CategoryField(
                       category: _categoryId == null
                           ? null
@@ -240,7 +242,7 @@ class _EditorScreenState extends State<EditorScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(22, 8, 22, 28),
                 child: PrimaryButton(
-                  label: 'Save exit',
+                  label: loc.editorSaveExit,
                   enabled: _canSave,
                   onTap: _canSave ? () => _save(state) : null,
                 ),
@@ -323,10 +325,11 @@ class _EditorScreenState extends State<EditorScreen> {
       return;
     }
     if (!mounted) return;
+    final AppLocalizations loc = AppLocalizations.of(context);
     final ExitCategory category = ExitCategory(
       id: 'usercat-${DateTime.now().microsecondsSinceEpoch}',
       label: name,
-      description: 'Your own category.',
+      description: loc.editorNewCategoryDescription,
       icon: _newCategoryIcon,
       origin: SoundOrigin.user,
     );
@@ -402,6 +405,7 @@ Future<String?> showCategorySheet(
       backgroundColor: Colors.transparent,
       barrierColor: const Color(0x9E000000),
       builder: (BuildContext sheetContext) {
+        final AppLocalizations loc = AppLocalizations.of(sheetContext);
         return Container(
           decoration: const BoxDecoration(
             color: ExitColors.surf2,
@@ -425,7 +429,7 @@ Future<String?> showCategorySheet(
                     ),
                   ),
                   Text(
-                    'Save it where?',
+                    loc.editorSaveItWhere,
                     style: sans(17, weight: 600, letterSpacing: -0.3),
                   ),
                   const SizedBox(height: 18),
@@ -461,7 +465,7 @@ Future<String?> showCategorySheet(
                         const Icon(Icons.add, size: 16, color: ExitColors.mid),
                         const SizedBox(width: 11),
                         Text(
-                          'New category',
+                          loc.editorNewCategory,
                           style: sans(13, weight: 500, color: ExitColors.mid),
                         ),
                       ],
@@ -501,9 +505,11 @@ class _PreviewButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Semantics(
       button: true,
-      label: playing ? 'Stop preview' : 'Preview window',
+      label: playing ? loc.editorStopPreview : loc.editorPreviewWindow,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -527,7 +533,7 @@ class _PreviewButton extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  playing ? 'Stop preview' : 'Preview window',
+                  playing ? loc.editorStopPreview : loc.editorPreviewWindow,
                   style: sans(11, weight: 500, color: ExitColors.green),
                 ),
               ],
@@ -585,6 +591,7 @@ class _CategoryField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
     final ExitCategory? c = category;
     final Color accent = c == null
         ? ExitColors.dim
@@ -592,7 +599,7 @@ class _CategoryField extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: 'Target category',
+      label: loc.editorTargetCategory,
       child: Panel(
         onTap: onTap,
         radius: ExitRadius.field,
@@ -603,7 +610,7 @@ class _CategoryField extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                c?.label ?? 'Pick one',
+                c?.label ?? loc.editorPickOne,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: c == null
@@ -611,7 +618,7 @@ class _CategoryField extends StatelessWidget {
                     : sans(14, weight: 500),
               ),
             ),
-            Text('CHANGE ▾', style: mono(11)),
+            Text(loc.editorChange, style: mono(11)),
           ],
         ),
       ),
@@ -678,13 +685,15 @@ class _NewCategoryForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Panel(
       radius: ExitRadius.field,
       borderColor: ExitColors.greenLine,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('NEW CATEGORY', style: ExitText.caption),
+          Text(loc.editorNewCategoryCaption, style: ExitText.caption),
           const SizedBox(height: 8),
           TextField(
             controller: controller,
@@ -695,7 +704,7 @@ class _NewCategoryForm extends StatelessWidget {
             decoration: InputDecoration(
               isDense: true,
               border: const UnderlineInputBorder(),
-              hintText: 'Name',
+              hintText: loc.editorCategoryNameHint,
               hintStyle: sans(14, color: ExitColors.dim),
             ),
           ),
@@ -710,7 +719,7 @@ class _NewCategoryForm extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(6),
                   child: Text(
-                    'Cancel',
+                    loc.editorCancel,
                     style: sans(13, weight: 500, color: ExitColors.mid),
                   ),
                 ),
@@ -722,7 +731,7 @@ class _NewCategoryForm extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(6),
                   child: Text(
-                    'Create',
+                    loc.editorCreate,
                     style: sans(13, weight: 600, color: ExitColors.green),
                   ),
                 ),

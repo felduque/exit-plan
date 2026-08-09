@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 import '../data/system_catalog.dart';
+import '../l10n/app_localizations.dart';
 import '../models/call_preset.dart';
 import '../state/app_state.dart';
 import '../themes/call_theme_registry.dart';
 import 'browse_row.dart';
 import 'call_preset_card.dart';
+import 'language_toggle.dart';
 import 'quick_slot_button.dart';
 import 'selectors.dart';
 
@@ -30,7 +32,9 @@ class _IntroOverlayState extends State<IntroOverlay> {
   int _step = 0;
   int _delayDemo = 10;
 
-  static int get _lastStep => _kickers.length - 1;
+  /// The step count is a fixed property of the tour itself, independent of
+  /// the (now build-time, localized) copy arrays below.
+  static const int _lastStep = 3;
 
   void _next() {
     if (_step >= _lastStep) {
@@ -48,6 +52,26 @@ class _IntroOverlayState extends State<IntroOverlay> {
   @override
   Widget build(BuildContext context) {
     final AppState state = AppScope.of(context);
+    final AppLocalizations loc = AppLocalizations.of(context);
+
+    final List<String> kickers = <String>[
+      loc.introKicker0,
+      loc.introKicker1,
+      loc.introKicker2,
+      loc.introKicker3,
+    ];
+    final List<String> titles = <String>[
+      loc.introTitle0,
+      loc.introTitle1,
+      loc.introTitle2,
+      loc.introTitle3,
+    ];
+    final List<String> bodies = <String>[
+      loc.introBody0,
+      loc.introBody1,
+      loc.introBody2,
+      loc.introBody3,
+    ];
 
     return PopScope(
       canPop: false,
@@ -65,7 +89,7 @@ class _IntroOverlayState extends State<IntroOverlay> {
                   children: <Widget>[
                     Row(
                       children: <Widget>[
-                        for (int i = 0; i < _kickers.length; i++) ...<Widget>[
+                        for (int i = 0; i <= _lastStep; i++) ...<Widget>[
                           if (i > 0) const SizedBox(width: 6),
                           Container(
                             width: 24,
@@ -82,13 +106,20 @@ class _IntroOverlayState extends State<IntroOverlay> {
                         ],
                       ],
                     ),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: widget.onDone,
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: Text('SKIP', style: mono(10)),
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const LanguageToggle(),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: widget.onDone,
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Text(loc.introSkip, style: mono(10)),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -110,14 +141,14 @@ class _IntroOverlayState extends State<IntroOverlay> {
                             vertical: 6,
                           ),
                           child: Text(
-                            'STEP 0${_step + 1} · ${_kickers[_step]}',
+                            loc.introStepLabel(_step + 1, kickers[_step]),
                             style: mono(9),
                           ),
                         ),
                       ),
                       const SizedBox(height: 22),
                       Text(
-                        _titles[_step],
+                        titles[_step],
                         style: sans(
                           30,
                           weight: 600,
@@ -127,11 +158,11 @@ class _IntroOverlayState extends State<IntroOverlay> {
                       ),
                       const SizedBox(height: 22),
                       Text(
-                        _bodies[_step],
+                        bodies[_step],
                         style: sans(13, color: ExitColors.mid, height: 1.65),
                       ),
                       const SizedBox(height: 26),
-                      _demo(state),
+                      _demo(state, loc),
                     ],
                   ),
                 ),
@@ -139,7 +170,7 @@ class _IntroOverlayState extends State<IntroOverlay> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(32, 0, 32, 28),
                 child: PrimaryButton.neutral(
-                  label: _step == _lastStep ? 'Start' : 'Next',
+                  label: _step == _lastStep ? loc.introStart : loc.introNext,
                   onTap: _next,
                 ),
               ),
@@ -150,7 +181,7 @@ class _IntroOverlayState extends State<IntroOverlay> {
     );
   }
 
-  Widget _demo(AppState state) {
+  Widget _demo(AppState state, AppLocalizations loc) {
     switch (_step) {
       case 0:
         return SizedBox(
@@ -201,7 +232,7 @@ class _IntroOverlayState extends State<IntroOverlay> {
         return CallPresetCard(
           preset: CallPreset(
             id: 'intro-demo',
-            name: 'Mom',
+            name: loc.introDemoCallerName,
             number: '+1 555 0100',
             themeId: kDefaultCallThemeId,
             ringtoneSoundId: kFallbackSoundId,
@@ -211,31 +242,4 @@ class _IntroOverlayState extends State<IntroOverlay> {
         );
     }
   }
-
-  static const List<String> _kickers = <String>[
-    'THE EXIT',
-    'DELAY FUSE',
-    'FOUR SLOTS',
-    'FAKE CALLS',
-  ];
-
-  static const List<String> _titles = <String>[
-    'Tap it and\nthe room\nchanges.',
-    'Arm it, then\npocket the\nphone.',
-    'Four exits,\nalways one\ntap away.',
-    'A call\nthat looks\nreal.',
-  ];
-
-  static const List<String> _bodies = <String>[
-    'The screen goes completely black and the sound fires in a loop. '
-        'It looks like the phone is in your pocket and the noise is real.',
-    'Set a fuse of 5, 10 or 30 seconds. Fire it, put the phone away, and let '
-        'the noise go off on its own — completely hands free.',
-    'The home grid holds four sounds. Change any slot while browsing: tap the '
-        'star on a sound and choose which slot it replaces.',
-    'Build a caller under Fake calls: a name, a photo from your gallery, and '
-        'one of six call screens to draw it. Ring it, answer for real, hang up '
-        'when you are ready to go — or let it ring out as a missed call. The '
-        'photo never leaves your phone.',
-  ];
 }

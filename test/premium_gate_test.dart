@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:exitplan/core/premium_config.dart';
-import 'package:exitplan/core/theme.dart';
 import 'package:exitplan/data/gate_baseline.dart';
 import 'package:exitplan/screens/calls_screen.dart';
 import 'package:exitplan/state/app_state.dart';
@@ -9,6 +8,8 @@ import 'package:exitplan/state/premium_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/pump_localized.dart';
 
 /// Free-tier limits are being introduced into an app that shipped without any.
 /// The whole risk of that is retroactively taking something away from someone
@@ -155,34 +156,38 @@ void main() {
       );
     });
 
-    test('a fresh install baselines at zero and blocks the third preset',
-        () async {
-      SharedPreferences.setMockInitialValues(prefsWithPresets(2));
+    test(
+      'a fresh install baselines at zero and blocks the third preset',
+      () async {
+        SharedPreferences.setMockInitialValues(prefsWithPresets(2));
 
-      final AppState state = await AppState.bootstrap();
+        final AppState state = await AppState.bootstrap();
 
-      expect(state.gateBaseline.callPresets, 2);
-      expect(
-        state.canAddCallPreset,
-        isFalse,
-        reason: 'two presets is the free ceiling',
-      );
-      expect(state.callPresetCap, FreeLimits.callPresets);
-    });
+        expect(state.gateBaseline.callPresets, 2);
+        expect(
+          state.canAddCallPreset,
+          isFalse,
+          reason: 'two presets is the free ceiling',
+        );
+        expect(state.callPresetCap, FreeLimits.callPresets);
+      },
+    );
 
-    test('survives a corrupt stored baseline without granting a free pass',
-        () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{
-        'exitplan.gateBaseline': 'not json at all',
-      });
+    test(
+      'survives a corrupt stored baseline without granting a free pass',
+      () async {
+        SharedPreferences.setMockInitialValues(<String, Object>{
+          'exitplan.gateBaseline': 'not json at all',
+        });
 
-      final AppState state = await AppState.bootstrap();
+        final AppState state = await AppState.bootstrap();
 
-      // Unreadable means "never captured", so it is captured now — against an
-      // empty library, which lands on the plain free tier.
-      expect(state.gateBaseline.callPresets, 0);
-      expect(state.gateBaseline.capturedAtMs, greaterThan(0));
-    });
+        // Unreadable means "never captured", so it is captured now — against an
+        // empty library, which lands on the plain free tier.
+        expect(state.gateBaseline.callPresets, 0);
+        expect(state.gateBaseline.capturedAtMs, greaterThan(0));
+      },
+    );
   });
 
   group('the gate sheet', () {
@@ -192,15 +197,7 @@ void main() {
       addTearDown(tester.view.reset);
 
       final AppState state = await AppState.bootstrap();
-      await tester.pumpWidget(
-        AppScope(
-          state: state,
-          child: MaterialApp(
-            theme: buildExitTheme(),
-            home: const CallsScreen(),
-          ),
-        ),
-      );
+      await pumpLocalized(tester, state, const CallsScreen());
       await tester.pump();
       await tester.tap(find.text('NEW'));
       await tester.pumpAndSettle();
@@ -223,16 +220,18 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('tells a grandfathered user their real number, not the free one',
-        (WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues(prefsWithPresets(9));
-      await pumpCalls(tester);
+    testWidgets(
+      'tells a grandfathered user their real number, not the free one',
+      (WidgetTester tester) async {
+        SharedPreferences.setMockInitialValues(prefsWithPresets(9));
+        await pumpCalls(tester);
 
-      // Quoting "the free version covers 2" to somebody holding nine would
-      // read as if six were about to be taken away.
-      expect(find.textContaining('You had 9 before'), findsOneWidget);
-      expect(find.textContaining('The free version covers'), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
+        // Quoting "the free version covers 2" to somebody holding nine would
+        // read as if six were about to be taken away.
+        expect(find.textContaining('You had 9 before'), findsOneWidget);
+        expect(find.textContaining('The free version covers'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

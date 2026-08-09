@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../call_theme.dart';
 import '../call_visuals.dart';
 
@@ -40,132 +41,144 @@ const CallPalette _palette = CallPalette(
 const Color _avatarTint = Color(0xFF3C4043);
 
 Widget _buildIncoming(CallIncomingContext ctx) {
-  return Scaffold(
-    backgroundColor: _base,
-    body: Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        CallBackdrop(
-          avatarPath: ctx.avatarPath,
-          name: ctx.name,
-          baseColor: _base,
-          scrim: _scrim,
+  return Builder(
+    builder: (BuildContext context) {
+      final AppLocalizations loc = AppLocalizations.of(context);
+      return Scaffold(
+        backgroundColor: _base,
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            CallBackdrop(
+              avatarPath: ctx.avatarPath,
+              name: ctx.name,
+              baseColor: _base,
+              scrim: _scrim,
+            ),
+            const SafeArea(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: CallStatusBar(color: _text),
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 34),
+                child: Column(
+                  children: <Widget>[
+                    const SizedBox(height: 26),
+                    Text(
+                      loc.callMaterialIncomingCall,
+                      style: TextStyle(
+                        color: _subtext,
+                        fontSize: 14,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const Spacer(),
+                    CallAvatar(
+                      avatarPath: ctx.avatarPath,
+                      name: ctx.name,
+                      diameter: 118,
+                      tint: _avatarTint,
+                    ),
+                    const SizedBox(height: 22),
+                    Text(
+                      ctx.name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: _text,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (ctx.number.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 6),
+                      Text(
+                        ctx.number,
+                        style: TextStyle(color: _subtext, fontSize: 15),
+                      ),
+                    ],
+                    const Spacer(flex: 2),
+                    _IncomingActions(
+                      onDecline: ctx.onDecline,
+                      onAccept: ctx.onAccept,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        const SafeArea(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: CallStatusBar(color: _text),
-          ),
-        ),
-        SafeArea(
+      );
+    },
+  );
+}
+
+Widget _buildActive(CallActiveContext ctx) {
+  return Builder(
+    builder: (BuildContext context) {
+      final AppLocalizations loc = AppLocalizations.of(context);
+      return Scaffold(
+        backgroundColor: _base,
+        body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 34),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 30),
             child: Column(
               children: <Widget>[
-                const SizedBox(height: 26),
-                Text(
-                  'Incoming call',
-                  style: TextStyle(
-                    color: _subtext,
-                    fontSize: 14,
-                    letterSpacing: 0.3,
-                  ),
-                ),
                 const Spacer(),
                 CallAvatar(
                   avatarPath: ctx.avatarPath,
                   name: ctx.name,
-                  diameter: 118,
+                  diameter: 96,
                   tint: _avatarTint,
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
                 Text(
                   ctx.name,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: _text,
-                    fontSize: 26,
+                    fontSize: 24,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                if (ctx.number.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 6),
-                  Text(
-                    ctx.number,
-                    style: TextStyle(color: _subtext, fontSize: 15),
+                const SizedBox(height: 6),
+                Text(
+                  ctx.timer,
+                  style: TextStyle(
+                    color: _subtext,
+                    fontSize: 15,
+                    fontFeatures: const <FontFeature>[
+                      FontFeature.tabularFigures(),
+                    ],
                   ),
-                ],
-                const Spacer(flex: 2),
-                _IncomingActions(
-                  onDecline: ctx.onDecline,
-                  onAccept: ctx.onAccept,
                 ),
-                const SizedBox(height: 10),
+                const Spacer(flex: 2),
+                _InCallGrid(
+                  muted: ctx.muted,
+                  onMute: ctx.onMute,
+                  speaker: ctx.speaker,
+                  onSpeaker: ctx.onSpeaker,
+                  keypadOpen: ctx.keypadOpen,
+                  onKeypad: ctx.onKeypad,
+                ),
+                const SizedBox(height: 30),
+                CallActionButton(
+                  icon: Icons.call_end_rounded,
+                  background: _decline,
+                  iconColor: Colors.white,
+                  onTap: ctx.onHangUp,
+                  semanticLabel: loc.callActionEndCall,
+                ),
+                const SizedBox(height: 6),
               ],
             ),
           ),
         ),
-      ],
-    ),
-  );
-}
-
-Widget _buildActive(CallActiveContext ctx) {
-  return Scaffold(
-    backgroundColor: _base,
-    body: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 30),
-        child: Column(
-          children: <Widget>[
-            const Spacer(),
-            CallAvatar(
-              avatarPath: ctx.avatarPath,
-              name: ctx.name,
-              diameter: 96,
-              tint: _avatarTint,
-            ),
-            const SizedBox(height: 18),
-            Text(
-              ctx.name,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: _text,
-                fontSize: 24,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              ctx.timer,
-              style: TextStyle(
-                color: _subtext,
-                fontSize: 15,
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-              ),
-            ),
-            const Spacer(flex: 2),
-            _InCallGrid(
-              muted: ctx.muted,
-              onMute: ctx.onMute,
-              speaker: ctx.speaker,
-              onSpeaker: ctx.onSpeaker,
-              keypadOpen: ctx.keypadOpen,
-              onKeypad: ctx.onKeypad,
-            ),
-            const SizedBox(height: 30),
-            CallActionButton(
-              icon: Icons.call_end_rounded,
-              background: _decline,
-              iconColor: Colors.white,
-              onTap: ctx.onHangUp,
-              semanticLabel: 'End call',
-            ),
-            const SizedBox(height: 6),
-          ],
-        ),
-      ),
-    ),
+      );
+    },
   );
 }
 
@@ -179,6 +192,8 @@ class _IncomingActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Row(
@@ -187,25 +202,25 @@ class _IncomingActions extends StatelessWidget {
         children: <Widget>[
           DragUpToConfirm(
             onConfirm: onDecline,
-            hint: 'Swipe up to decline',
+            hint: loc.callMaterialSwipeUpDecline,
             child: CallActionButton(
               icon: Icons.call_end_rounded,
               background: _decline,
               iconColor: Colors.white,
               onTap: callNoop,
-              semanticLabel: 'Decline call',
+              semanticLabel: loc.callActionDeclineCall,
             ),
           ),
           DragUpToConfirm(
             onConfirm: onAccept,
-            hint: 'Swipe up to answer',
+            hint: loc.callMaterialSwipeUpAnswer,
             child: CallActionButton(
               icon: Icons.call_rounded,
               background: _accept,
               iconColor: Colors.white,
               onTap: callNoop,
               pulse: true,
-              semanticLabel: 'Accept call',
+              semanticLabel: loc.callActionAcceptCall,
             ),
           ),
         ],
@@ -234,26 +249,28 @@ class _InCallGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: <Widget>[
         CallGridButton(
           icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
-          label: 'Mute',
+          label: loc.callGridMute,
           active: muted,
           onTap: onMute,
           tint: _base,
         ),
         CallGridButton(
           icon: Icons.dialpad_rounded,
-          label: 'Keypad',
+          label: loc.callGridKeypad,
           active: keypadOpen,
           onTap: onKeypad,
           tint: _base,
         ),
         CallGridButton(
           icon: Icons.volume_up_rounded,
-          label: 'Speaker',
+          label: loc.callGridSpeaker,
           active: speaker,
           onTap: onSpeaker,
           tint: _base,

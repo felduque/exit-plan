@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../call_theme.dart';
 import '../call_visuals.dart';
 
@@ -59,59 +60,64 @@ const Color _avatarTint = Color(0xFFCFD7DB);
 const Color _avatarGlyph = Color(0xFF8696A0);
 
 Widget _buildIncoming(CallIncomingContext ctx) {
-  return Scaffold(
-    backgroundColor: _base,
-    body: Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        const DoodleBackground(),
-        const SafeArea(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: CallStatusBar(color: _text),
-          ),
-        ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 34),
-            child: Column(
-              children: <Widget>[
-                const SizedBox(height: 40),
-                Text(
-                  ctx.name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: _text,
-                    fontSize: 25,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Voice call…',
-                  style: TextStyle(color: _subtext, fontSize: 14.5),
-                ),
-                const Spacer(),
-                CallAvatar(
-                  avatarPath: ctx.avatarPath,
-                  name: ctx.name,
-                  diameter: 128,
-                  tint: _avatarTint,
-                  textColor: _avatarGlyph,
-                  fallbackIcon: kSilhouetteAvatar,
-                ),
-                const Spacer(flex: 2),
-                _IncomingActions(
-                  onDecline: ctx.onDecline,
-                  onAccept: ctx.onAccept,
-                ),
-                const SizedBox(height: 10),
-              ],
+  return Builder(
+    builder: (BuildContext context) {
+      final AppLocalizations loc = AppLocalizations.of(context);
+      return Scaffold(
+        backgroundColor: _base,
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            const DoodleBackground(),
+            const SafeArea(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: CallStatusBar(color: _text),
+              ),
             ),
-          ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 34),
+                child: Column(
+                  children: <Widget>[
+                    const SizedBox(height: 40),
+                    Text(
+                      ctx.name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: _text,
+                        fontSize: 25,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      loc.callChatGreenVoiceCall,
+                      style: TextStyle(color: _subtext, fontSize: 14.5),
+                    ),
+                    const Spacer(),
+                    CallAvatar(
+                      avatarPath: ctx.avatarPath,
+                      name: ctx.name,
+                      diameter: 128,
+                      tint: _avatarTint,
+                      textColor: _avatarGlyph,
+                      fallbackIcon: kSilhouetteAvatar,
+                    ),
+                    const Spacer(flex: 2),
+                    _IncomingActions(
+                      onDecline: ctx.onDecline,
+                      onAccept: ctx.onAccept,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
+      );
+    },
   );
 }
 
@@ -231,9 +237,8 @@ class _DoodlePainter extends CustomPainter {
       // Brick offset per row, matching the tiled look it evokes.
       final double rowOffset = row.isOdd ? _spacing / 2 : 0;
       for (int col = 0; col < cols; col++) {
-        final IconData icon =
-            DoodleBackground._doodles[(row * cols + col) %
-                DoodleBackground._doodles.length];
+        final IconData icon = DoodleBackground
+            ._doodles[(row * cols + col) % DoodleBackground._doodles.length];
         final double dx = col * _spacing + rowOffset - _spacing;
         final double dy = row * _spacing;
         final double angle = (rnd.nextDouble() - 0.5) * 0.35;
@@ -273,6 +278,8 @@ class _IncomingActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 46),
       child: Row(
@@ -283,8 +290,8 @@ class _IncomingActions extends StatelessWidget {
             background: _decline,
             iconColor: Colors.white,
             onTap: onDecline,
-            label: 'Decline',
-            semanticLabel: 'Decline call',
+            label: loc.callActionDecline,
+            semanticLabel: loc.callActionDeclineCall,
           ),
           CallActionButton(
             icon: Icons.call_rounded,
@@ -292,8 +299,8 @@ class _IncomingActions extends StatelessWidget {
             iconColor: Colors.white,
             onTap: onAccept,
             pulse: true,
-            label: 'Accept',
-            semanticLabel: 'Accept call',
+            label: loc.callActionAccept,
+            semanticLabel: loc.callActionAcceptCall,
           ),
         ],
       ),
@@ -325,6 +332,8 @@ class _InCallBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
@@ -338,32 +347,32 @@ class _InCallBar extends StatelessWidget {
             icon: Icons.more_horiz,
             active: false,
             onTap: callNoop,
-            semanticLabel: 'More options',
+            semanticLabel: loc.callChatGreenMoreOptions,
           ),
           _PillButton(
             icon: Icons.videocam_rounded,
             active: videoOn,
             onTap: onVideo,
-            semanticLabel: 'Toggle video',
+            semanticLabel: loc.callChatGreenToggleVideo,
           ),
           _PillButton(
             icon: Icons.volume_up_rounded,
             active: speaker,
             onTap: onSpeaker,
-            semanticLabel: 'Toggle speaker',
+            semanticLabel: loc.callChatGreenToggleSpeaker,
           ),
           _PillButton(
             icon: muted ? Icons.mic_off_rounded : Icons.mic_rounded,
             active: muted,
             onTap: onMute,
-            semanticLabel: 'Toggle mute',
+            semanticLabel: loc.callChatGreenToggleMute,
           ),
           _PillButton(
             icon: Icons.call_end_rounded,
             active: false,
             background: _decline,
             onTap: onHangUp,
-            semanticLabel: 'End call',
+            semanticLabel: loc.callActionEndCall,
           ),
         ],
       ),

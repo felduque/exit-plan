@@ -4,6 +4,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import '../core/premium_config.dart';
 import '../core/theme.dart';
 import '../data/entitlement.dart';
+import '../l10n/app_localizations.dart';
 import '../services/billing_service.dart';
 import '../state/app_state.dart';
 import '../state/ui_flags.dart';
@@ -48,6 +49,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
   @override
   Widget build(BuildContext context) {
     final AppState state = AppScope.of(context);
+    final AppLocalizations loc = AppLocalizations.of(context);
 
     return TipsSuppressor(
       child: Scaffold(
@@ -59,7 +61,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                 child: Row(
                   children: <Widget>[
                     const BackChevron(),
-                    Text('Premium', style: ExitText.title),
+                    Text(loc.premiumTitle, style: ExitText.title),
                   ],
                 ),
               ),
@@ -72,13 +74,13 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     else ...<Widget>[
                       const _Benefits(),
                       const SizedBox(height: 20),
-                      ..._offer(),
+                      ..._offer(loc),
                     ],
                   ],
                 ),
               ),
               if (!state.isPremium) _RestoreRow(onRestore: _restore),
-              const FooterNote('ONE DEVICE · NO ACCOUNT'),
+              FooterNote(loc.premiumFooter),
             ],
           ),
         ),
@@ -86,28 +88,26 @@ class _PremiumScreenState extends State<PremiumScreen> {
     );
   }
 
-  List<Widget> _offer() {
+  List<Widget> _offer(AppLocalizations loc) {
     switch (_billing.phase) {
       case BillingPhase.unavailable:
-        return const <Widget>[
-          _Notice(
-            'Play Billing is not available on this device, so Premium cannot '
-            'be bought here. Everything else in the app works as it always has.',
-          ),
-        ];
+        return <Widget>[_Notice(loc.premiumBillingUnavailable)];
       case BillingPhase.error:
         return <Widget>[
-          _Notice(_billing.error ?? 'Something went wrong.'),
+          _Notice(_billing.error ?? loc.premiumErrorGeneric),
           const SizedBox(height: 12),
-          PrimaryButton.neutral(label: 'Try again', onTap: _billing.loadProducts),
+          PrimaryButton.neutral(
+            label: loc.premiumTryAgain,
+            onTap: _billing.loadProducts,
+          ),
         ];
       case BillingPhase.loading:
-        return const <Widget>[_Notice('Checking prices…')];
+        return <Widget>[_Notice(loc.premiumCheckingPrices)];
       case BillingPhase.pending:
       case BillingPhase.idle:
         final List<ProductDetails> products = _billing.products;
         if (products.isEmpty) {
-          return const <Widget>[_Notice('No plans available right now.')];
+          return <Widget>[_Notice(loc.premiumNoPlans)];
         }
         return <Widget>[
           for (final ProductDetails product in products) ...<Widget>[
@@ -133,24 +133,22 @@ class _Benefits extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Panel(
       radius: ExitRadius.tile,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('PREMIUM', style: ExitText.caption),
+          Text(loc.premiumBenefitsCaption, style: ExitText.caption),
           const SizedBox(height: 10),
-          const _Line('No ads, anywhere in the app'),
-          const _Line('Unlimited fake call templates'),
-          const _Line('Unlimited imported sounds'),
-          const _Line('Unlimited categories of your own'),
+          _Line(loc.premiumBenefitNoAds),
+          _Line(loc.premiumBenefitUnlimitedCalls),
+          _Line(loc.premiumBenefitUnlimitedSounds),
+          _Line(loc.premiumBenefitUnlimitedCategories),
           const SizedBox(height: 12),
-          Text(
-            'The 47 built-in sounds and the four quick exits are free, and '
-            'always will be. Premium only lifts the limits on what you add.',
-            style: ExitText.bodySmall,
-          ),
+          Text(loc.premiumBenefitsFooter, style: ExitText.bodySmall),
         ],
       ),
     );
@@ -196,25 +194,28 @@ class _PlanCard extends StatelessWidget {
 
   bool get _isLifetime => product.id == PremiumProducts.lifetime;
 
-  String get _label => switch (product.id) {
-    PremiumProducts.monthly => 'Monthly',
-    PremiumProducts.yearly => 'Yearly',
-    PremiumProducts.lifetime => 'One payment',
+  String _label(AppLocalizations loc) => switch (product.id) {
+    PremiumProducts.monthly => loc.premiumPlanMonthly,
+    PremiumProducts.yearly => loc.premiumPlanYearly,
+    PremiumProducts.lifetime => loc.premiumPlanLifetime,
     _ => product.title,
   };
 
-  String get _note => switch (product.id) {
-    PremiumProducts.monthly => 'Renews every month · cancel anytime',
-    PremiumProducts.yearly => 'Renews every year · cancel anytime',
-    PremiumProducts.lifetime => 'Yours for good · nothing renews',
+  String _note(AppLocalizations loc) => switch (product.id) {
+    PremiumProducts.monthly => loc.premiumNoteMonthly,
+    PremiumProducts.yearly => loc.premiumNoteYearly,
+    PremiumProducts.lifetime => loc.premiumNoteLifetime,
     _ => '',
   };
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+    final String label = _label(loc);
+
     return Semantics(
       button: true,
-      label: '$_label, ${product.price}',
+      label: loc.premiumPlanSemantics(label, product.price),
       child: Panel(
         onTap: busy ? null : onTap,
         radius: ExitRadius.tile,
@@ -233,16 +234,16 @@ class _PlanCard extends StatelessWidget {
                   // ~29px, and the alternative — ellipsising the plan name —
                   // hides the thing the user is deciding between.
                   if (_isLifetime) ...<Widget>[
-                    const TagChip(
-                      'BEST VALUE',
+                    TagChip(
+                      loc.premiumBestValue,
                       color: ExitColors.green,
                       borderColor: ExitColors.greenLine,
                     ),
                     const SizedBox(height: 6),
                   ],
-                  Text(_label, style: ExitText.row),
+                  Text(label, style: ExitText.row),
                   const SizedBox(height: 3),
-                  Text(_note, style: ExitText.bodySmall),
+                  Text(_note(loc), style: ExitText.bodySmall),
                 ],
               ),
             ),
@@ -267,6 +268,7 @@ class _ActiveNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
     final bool lifetime = entitlement.isLifetime;
     return Panel(
       radius: ExitRadius.tile,
@@ -286,7 +288,9 @@ class _ActiveNote extends StatelessWidget {
               // opens to confirm what they bought.
               Flexible(
                 child: Text(
-                  lifetime ? 'Premium — one payment' : 'Premium — active',
+                  lifetime
+                      ? loc.premiumActiveLifetime
+                      : loc.premiumActiveSubscription,
                   style: sans(13, weight: 600, color: ExitColors.green),
                 ),
               ),
@@ -295,10 +299,8 @@ class _ActiveNote extends StatelessWidget {
           const SizedBox(height: 9),
           Text(
             lifetime
-                ? 'No ads and no limits, for good. Nothing renews and there is '
-                      'nothing to cancel.'
-                : 'No ads and no limits. Manage or cancel it any time in the '
-                      'Play Store, under Subscriptions.',
+                ? loc.premiumActiveLifetimeDetail
+                : loc.premiumActiveSubscriptionDetail,
             style: ExitText.bodySmall,
           ),
         ],
@@ -340,7 +342,7 @@ class _RestoreRow extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Text(
-              'Restore a previous purchase',
+              AppLocalizations.of(context).premiumRestorePurchase,
               textAlign: TextAlign.center,
               style: sans(12, weight: 500, color: ExitColors.mid),
             ),

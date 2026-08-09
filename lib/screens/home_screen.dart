@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/enums.dart';
 import '../state/app_state.dart';
 import '../state/permissions.dart';
@@ -34,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final AppState state = AppScope.of(context);
+    final AppLocalizations loc = AppLocalizations.of(context);
     final LoopChoice loop = _loop ?? loopDefaultFor(state.settings.loopSound);
 
     return Scaffold(
@@ -53,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'QUICK EXITS',
+                      loc.homeQuickExitsLabel,
                       style: mono(9, color: ExitColors.dim, letterSpacing: 2),
                     ),
                     const SizedBox(height: 10),
@@ -119,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => _open(const CallsScreen()),
               ),
             ),
-            const FooterNote('TAP AN EXIT · SCREEN GOES DARK · SOUND FIRES'),
+            FooterNote(loc.homeFooter),
             // Last child, below everything, and deliberately as far from the
             // quick-exit grid as this screen allows — the grid is up inside the
             // scroll view. See ad_banner.dart for why that distance is the
@@ -153,9 +155,11 @@ class _CallsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Semantics(
       button: true,
-      label: 'Fake calls',
+      label: loc.homeFakeCallsLabel,
       child: Panel(
         onTap: onTap,
         radius: ExitRadius.tile,
@@ -168,12 +172,10 @@ class _CallsRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('Fake calls', style: sans(13, weight: 600)),
+                  Text(loc.homeFakeCallsLabel, style: sans(13, weight: 600)),
                   const SizedBox(height: 3),
                   Text(
-                    templateCount == 0
-                        ? 'NO TEMPLATES YET'
-                        : '$templateCount TEMPLATE${templateCount == 1 ? '' : 'S'}',
+                    loc.homeTemplateCount(templateCount),
                     style: mono(9, letterSpacing: 1),
                   ),
                 ],
@@ -215,6 +217,7 @@ class _Masthead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
     void openSettings() => Navigator.of(context).push<void>(
       MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
     );
@@ -262,8 +265,8 @@ class _Masthead extends StatelessWidget {
                         Flexible(
                           child: Text(
                             blocked
-                                ? 'NO NOTIFICATIONS · TAP TO FIX'
-                                : 'STANDBY · $exits EXITS READY',
+                                ? loc.homeNotificationsBlocked
+                                : loc.homeStandby(exits),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: mono(
@@ -289,7 +292,7 @@ class _Masthead extends StatelessWidget {
         if (!premium) ...<Widget>[
           IconTile(
             icon: Icons.workspace_premium_outlined,
-            semanticLabel: 'Premium',
+            semanticLabel: loc.homePremiumIconLabel,
             color: ExitColors.amber,
             onTap: openPremium,
           ),
@@ -297,7 +300,7 @@ class _Masthead extends StatelessWidget {
         ],
         IconTile(
           icon: Icons.settings_outlined,
-          semanticLabel: 'Settings',
+          semanticLabel: loc.homeSettingsIconLabel,
           onTap: openSettings,
         ),
       ],

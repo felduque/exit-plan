@@ -1,4 +1,3 @@
-import 'package:exitplan/core/theme.dart';
 import 'package:exitplan/data/entitlement.dart';
 import 'package:exitplan/screens/home_screen.dart';
 import 'package:exitplan/screens/settings_screen.dart';
@@ -9,6 +8,8 @@ import 'package:exitplan/widgets/ad_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/pump_localized.dart';
 
 /// The banner is the one piece of this app that can hurt someone: it sits on a
 /// panic button, and a layout that shifts under a thumb, or a banner that
@@ -39,12 +40,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     final AppState state = await AppState.bootstrap();
-    await tester.pumpWidget(
-      AppScope(
-        state: state,
-        child: MaterialApp(theme: buildExitTheme(), home: screen),
-      ),
-    );
+    await pumpLocalized(tester, state, screen);
     await tester.pump();
     return state;
   }
@@ -88,7 +84,11 @@ void main() {
 
       for (final Size size in sizes) {
         await pump(tester, const SettingsScreen(), size);
-        expect(tester.takeException(), isNull, reason: 'settings broke at $size');
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'settings broke at $size',
+        );
       }
     });
 

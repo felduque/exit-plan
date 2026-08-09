@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../audio/preview_player.dart';
 import '../core/icons.dart';
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/enums.dart';
 import '../models/escape_sound.dart';
 import '../models/exit_category.dart';
@@ -45,6 +46,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   @override
   Widget build(BuildContext context) {
     final AppState state = AppScope.of(context);
+    final AppLocalizations loc = AppLocalizations.of(context);
     final List<ExitCategory> categories = state.library.categories;
     // A filter can point at a category that was deleted from under it.
     final String? filter = categories.any((ExitCategory c) => c.id == _filter)
@@ -68,7 +70,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
               child: Row(
                 children: <Widget>[
                   const BackChevron(),
-                  Expanded(child: Text('All exits', style: ExitText.title)),
+                  Expanded(child: Text(loc.browseTitle, style: ExitText.title)),
                   _ImportButton(onTap: () => startImport(context)),
                 ],
               ),
@@ -146,10 +148,11 @@ class _BrowseScreenState extends State<BrowseScreen> {
   }
 
   Future<void> _deleteSound(EscapeSound sound) async {
+    final AppLocalizations loc = AppLocalizations.of(context);
     final bool ok = await confirmDestructive(
       context,
-      title: 'Delete sound',
-      message: '${sound.label} and its audio file will be removed.',
+      title: loc.browseDeleteSoundTitle,
+      message: loc.browseDeleteSoundMessage(sound.label),
     );
     if (!ok || !mounted) return;
     await _preview.stop();
@@ -173,6 +176,8 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return SizedBox(
       height: 42,
       child: ListView(
@@ -180,7 +185,7 @@ class _FilterBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(22, 0, 22, 0),
         children: <Widget>[
           _Chip(
-            label: 'ALL',
+            label: loc.browseFilterAll,
             active: selected == null,
             onTap: () => onSelected(null),
           ),
@@ -245,13 +250,14 @@ class _GroupHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
     final Color accent = category.isUser
         ? ExitColors.green
         : accentForCategory(category.id);
 
     return Semantics(
       button: true,
-      label: 'Open ${category.label}',
+      label: loc.browseOpenCategory(category.label),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -289,9 +295,11 @@ class _ImportButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Semantics(
       button: true,
-      label: 'Import audio',
+      label: loc.browseImportAudio,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -307,7 +315,7 @@ class _ImportButton extends StatelessWidget {
             children: <Widget>[
               const Icon(Icons.add, size: 13, color: ExitColors.hi),
               const SizedBox(width: 7),
-              Text('IMPORT', style: mono(10, color: ExitColors.hi)),
+              Text(loc.browseImport, style: mono(10, color: ExitColors.hi)),
             ],
           ),
         ),

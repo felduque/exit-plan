@@ -11,6 +11,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/pump_localized.dart';
+
 /// The paywall has to survive states nobody thinks to design for: a device with
 /// no Play Billing, a purchase stuck mid-flight, a product Play has not finished
 /// publishing. Each of those is a real screen a real user can land on, and an
@@ -40,11 +42,16 @@ void main() {
     addTearDown(tester.view.reset);
 
     final AppState state = await AppState.bootstrap();
-    await tester.pumpWidget(
-      AppScope(
-        state: state,
-        child: MaterialApp(theme: buildExitTheme(), home: screen),
-      ),
+    // Keyed by size: tests that loop over sizes in the same `tester`
+    // (scrolling at one size, then re-pumping at another) would otherwise
+    // have Flutter reuse the previous size's Scrollable — and its leftover
+    // scroll offset — for the new tree, under-building the list at the
+    // smaller size before the test gets a chance to scroll it itself. A
+    // fresh key forces a clean Scrollable per size instead.
+    await pumpLocalized(
+      tester,
+      state,
+      KeyedSubtree(key: ValueKey(size), child: screen),
     );
     await tester.pump();
     return state;
@@ -110,7 +117,9 @@ void main() {
         'exitplan.premium': '{"source":"lifetime"}',
       });
       BillingService.instance.debugSet(
-        products: <ProductDetails>[product(PremiumProducts.lifetime, r'$24.99')],
+        products: <ProductDetails>[
+          product(PremiumProducts.lifetime, r'$24.99'),
+        ],
       );
 
       await pump(tester, const PremiumScreen(), sizes.last);

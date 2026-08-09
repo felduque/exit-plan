@@ -202,10 +202,7 @@ void main() {
     });
 
     test('a template with no number still gets a body', () async {
-      await scheduler.schedule(
-        preset(number: ''),
-        DateTime(2026, 8, 8, 15, 0),
-      );
+      await scheduler.schedule(preset(number: ''), DateTime(2026, 8, 8, 15, 0));
       expect(backend.scheduled.single.body, isNotEmpty);
     });
   });

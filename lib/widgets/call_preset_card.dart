@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/call_preset.dart';
 import '../themes/call_theme_registry.dart';
 import '../themes/call_visuals.dart';
@@ -21,6 +22,8 @@ class CallPresetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
     return Panel(
       radius: ExitRadius.tile,
       onTap: onCall,
@@ -66,7 +69,7 @@ class CallPresetCard extends StatelessWidget {
           const SizedBox(width: 8),
           Semantics(
             button: true,
-            label: 'Edit ${preset.name}',
+            label: loc.callPresetCardEdit(preset.name),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: onEdit,
@@ -82,7 +85,7 @@ class CallPresetCard extends StatelessWidget {
           ),
           Semantics(
             button: true,
-            label: 'Ring ${preset.name}',
+            label: loc.callPresetCardRing(preset.name),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: onCall,
