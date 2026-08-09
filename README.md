@@ -143,6 +143,55 @@ afterwards** (`ScheduleReadinessNotice`):
 Refusing outright would withhold a feature the device can mostly perform, and a
 call two minutes late still gets somebody out of a meeting.
 
+**One timing control, not two.** The editor used to carry a `FUSE` row of
+seconds *and* a `SCHEDULE` row of minutes. They asked the same question in two
+grammars and combined into nonsense — a fuse of 5s with a schedule of 1 minute
+opened the call a minute later and then sat there for another five seconds
+before ringing. `CallSchedule` is now the only axis; `delaySeconds` survives
+only as a migration input and a rollback courtesy. (The delay fuse still exists
+for *sounds*: that path fires from home with no alarm behind it and wants none.)
+
+**Every booking arms two things**, and `CallBookingCenter` owns both:
+
+```
+alarm  ──┐
+         ├─→ whichever lands first opens the call; the other is guarded out
+timer  ──┘
+```
+
+The alarm is what survives the app being closed. The in-process timer is what
+makes a call due *while the user is looking at the app* open the call screen
+directly, instead of leaving them a notification to tap — which is what it did
+before, and which is absurd for a call you are sitting there waiting for.
+`deliver()` is idempotent, because the cold-start payload stays readable after
+the stream has already delivered it.
+
+**The notification rings.** `v1` of the channel was silent, on the reasoning
+that the call screen owns the ringtone — true when the full-screen intent fires,
+and completely wrong when it does not. On Android 14+ every scheduled call
+arrived as a mute, undismissable row in the shade, which reads exactly like the
+call never arriving. `v2` uses the device ringtone with `FLAG_INSISTENT`; the id
+had to be bumped because **an Android channel is immutable once created**.
+
+`FLAG_INSISTENT` means the sound repeats until something cancels the
+notification. That is safe only because `CallBookingCenter.deliver` always does,
+on whichever route the call arrives by. Break that and you have shipped a phone
+that never stops ringing.
+
+**A cold start caused by a call skips the splash.** `AnimatedSplash` is an
+overlay above the navigator and runs for 3.3 seconds, so without this the
+ExitPlan logo animates on top of the fake incoming call — the app announcing
+itself over the one screen that exists to keep it hidden. `main()` reads the
+launch payload before `ExitApp` is constructed, which is the only point early
+enough to skip the splash rather than race it.
+
+**`showWhenLocked` is set in Kotlin, in `onCreate`.** Dart runs after the engine
+boots, long after Android has placed the window — by then the call is already
+behind the keyguard with the display off. It is deliberately not
+`android:showWhenLocked="true"` in the manifest: MainActivity is the launcher
+activity, and a permanent flag would leave the app sitting over the lock screen
+whenever the user locks the phone with it open.
+
 ### Permissions
 
 `POST_NOTIFICATIONS` is still the only one with a runtime dialog, and it now
@@ -291,17 +340,44 @@ something running Android 14+, not just a Pixel.
 - [ ] Let it ring out → missed-call screen, and the phone has stopped buzzing.
 - [ ] Hang up after → auto-end at 30s ends the call by itself, audio and
       vibration stopping together.
-- [ ] Schedule +2 min → close the app → lock the phone → **the screen lights up
-      with the call.**
+Arrival, which is where every reported bug has been so far. The four states are
+genuinely different code paths and all four have to be walked:
+
+- [ ] **App in front of you.** Schedule +1 min and sit there → the call screen
+      opens by itself. **No notification to tap.** This is the in-process timer;
+      before it existed the app just posted a banner and waited.
+- [ ] **App backgrounded** (home button, not swiped) → it rings and arrives.
+- [ ] **App swiped from recents** → it still rings. The notification is posted
+      by a native receiver with no Flutter running.
+- [ ] **Phone locked and screen off** → **the display comes on with the call**,
+      no logo, no splash, straight to the caller.
+- [ ] **Force stop from app info** → nothing arrives. Expected: Android cancels
+      every alarm of a stopped app. Not a bug and not fixable.
+- [ ] Whichever way it arrives, the notification **rings out loud** and the
+      shade has **no leftover row** afterwards.
+- [ ] Tapping call on a scheduled template → the card flips to `PROGRAMADA ·
+      hh:mm`, a snackbar says what will happen, and the circle becomes a cancel.
+- [ ] Tapping cancel → the booking is gone and nothing rings at its time.
 - [ ] Android 14 with the full-screen-intent permission denied → it arrives as a
-      heads-up that rings, and the editor said so before saving.
+      heads-up that **rings**, and the editor said so before saving.
 - [ ] Exact alarms off → it still arrives, late, and the editor said so.
 - [ ] Reboot the phone with a call scheduled → it still arrives.
+- [ ] Kill the app with a call pending, reopen it → the card still shows the
+      booking, and it still rings on time.
 - [ ] Delete a scheduled template → nothing rings at its time.
-- [ ] Edit a scheduled template's time → it rings once, at the new time.
-- [ ] Do Not Disturb on → note what actually happens; the ringtone channel is
-      `USAGE_ALARM` but OEMs differ.
+- [ ] Edit a scheduled template's time → it rings **once**, at the new time.
+- [ ] Set a template to "Now" after it was scheduled → the booking is dropped.
+- [ ] Do Not Disturb on → note what actually happens; the channel is
+      `USAGE_NOTIFICATION_RINGTONE` but OEMs differ.
 - [ ] An immediate call still rings instantly with no notification left behind.
+- [ ] Upgrading over a build that had a scheduled template → the old `FUSE`
+      value shows up as the equivalent delay in the new single control, and the
+      template still behaves the way it used to.
+
+The one thing this device fleet cannot answer: aggressive OEM task killers
+(Xiaomi, Huawei, Oppo, some ZTE) force-stop apps, and a force-stopped app gets
+no alarms. That is the same row as "force stop" above and there is no code fix —
+only the fabricator-specific autostart guidance every alarm app ships.
 
 ## Design doc deltas
 

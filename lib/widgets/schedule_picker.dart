@@ -6,13 +6,17 @@ import '../l10n/app_localizations.dart';
 import '../state/ui_flags.dart';
 import 'selectors.dart';
 
-/// When the call arrives: now, after a countdown, or at a wall-clock time.
+/// When the call arrives. **The only timing control the editor has.**
 ///
-/// Sits *below* the existing FUSE control rather than replacing it, because the
-/// two answer different questions and collapsing them would lose one. The fuse
-/// is a countdown inside a call that has already started — the incoming screen
-/// is up and armed, which is what lets somebody pocket the phone mid-gesture.
-/// This decides whether that screen appears at all without the app being open.
+/// It used to be two: a `FUSE` row of seconds and a `SCHEDULE` row of minutes.
+/// They asked the same question in two grammars and combined into nonsense —
+/// a fuse of 5s with a schedule of 1 minute opened the call a minute later and
+/// then sat there for another five seconds before ringing. Nobody chose that;
+/// it was just what happened when both controls were on screen.
+///
+/// So one row of delays, from five seconds to an hour, plus a time of day.
+/// (The delay fuse still exists for *sounds* — that path fires from the home
+/// screen with no alarm behind it and wants none.)
 class SchedulePicker extends StatelessWidget {
   const SchedulePicker({
     super.key,
@@ -24,86 +28,71 @@ class SchedulePicker extends StatelessWidget {
 
   final CallSchedule schedule;
 
-  /// Whether the user may schedule beyond [kFreeScheduleMaxMinutes].
+  /// Whether the user may go past [kFreeScheduleMax].
   final bool premium;
 
   final ValueChanged<CallSchedule> onChanged;
 
-  /// Called instead of [onChanged] when a free user picks something past the
-  /// free ceiling.
+  /// Called instead of [onChanged] when a free user reaches past the ceiling.
   final VoidCallback onLocked;
 
-  _Mode get _mode => switch (schedule) {
-    ImmediateSchedule() => _Mode.now,
-    InMinutesSchedule() => _Mode.inMinutes,
-    AtTimeSchedule() => _Mode.atTime,
-  };
+  int? get _selectedSeconds =>
+      schedule is AfterDelaySchedule ? (schedule as AfterDelaySchedule).seconds : null;
 
-  bool _allowed(int minutes) => premium || minutes <= kFreeScheduleMaxMinutes;
+  bool _allowed(CallSchedule candidate) => premium || isFreeSchedule(candidate);
+
+  void _pick(CallSchedule candidate) {
+    if (!_allowed(candidate)) {
+      onLocked();
+      return;
+    }
+    onChanged(candidate);
+  }
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations loc = AppLocalizations.of(context);
+    final CallSchedule current = schedule;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        SegmentedRow<_Mode>(
-          caption: loc.scheduleCaption,
-          options: _Mode.values,
-          selected: _mode,
-          labelOf: (_Mode m) => _modeLabel(m, loc),
-          onChanged: (_Mode m) => _pickMode(context, m),
+        Text(loc.scheduleCaption, style: ExitText.caption),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: <Widget>[
+            _Chip(
+              label: loc.scheduleModeNow,
+              selected: current is ImmediateSchedule,
+              locked: false,
+              onTap: () => _pick(const ImmediateSchedule()),
+            ),
+            for (final int seconds in kScheduleDelayOptions)
+              _Chip(
+                label: _delayLabel(seconds),
+                selected: _selectedSeconds == seconds,
+                locked: !premium &&
+                    !isFreeSchedule(AfterDelaySchedule(seconds)),
+                onTap: () => _pick(AfterDelaySchedule(seconds)),
+              ),
+            _Chip(
+              label: current is AtTimeSchedule
+                  ? _clock(current)
+                  : loc.scheduleModeAtTime,
+              selected: current is AtTimeSchedule,
+              locked: !premium,
+              onTap: () => _pickTime(context),
+            ),
+          ],
         ),
-        if (_mode == _Mode.inMinutes) ...<Widget>[
-          const SizedBox(height: 14),
-          SegmentedRow<int>(
-            caption: loc.scheduleInCaption,
-            options: kScheduleMinuteOptions,
-            selected: schedule is InMinutesSchedule
-                ? (schedule as InMinutesSchedule).minutes
-                : kScheduleMinuteOptions.first,
-            labelOf: _minuteLabel,
-            onChanged: (int minutes) {
-              if (!_allowed(minutes)) {
-                onLocked();
-                return;
-              }
-              onChanged(InMinutesSchedule(minutes));
-            },
-          ),
-        ],
-        if (_mode == _Mode.atTime) ...<Widget>[
-          const SizedBox(height: 14),
-          _TimeField(
-            schedule: schedule as AtTimeSchedule,
-            onTap: () => _pickTime(context),
-          ),
-        ],
-        if (_mode != _Mode.now) ...<Widget>[
-          const SizedBox(height: 8),
+        if (current is! ImmediateSchedule) ...<Widget>[
+          const SizedBox(height: 10),
           Text(loc.scheduleArrivesWhenClosed, style: ExitText.bodySmall),
         ],
       ],
     );
-  }
-
-  void _pickMode(BuildContext context, _Mode mode) {
-    switch (mode) {
-      case _Mode.now:
-        onChanged(const ImmediateSchedule());
-      case _Mode.inMinutes:
-        // Lands on the shortest option, which is always inside the free tier.
-        // Opening onto something the user cannot have would put a paywall in
-        // front of a control they were only trying to look at.
-        onChanged(InMinutesSchedule(kScheduleMinuteOptions.first));
-      case _Mode.atTime:
-        if (!premium) {
-          onLocked();
-          return;
-        }
-        _pickTime(context);
-    }
   }
 
   Future<void> _pickTime(BuildContext context) async {
@@ -126,44 +115,77 @@ class SchedulePicker extends StatelessWidget {
   }
 }
 
-enum _Mode { now, inMinutes, atTime }
+String _clock(AtTimeSchedule s) =>
+    '${s.hour.toString().padLeft(2, '0')}:${s.minute.toString().padLeft(2, '0')}';
 
-String _modeLabel(_Mode mode, AppLocalizations loc) => switch (mode) {
-  _Mode.now => loc.scheduleModeNow,
-  _Mode.inMinutes => loc.scheduleModeInMinutes,
-  _Mode.atTime => loc.scheduleModeAtTime,
-};
+/// Seconds under a minute, then minutes, then hours — whichever reads shortest.
+/// A row of "3600s" is a row nobody scans correctly.
+String _delayLabel(int seconds) {
+  if (seconds < 60) return '${seconds}s';
+  if (seconds < 3600) return '${seconds ~/ 60}m';
+  return '${seconds ~/ 3600}h';
+}
 
-/// `60` reads as an hour, because a row of minute counts ending in a
-/// three-digit number is a row nobody scans correctly.
-String _minuteLabel(int minutes) =>
-    minutes >= 60 ? '${minutes ~/ 60}h' : '${minutes}m';
+/// A [Wrap] of chips rather than a [SegmentedRow]: nine options do not fit in
+/// one segmented track on a 360dp phone, and squeezing them would make every
+/// cell too small to hit.
+class _Chip extends StatelessWidget {
+  const _Chip({
+    required this.label,
+    required this.selected,
+    required this.locked,
+    required this.onTap,
+  });
 
-class _TimeField extends StatelessWidget {
-  const _TimeField({required this.schedule, required this.onTap});
-
-  final AtTimeSchedule schedule;
+  final String label;
+  final bool selected;
+  final bool locked;
   final VoidCallback onTap;
-
-  String get _formatted {
-    final String h = schedule.hour.toString().padLeft(2, '0');
-    final String m = schedule.minute.toString().padLeft(2, '0');
-    return '$h:$m';
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Panel(
-      onTap: onTap,
-      radius: ExitRadius.field,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-      child: Row(
-        children: <Widget>[
-          const Icon(Icons.schedule_rounded, size: 16, color: ExitColors.mid),
-          const SizedBox(width: 11),
-          Expanded(child: Text(_formatted, style: sans(15, weight: 600))),
-          Text(AppLocalizations.of(context).editorChange, style: mono(11)),
-        ],
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: selected ? ExitColors.raise : ExitColors.surf,
+            borderRadius: ExitRadius.chip,
+            border: Border.all(
+              color: selected ? ExitColors.line2 : ExitColors.line,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  label,
+                  style: mono(
+                    11,
+                    color: selected ? ExitColors.hi : ExitColors.mid,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                // A padlock rather than a hidden or greyed-out chip: the point
+                // is that the option exists and costs money, which a disabled
+                // control does not say.
+                if (locked) ...<Widget>[
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.lock_outline,
+                    size: 11,
+                    color: ExitColors.amber,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

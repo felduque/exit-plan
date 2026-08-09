@@ -1,3 +1,4 @@
+import 'package:exitplan/calls/call_schedule.dart';
 import 'package:exitplan/models/call_preset.dart';
 import 'package:exitplan/themes/call_theme_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,7 +21,7 @@ void main() {
         avatarPath: '/tmp/photo.jpg',
         themeId: 'chat-green',
         ringtoneSoundId: 'alarms-clock',
-        delaySeconds: 10,
+        schedule: AfterDelaySchedule(600),
         ringSeconds: 60,
         autoEndSeconds: 120,
         vibrate: false,
@@ -35,7 +36,7 @@ void main() {
       expect(parsed.avatarPath, preset.avatarPath);
       expect(parsed.themeId, preset.themeId);
       expect(parsed.ringtoneSoundId, preset.ringtoneSoundId);
-      expect(parsed.delaySeconds, preset.delaySeconds);
+      expect((parsed.schedule as AfterDelaySchedule).seconds, 600);
       expect(parsed.ringSeconds, preset.ringSeconds);
       expect(parsed.autoEndSeconds, preset.autoEndSeconds);
       expect(parsed.vibrate, preset.vibrate);
@@ -108,7 +109,63 @@ void main() {
       final CallPreset parsed = CallPreset.tryFromJson(legacy('whatsapp'))!;
       expect(parsed.name, 'Mom');
       expect(parsed.number, '+1 555 0100');
-      expect(parsed.delaySeconds, 5);
+    });
+
+    test('the old fuse becomes a schedule of the same length — a template '
+        'that used to ring five seconds after firing still does', () {
+      final CallPreset parsed = CallPreset.tryFromJson(legacy('ios'))!;
+      expect(parsed.schedule, isA<AfterDelaySchedule>());
+      expect((parsed.schedule as AfterDelaySchedule).seconds, 5);
+    });
+
+    test('a pre-merge minute schedule becomes the same number of seconds', () {
+      final CallPreset parsed = CallPreset.tryFromJson(<String, dynamic>{
+        'id': 'call-1',
+        'name': 'Mom',
+        'ringtoneSoundId': 'alarms-clock',
+        'schedule': <String, dynamic>{'kind': 'in', 'minutes': 5},
+      })!;
+      expect((parsed.schedule as AfterDelaySchedule).seconds, 300);
+    });
+
+    test('a fuse and a schedule together resolve to the schedule — the two '
+        'were never meant to combine, and the outer wait is the one the user '
+        'was actually looking at', () {
+      final CallPreset parsed = CallPreset.tryFromJson(<String, dynamic>{
+        'id': 'call-1',
+        'name': 'Mom',
+        'ringtoneSoundId': 'alarms-clock',
+        'delaySeconds': 5,
+        'schedule': <String, dynamic>{'kind': 'in', 'minutes': 1},
+      })!;
+      expect((parsed.schedule as AfterDelaySchedule).seconds, 60);
+    });
+
+    test('a short delay still round-trips through a rollback, because the '
+        'old fuse field keeps being written', () {
+      const CallPreset p = CallPreset(
+        id: 'call-1',
+        name: 'Mom',
+        number: '',
+        themeId: 'material',
+        ringtoneSoundId: 'alarms-clock',
+        schedule: AfterDelaySchedule(10),
+      );
+      expect(p.toJson()['delaySeconds'], 10);
+    });
+
+    test('a delay the old fuse could not express writes 0 rather than a wrong '
+        'time — ringing at once is a visible surprise, ringing an hour early '
+        'is not', () {
+      const CallPreset p = CallPreset(
+        id: 'call-1',
+        name: 'Mom',
+        number: '',
+        themeId: 'material',
+        ringtoneSoundId: 'alarms-clock',
+        schedule: AfterDelaySchedule(3600),
+      );
+      expect(p.toJson()['delaySeconds'], 0);
     });
 
     test('fields the old schema never had take their defaults, and the '
@@ -202,7 +259,7 @@ void main() {
       expect(parsed, isNotNull);
       expect(parsed!.avatarPath, isNull);
       expect(parsed.number, isEmpty);
-      expect(parsed.delaySeconds, 0);
+      expect(parsed.schedule, isA<ImmediateSchedule>());
     });
 
     test('a negative delay is dropped rather than trusted', () {
@@ -213,7 +270,7 @@ void main() {
         'delaySeconds': -5,
       });
 
-      expect(parsed!.delaySeconds, 0);
+      expect(parsed!.schedule, isA<ImmediateSchedule>());
     });
 
     test('a negative ring window falls back rather than never ringing', () {
@@ -269,7 +326,7 @@ void main() {
       avatarPath: '/tmp/photo.jpg',
       themeId: 'material',
       ringtoneSoundId: 'alarms-clock',
-      delaySeconds: 5,
+      schedule: AfterDelaySchedule(300),
       autoEndSeconds: 60,
     );
 
@@ -292,7 +349,7 @@ void main() {
       expect(next.number, '555');
       expect(next.themeId, 'material');
       expect(next.ringtoneSoundId, 'alarms-clock');
-      expect(next.delaySeconds, 5);
+      expect((next.schedule as AfterDelaySchedule).seconds, 300);
       expect(next.autoEndSeconds, 60);
     });
   });

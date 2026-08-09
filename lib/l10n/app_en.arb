@@ -396,6 +396,20 @@
     }
   },
 
+  "callPresetCardCancel": "Cancel the scheduled call to {name}",
+  "@callPresetCardCancel": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "callPresetCardScheduledFor": "SCHEDULED · {when}",
+  "@callPresetCardScheduledFor": {
+    "placeholders": {
+      "when": {"type": "String"}
+    }
+  },
+
   "callThemeMissedCall": "Missed call",
 
   "callActionDecline": "Decline",

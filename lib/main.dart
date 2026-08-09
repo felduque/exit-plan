@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import 'app.dart';
 import 'audio/audio_boot.dart';
+import 'calls/call_scheduler.dart';
 import 'services/ads_service.dart';
 import 'services/firebase_analytics_service.dart';
 import 'services/force_update_service.dart';
@@ -65,5 +66,18 @@ Future<void> main() async {
   await initAudio();
   final AppState state = await AppState.bootstrap();
 
-  runApp(ExitApp(state: state));
+  // Asked here, before the first frame, rather than from a widget's initState.
+  //
+  // The animated splash is an overlay stacked *above* the navigator, and it
+  // runs for 3.3 seconds. A launch caused by a scheduled call would therefore
+  // put the ExitPlan logo on top of the fake incoming call for those seconds —
+  // the app announcing itself over the one screen that exists to keep it
+  // hidden. Knowing the answer before `ExitApp` is constructed is the only way
+  // to skip the splash rather than race it.
+  //
+  // Local work only: reading the launch intent's extras, no network.
+  await CallScheduler.instance.init();
+  final String? callLaunch = await CallScheduler.instance.launchPayload();
+
+  runApp(ExitApp(state: state, launchedByCall: callLaunch != null));
 }

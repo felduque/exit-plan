@@ -72,7 +72,12 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
     );
     await callRingEngine.arm(
       sound,
-      delaySeconds: widget.preset.delaySeconds,
+      // Always zero now. By the time this screen exists the wait is already
+      // over — either the user asked for a call *now*, or a booking came due.
+      // The engine keeps the parameter because the armed phase is still real
+      // machinery worth its tests, but nothing in the app sets it any more:
+      // the old fuse it served is folded into `CallSchedule`.
+      delaySeconds: 0,
       ringSeconds: widget.preset.ringSeconds,
       autoEndSeconds: widget.preset.autoEndSeconds,
       vibrate: widget.preset.vibrate,

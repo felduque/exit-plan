@@ -59,7 +59,6 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
   late String _themeId = widget.preset?.themeId ?? kDefaultCallThemeId;
   late String _ringtoneSoundId =
       widget.preset?.ringtoneSoundId ?? kFallbackSoundId;
-  late int _delay = widget.preset?.delaySeconds ?? 0;
   late int _ringSeconds = widget.preset?.ringSeconds ?? 30;
   late int? _autoEndSeconds = widget.preset?.autoEndSeconds;
   late bool _vibrate = widget.preset?.vibrate ?? true;
@@ -171,11 +170,33 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                       onTap: () => _pickRingtone(state),
                     ),
                     const SizedBox(height: 20),
-                    DelayFuseSelector(
-                      seconds: _delay,
-                      onChanged: (int value) => setState(() => _delay = value),
+                    // The one timing control. The old FUSE row lived here and
+                    // asked the same question in a second grammar — see
+                    // [SchedulePicker] for why having both was a mistake.
+                    SchedulePicker(
+                      schedule: _schedule,
+                      premium: state.isPremium,
+                      onChanged: (CallSchedule s) =>
+                          setState(() => _schedule = s),
+                      onLocked: () => showPremiumSheet(
+                        context,
+                        title: loc.callEditorSchedulingPremiumTitle,
+                        body: loc.callEditorSchedulingPremiumBody(
+                          kFreeScheduleMax.inMinutes,
+                        ),
+                        footnote: loc.callEditorSchedulingPremiumFootnote,
+                      ),
                     ),
+                    // Only worth saying once the call actually has to survive
+                    // the app closing. An immediate call needs none of this.
+                    if (_schedule is! ImmediateSchedule) ...<Widget>[
+                      const SizedBox(height: 14),
+                      const ScheduleReadinessNotice(),
+                    ],
                     const SizedBox(height: 20),
+                    // These two sit after the schedule, and read as a sequence
+                    // once they do: when it arrives, how long it rings if
+                    // nobody picks up, how long it lasts once somebody does.
                     SegmentedRow<int>(
                       caption: loc.callEditorRingForCaption,
                       options: kRingSecondsOptions,
@@ -193,27 +214,6 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                       onChanged: (int? value) =>
                           setState(() => _autoEndSeconds = value),
                     ),
-                    const SizedBox(height: 20),
-                    SchedulePicker(
-                      schedule: _schedule,
-                      premium: state.isPremium,
-                      onChanged: (CallSchedule s) =>
-                          setState(() => _schedule = s),
-                      onLocked: () => showPremiumSheet(
-                        context,
-                        title: loc.callEditorSchedulingPremiumTitle,
-                        body: loc.callEditorSchedulingPremiumBody(
-                          kFreeScheduleMaxMinutes,
-                        ),
-                        footnote: loc.callEditorSchedulingPremiumFootnote,
-                      ),
-                    ),
-                    // Only worth saying once the call actually has to survive
-                    // the app closing. An immediate call needs none of this.
-                    if (_schedule is! ImmediateSchedule) ...<Widget>[
-                      const SizedBox(height: 14),
-                      const ScheduleReadinessNotice(),
-                    ],
                     const SizedBox(height: 20),
                     _VibrateToggle(
                       value: _vibrate,
@@ -316,7 +316,6 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
             avatarPath: _avatarPath,
             themeId: _themeId,
             ringtoneSoundId: _ringtoneSoundId,
-            delaySeconds: _delay,
             ringSeconds: _ringSeconds,
             autoEndSeconds: _autoEndSeconds,
             vibrate: _vibrate,
@@ -329,7 +328,6 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
             clearAvatar: _avatarPath == null,
             themeId: _themeId,
             ringtoneSoundId: _ringtoneSoundId,
-            delaySeconds: _delay,
             ringSeconds: _ringSeconds,
             autoEndSeconds: _autoEndSeconds,
             clearAutoEnd: _autoEndSeconds == null,

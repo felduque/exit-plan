@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import 'calls/call_booking_center.dart';
+import 'calls/call_dispatcher.dart';
 import 'calls/call_launch.dart';
 import 'core/theme.dart';
 import 'data/entitlement.dart';
@@ -25,17 +27,35 @@ import 'widgets/tip_banner.dart';
 /// The splash and the intro are **overlays over the navigator, not routes**, so
 /// the home screen needs no guard or redirect and is never seen half-built.
 class ExitApp extends StatefulWidget {
-  const ExitApp({super.key, required this.state});
+  const ExitApp({
+    super.key,
+    required this.state,
+    this.launchedByCall = false,
+  });
 
   final AppState state;
+
+  /// True when this process was started by a scheduled call arriving, rather
+  /// than by the user opening the app.
+  ///
+  /// Suppresses the splash and the intro. Both are overlays above the
+  /// navigator, so without this the ExitPlan logo animates on top of the fake
+  /// incoming call for three and a half seconds — the app announcing itself
+  /// over the exact screen that exists to keep it hidden.
+  final bool launchedByCall;
 
   @override
   State<ExitApp> createState() => _ExitAppState();
 }
 
 class _ExitAppState extends State<ExitApp> {
-  bool _splashDone = false;
-  late bool _introDone = widget.state.onboardingDone;
+  late bool _splashDone = widget.launchedByCall;
+
+  /// Skipped for this launch only — [AppState.completeOnboarding] is
+  /// deliberately not called, so a user whose first ever launch happens to be a
+  /// scheduled call still gets the tour the next time they open the app
+  /// themselves.
+  late bool _introDone = widget.state.onboardingDone || widget.launchedByCall;
 
   /// True once the user is sitting quietly on the home screen.
   bool get _settled => _splashDone && _introDone;
@@ -57,9 +77,17 @@ class _ExitAppState extends State<ExitApp> {
   /// tree — the alarm arrives with no BuildContext attached to it.
   final GlobalKey<NavigatorState> _navigator = GlobalKey<NavigatorState>();
 
+  /// Owns every pending booking, and the in-process timers that make a call
+  /// due while the app is open open the call screen directly instead of
+  /// leaving a notification for the user to find.
+  late final CallBookingCenter _bookings = CallBookingCenter(
+    store: const PrefsBookingStore(),
+  );
+
   late final CallLaunchRouter _calls = CallLaunchRouter(
     navigatorKey: _navigator,
     state: widget.state,
+    bookings: _bookings,
   );
 
   @override
@@ -85,9 +113,13 @@ class _ExitAppState extends State<ExitApp> {
     // answer ever changes: neither has a runtime dialog, so the app learns it
     // was granted by noticing it has come back from a settings page.
     PermissionCenter.instance.start();
-    // Picks up a call that arrived while the app was closed, and listens for
-    // the ones that arrive while it is open. Not awaited: a scheduled call is
-    // never the reason the first frame is late.
+    // Every screen books through the same centre this router listens to. Set
+    // before the first frame so a tap on the very first build cannot create a
+    // second, orphaned one whose timers nothing is watching.
+    CallDispatcher.bookings = _bookings;
+    // Picks up a call that arrived while the app was closed, re-arms the
+    // timers for anything still pending, and listens for the rest. Not
+    // awaited: a scheduled call is never the reason the first frame is late.
     unawaited(_calls.start());
     // The TikTok SDK batches on a timer, so an install recorded moments before
     // the user leaves can otherwise sit in the queue unsent. Leaving is exactly
@@ -109,6 +141,7 @@ class _ExitAppState extends State<ExitApp> {
     widget.state.removeListener(_onStateChanged);
     _lifecycle.dispose();
     _calls.stop();
+    _bookings.dispose();
     BillingService.instance.stop();
     PermissionCenter.instance.stop();
     NotificationPermission.instance.stop();

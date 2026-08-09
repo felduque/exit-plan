@@ -29,7 +29,6 @@ class CallPreset {
     required this.themeId,
     required this.ringtoneSoundId,
     this.avatarPath,
-    this.delaySeconds = 0,
     this.ringSeconds = 30,
     this.autoEndSeconds,
     this.vibrate = true,
@@ -56,10 +55,6 @@ class CallPreset {
   /// other sound reference in the app.
   final String ringtoneSoundId;
 
-  /// Seconds the call waits, armed, before it starts ringing. Same scale as
-  /// [kDelayFuseOptions].
-  final int delaySeconds;
-
   /// Seconds of ringing before the call is treated as missed. 0 rings on.
   final int ringSeconds;
 
@@ -70,16 +65,14 @@ class CallPreset {
   /// Whether the phone buzzes along with the ringtone.
   final bool vibrate;
 
-  /// When the call arrives.
+  /// When the call arrives — the only timing axis there is.
   ///
-  /// [ImmediateSchedule] — the default, and what every template did before this
-  /// existed — rings here and now with the app open, and is the only one that
-  /// needs no permission at all. The other two book a real alarm, which is what
-  /// makes a call arrive with the phone locked in a pocket.
+  /// [ImmediateSchedule] rings here and now with the app open, and is the only
+  /// one that needs no permission at all. The other two book a real alarm,
+  /// which is what makes a call arrive with the phone locked in a pocket.
   ///
-  /// Distinct from [delaySeconds], which is a fuse *inside* an already-started
-  /// call: the incoming screen is up, armed, counting down. This decides
-  /// whether that screen appears at all without the user opening the app.
+  /// This absorbed the old `delaySeconds` fuse; see [CallSchedule] for why
+  /// having both was a mistake.
   final CallSchedule schedule;
 
   CallPreset copyWith({
@@ -89,7 +82,7 @@ class CallPreset {
     bool clearAvatar = false,
     String? themeId,
     String? ringtoneSoundId,
-    int? delaySeconds,
+
     int? ringSeconds,
     int? autoEndSeconds,
     bool clearAutoEnd = false,
@@ -103,7 +96,7 @@ class CallPreset {
       avatarPath: clearAvatar ? null : (avatarPath ?? this.avatarPath),
       themeId: themeId ?? this.themeId,
       ringtoneSoundId: ringtoneSoundId ?? this.ringtoneSoundId,
-      delaySeconds: delaySeconds ?? this.delaySeconds,
+
       ringSeconds: ringSeconds ?? this.ringSeconds,
       autoEndSeconds: clearAutoEnd
           ? null
@@ -127,7 +120,10 @@ class CallPreset {
     'themeId': themeId,
     'platform': legacyPlatformFor(themeId),
     'ringtoneSoundId': ringtoneSoundId,
-    'delaySeconds': delaySeconds,
+    // The pre-merge fuse field. Same reasoning as `platform` above: a short
+    // delay round-trips through a rollback perfectly, and anything longer
+    // degrades to ringing at once rather than to a wrong time.
+    'delaySeconds': schedule.legacyDelaySeconds,
     'ringSeconds': ringSeconds,
     'autoEndSeconds': autoEndSeconds,
     'vibrate': vibrate,
@@ -158,8 +154,10 @@ class CallPreset {
         ? avatarRaw
         : null;
 
+    // The pre-merge fuse. Not a field any more — it is folded into the
+    // schedule below, which is the single timing axis now.
     final Object? delayRaw = raw['delaySeconds'];
-    final int delaySeconds = delayRaw is int && delayRaw >= 0 ? delayRaw : 0;
+    final int legacyDelay = delayRaw is int && delayRaw >= 0 ? delayRaw : 0;
 
     final Object? ringRaw = raw['ringSeconds'];
     final int ringSeconds = ringRaw is int && ringRaw >= 0 ? ringRaw : 30;
@@ -179,11 +177,13 @@ class CallPreset {
       avatarPath: avatarPath,
       themeId: _readThemeId(raw),
       ringtoneSoundId: ringtoneSoundId,
-      delaySeconds: delaySeconds,
       ringSeconds: ringSeconds,
       autoEndSeconds: autoEndSeconds,
       vibrate: vibrate,
-      schedule: CallSchedule.fromJson(raw['schedule']),
+      schedule: CallSchedule.fromJson(
+        raw['schedule'],
+        legacyDelaySeconds: legacyDelay,
+      ),
     );
   }
 

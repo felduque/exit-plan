@@ -51,10 +51,23 @@ class CallScheduler {
   /// The channel id carries a version because **an Android notification channel
   /// is immutable once created**. Its sound, importance and vibration are
   /// frozen at first use and cannot be edited by the app afterwards — only by
-  /// the user, or by shipping a new channel. Changing any of those later means
-  /// bumping this to `v2`, not editing the values in place and wondering why
-  /// nothing changed on devices that already ran the app.
-  static const String channelId = 'exitplan.calls.v1';
+  /// the user, or by shipping a new channel.
+  ///
+  /// `v1` was silent, and that was a mistake worth recording. The reasoning was
+  /// "the call screen owns the ringtone, so a channel sound would double up" —
+  /// true when the full-screen intent fires, and completely wrong when it does
+  /// not. On Android 14+, where the system withholds that permission from
+  /// non-phone apps, every scheduled call arrived as a mute, undismissable row
+  /// in the shade. It read as the call never arriving at all.
+  ///
+  /// Bumping the id is the only way to change it: devices that already ran v1
+  /// keep its frozen settings for ever otherwise.
+  static const String channelId = 'exitplan.calls.v2';
+
+  /// The channel v1 left behind on every device that ran it. Deleted on boot —
+  /// an app with a dead "Calls" channel sitting in Android's notification
+  /// settings invites the user to configure something that does nothing.
+  static const String _retiredChannelId = 'exitplan.calls.v1';
 
   /// Neutral on purpose, exactly like the media channel in `audio_boot.dart`.
   /// This string is visible in Android's own notification settings, where
@@ -205,21 +218,47 @@ class LocalNotificationsBackend implements CallSchedulerBackend {
     );
 
     if (Platform.isAndroid) {
-      await _plugin
+      final AndroidFlutterLocalNotificationsPlugin? android = _plugin
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
-          >()
-          ?.createNotificationChannel(
-            const AndroidNotificationChannel(
-              CallScheduler.channelId,
-              CallScheduler.channelName,
-              importance: Importance.max,
-              playSound: false,
-              enableVibration: false,
-            ),
-          );
+          >();
+
+      await android?.deleteNotificationChannel(
+        channelId: CallScheduler._retiredChannelId,
+      );
+
+      await android?.createNotificationChannel(
+        AndroidNotificationChannel(
+          CallScheduler.channelId,
+          CallScheduler.channelName,
+          importance: Importance.max,
+          playSound: true,
+          // The device's own ringtone rather than a bundled tone. The preset's
+          // chosen ringtone belongs to the call *screen*, which can stop it the
+          // instant Accept is pressed; this one has to be something Android can
+          // start and stop by itself, because it plays in a process that may
+          // not be running.
+          sound: const UriAndroidNotificationSound(_ringtoneUri),
+          audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
+          enableVibration: true,
+          vibrationPattern: _ringVibration,
+        ),
+      );
     }
   }
+
+  /// Android's default ringtone.
+  static const String _ringtoneUri = 'content://settings/system/ringtone';
+
+  /// A phone-ring buzz: wait, on, off, on. Mirrors
+  /// `CallRingEngine.kRingVibration` so the notification and the call screen
+  /// feel like the same event.
+  static final Int64List _ringVibration = Int64List.fromList(
+    <int>[0, 1000, 1000, 1000],
+  );
+
+  /// `Notification.FLAG_INSISTENT`.
+  static final Int32List _insistent = Int32List.fromList(<int>[4]);
 
   void _onResponse(NotificationResponse response) {
     final String? payload = response.payload;
@@ -251,12 +290,18 @@ class LocalNotificationsBackend implements CallSchedulerBackend {
           priority: Priority.high,
           category: AndroidNotificationCategory.call,
           fullScreenIntent: fullScreen,
-          // The call screen owns the ringtone and the vibration, because it has
-          // to stop them the instant Accept is pressed. A channel that also
-          // played a sound would leave a second one running that nothing in the
-          // app can reach.
-          playSound: false,
-          enableVibration: false,
+          playSound: true,
+          sound: const UriAndroidNotificationSound(_ringtoneUri),
+          audioAttributesUsage: AudioAttributesUsage.notificationRingtone,
+          enableVibration: true,
+          vibrationPattern: _ringVibration,
+          // FLAG_INSISTENT: repeat the sound until the notification is
+          // cancelled, which is what makes this ring like a call rather than
+          // chirp once like a message. Safe only because something always
+          // cancels it — `CallBookingCenter.deliver` does, on whichever route
+          // the call arrives by. Without that guarantee this would be a phone
+          // that never stops ringing.
+          additionalFlags: _insistent,
           ongoing: true,
           autoCancel: false,
         ),

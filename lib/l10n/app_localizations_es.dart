@@ -760,6 +760,16 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String callPresetCardCancel(String name) {
+    return 'Cancelar la llamada programada a $name';
+  }
+
+  @override
+  String callPresetCardScheduledFor(String when) {
+    return 'PROGRAMADA · $when';
+  }
+
+  @override
   String get callThemeMissedCall => 'Llamada perdida';
 
   @override

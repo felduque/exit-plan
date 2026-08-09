@@ -51,7 +51,7 @@ void main() {
 
     test('in-minutes counts forward from now', () {
       expect(
-        const InMinutesSchedule(15).resolve(now),
+        const AfterDelaySchedule(15 * 60).resolve(now),
         DateTime(2026, 8, 8, 14, 15),
       );
     });
@@ -84,7 +84,7 @@ void main() {
     test('each kind round-trips', () {
       final List<CallSchedule> all = <CallSchedule>[
         const ImmediateSchedule(),
-        const InMinutesSchedule(15),
+        const AfterDelaySchedule(15 * 60),
         const AtTimeSchedule(hour: 7, minute: 5),
       ];
       for (final CallSchedule s in all) {
@@ -250,14 +250,14 @@ void main() {
     test('the shortest offered delay is inside it, so opening the control '
         'never lands a free user on a paywall', () {
       expect(
-        kScheduleMinuteOptions.first,
-        lessThanOrEqualTo(kFreeScheduleMaxMinutes),
+        kScheduleDelayOptions.first,
+        lessThanOrEqualTo(kFreeScheduleMax.inMinutes),
       );
     });
 
     test('there is something beyond it to sell', () {
       expect(
-        kScheduleMinuteOptions.any((int m) => m > kFreeScheduleMaxMinutes),
+        kScheduleDelayOptions.any((int m) => m > kFreeScheduleMax.inMinutes),
         isTrue,
       );
     });

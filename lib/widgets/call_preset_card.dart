@@ -14,11 +14,23 @@ class CallPresetCard extends StatelessWidget {
     required this.preset,
     required this.onCall,
     required this.onEdit,
-  });
+    this.bookedAt,
+    this.onCancelBooking,
+  }) : assert(
+         bookedAt == null || onCancelBooking != null,
+         'A booked call must be cancellable.',
+       );
 
   final CallPreset preset;
   final VoidCallback onCall;
   final VoidCallback onEdit;
+
+  /// When this template's call is booked for, or null when nothing is pending.
+  final DateTime? bookedAt;
+
+  /// Drops the booking. Required whenever [bookedAt] is set — a scheduled call
+  /// the user cannot call off is a worse feature than no scheduling at all.
+  final VoidCallback? onCancelBooking;
 
   @override
   Widget build(BuildContext context) {
@@ -48,21 +60,29 @@ class CallPresetCard extends StatelessWidget {
                   style: ExitText.tile,
                 ),
                 const SizedBox(height: 3),
-                Row(
-                  children: <Widget>[
-                    if (preset.number.isNotEmpty)
-                      Flexible(
-                        child: Text(
-                          preset.number,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: ExitText.bodySmall,
+                // A booked call replaces the usual subtitle rather than
+                // sitting beside it. It is the only thing about this template
+                // that is *happening* rather than merely configured, and it is
+                // the answer to "did my tap do anything" — which, without it,
+                // nothing on this screen gave.
+                if (bookedAt != null)
+                  _BookedLine(at: bookedAt!, loc: loc)
+                else
+                  Row(
+                    children: <Widget>[
+                      if (preset.number.isNotEmpty)
+                        Flexible(
+                          child: Text(
+                            preset.number,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: ExitText.bodySmall,
+                          ),
                         ),
-                      ),
-                    if (preset.number.isNotEmpty) const SizedBox(width: 8),
-                    TagChip(callThemeFor(preset.themeId).name),
-                  ],
-                ),
+                      if (preset.number.isNotEmpty) const SizedBox(width: 8),
+                      TagChip(callThemeFor(preset.themeId).name),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -83,29 +103,68 @@ class CallPresetCard extends StatelessWidget {
               ),
             ),
           ),
+          // While a call is booked the same circle cancels it. One control that
+          // reflects the template's actual state, rather than a call button
+          // that silently re-books what is already pending.
           Semantics(
             button: true,
-            label: loc.callPresetCardRing(preset.name),
+            label: bookedAt == null
+                ? loc.callPresetCardRing(preset.name)
+                : loc.callPresetCardCancel(preset.name),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: onCall,
+              onTap: bookedAt == null ? onCall : onCancelBooking,
               child: Container(
                 width: 36,
                 height: 36,
-                decoration: const BoxDecoration(
-                  color: ExitColors.greenWash,
+                decoration: BoxDecoration(
+                  color: bookedAt == null
+                      ? ExitColors.greenWash
+                      : ExitColors.amber.withValues(alpha: 0.14),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.call_rounded,
+                child: Icon(
+                  bookedAt == null ? Icons.call_rounded : Icons.close_rounded,
                   size: 16,
-                  color: ExitColors.green,
+                  color: bookedAt == null
+                      ? ExitColors.green
+                      : ExitColors.amber,
                 ),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The line a booked template shows in place of its number and theme.
+class _BookedLine extends StatelessWidget {
+  const _BookedLine({required this.at, required this.loc});
+
+  final DateTime at;
+  final AppLocalizations loc;
+
+  @override
+  Widget build(BuildContext context) {
+    final String when =
+        '${at.hour.toString().padLeft(2, '0')}:'
+        '${at.minute.toString().padLeft(2, '0')}';
+
+    return Row(
+      children: <Widget>[
+        const PulseDot(color: ExitColors.amber),
+        const SizedBox(width: 7),
+        Flexible(
+          child: Text(
+            loc.callPresetCardScheduledFor(when),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: mono(9, color: ExitColors.amber, letterSpacing: 1),
+          ),
+        ),
+      ],
     );
   }
 }

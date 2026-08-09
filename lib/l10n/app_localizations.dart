@@ -1388,6 +1388,18 @@ abstract class AppLocalizations {
   /// **'Ring {name}'**
   String callPresetCardRing(String name);
 
+  /// No description provided for @callPresetCardCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel the scheduled call to {name}'**
+  String callPresetCardCancel(String name);
+
+  /// No description provided for @callPresetCardScheduledFor.
+  ///
+  /// In en, this message translates to:
+  /// **'SCHEDULED · {when}'**
+  String callPresetCardScheduledFor(String when);
+
   /// No description provided for @callThemeMissedCall.
   ///
   /// In en, this message translates to:

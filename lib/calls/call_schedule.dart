@@ -1,29 +1,67 @@
-/// When a fake call should arrive.
+/// When a fake call arrives.
 ///
-/// A sealed hierarchy rather than a nullable `DateTime`, because the three
-/// cases behave differently enough that collapsing them loses information the
-/// UI needs: "now" never touches the alarm manager at all, "in five minutes"
-/// has to be resolved against the clock at save time, and "at 14:30" has to
-/// know whether that is today or tomorrow.
+/// ## One question, asked once
+///
+/// This used to be two controls. `FUSE` was a countdown *inside* a call that
+/// had already started — the incoming screen was up, armed, waiting — and
+/// `SCHEDULE` decided whether that screen appeared at all without the app being
+/// open. They read as the same question to anybody who has not seen the code,
+/// and they combined into nonsense: a fuse of 5s with a schedule of 1 minute
+/// opened the screen a minute later and then made the user wait another five
+/// seconds while it sat there not ringing.
+///
+/// The fuse was also strictly worse at the job it existed for. "Arm it and
+/// pocket the phone" only survived as long as the app stayed open, which is
+/// exactly what an alarm fixes.
+///
+/// So there is one axis now: how long from the moment you fire it. The delay
+/// fuse still exists for *sounds* (`DelayFuseSelector` on home and the category
+/// screens) — that path has no alarm behind it and does not want one.
 sealed class CallSchedule {
   const CallSchedule();
 
-  /// Resolves to a wall-clock instant, or null when there is nothing to
-  /// schedule because the call happens immediately.
+  /// Resolves to a wall-clock instant, or null when the call happens straight
+  /// away and there is nothing to book.
   DateTime? resolve(DateTime now);
 
   Map<String, dynamic> toJson();
 
-  /// Tolerant parse. Anything unreadable becomes [ImmediateSchedule], which is
-  /// the behaviour every template had before scheduling existed and is the only
-  /// fallback that cannot surprise somebody: a call that rings when you press
-  /// the button.
-  static CallSchedule fromJson(Object? raw) {
+  /// What an older build should read out of [toJson] for its `delaySeconds`
+  /// field.
+  ///
+  /// The pre-merge schema had a 0/5/10/30s fuse, so a short delay round-trips
+  /// through a rollback perfectly and anything longer degrades to ringing at
+  /// once. Costs one integer and makes going backwards lossless for the case
+  /// that is actually common.
+  int get legacyDelaySeconds => 0;
+
+  /// Tolerant parse.
+  ///
+  /// [legacyDelaySeconds] is the old top-level fuse field, folded in here so a
+  /// template saved before the merge keeps its timing. When both are present
+  /// the schedule wins: it is the outer, longer wait, and the combination was
+  /// never something anybody chose deliberately.
+  static CallSchedule fromJson(Object? raw, {int legacyDelaySeconds = 0}) {
+    final CallSchedule parsed = _parse(raw);
+    if (parsed is! ImmediateSchedule) return parsed;
+    if (legacyDelaySeconds > 0) return AfterDelaySchedule(legacyDelaySeconds);
+    return const ImmediateSchedule();
+  }
+
+  static CallSchedule _parse(Object? raw) {
     if (raw is! Map) return const ImmediateSchedule();
     switch (raw['kind']) {
+      case 'after':
+        final Object? seconds = raw['seconds'];
+        if (seconds is int && seconds > 0) return AfterDelaySchedule(seconds);
+        return const ImmediateSchedule();
+      // The pre-merge minute-based form. Still on disk for anybody who
+      // scheduled a call before this version, so it stays readable for good.
       case 'in':
         final Object? minutes = raw['minutes'];
-        if (minutes is int && minutes > 0) return InMinutesSchedule(minutes);
+        if (minutes is int && minutes > 0) {
+          return AfterDelaySchedule(minutes * 60);
+        }
         return const ImmediateSchedule();
       case 'at':
         final Object? hour = raw['hour'];
@@ -43,10 +81,11 @@ sealed class CallSchedule {
   }
 }
 
-/// Rings as soon as the user asks, with the app in front of them.
+/// Rings the moment the user asks, with the app in front of them.
 ///
-/// This is the route the app has always had — a `Navigator.push` and an audio
-/// player, no alarm, no notification, no permission. It stays exactly that.
+/// The only one that touches no alarm, no notification and no permission: it is
+/// a route push and an audio player, exactly as it was before scheduling
+/// existed.
 final class ImmediateSchedule extends CallSchedule {
   const ImmediateSchedule();
 
@@ -58,27 +97,37 @@ final class ImmediateSchedule extends CallSchedule {
 }
 
 /// Rings after a countdown, whether or not the app is still open.
-final class InMinutesSchedule extends CallSchedule {
-  const InMinutesSchedule(this.minutes);
+///
+/// Everything above zero books a real alarm, including the five-second case
+/// that used to be handled in-process. That is deliberate: the whole complaint
+/// this replaced was that closing the app lost the call, and "it works unless
+/// you put your phone away" is not a promise worth keeping when the phone going
+/// away is the entire use case.
+final class AfterDelaySchedule extends CallSchedule {
+  const AfterDelaySchedule(this.seconds);
 
-  final int minutes;
+  final int seconds;
 
   @override
-  DateTime? resolve(DateTime now) => now.add(Duration(minutes: minutes));
+  DateTime? resolve(DateTime now) => now.add(Duration(seconds: seconds));
+
+  /// Only the values the old fuse could express survive a rollback; longer
+  /// waits collapse to "immediately" rather than to a wrong time.
+  @override
+  int get legacyDelaySeconds => seconds <= 30 ? seconds : 0;
 
   @override
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'kind': 'in',
-    'minutes': minutes,
+    'kind': 'after',
+    'seconds': seconds,
   };
 }
 
-/// Rings at a wall-clock time, today if it is still ahead and tomorrow if it
-/// is not.
+/// Rings at a wall-clock time, today if it is still ahead and tomorrow if not.
 ///
 /// Rolling forward rather than refusing is the only reading that is ever what
 /// somebody meant: setting 08:30 at nine in the evening is setting tomorrow
-/// morning's alarm, not making a mistake.
+/// morning's call, not making a mistake.
 final class AtTimeSchedule extends CallSchedule {
   const AtTimeSchedule({required this.hour, required this.minute});
 
@@ -87,17 +136,9 @@ final class AtTimeSchedule extends CallSchedule {
 
   @override
   DateTime? resolve(DateTime now) {
-    final DateTime today = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
-    // A time in the past by less than a minute is almost certainly the user
-    // meaning "now-ish" rather than "in 24 hours", but there is no way to be
-    // sure, and being an hour early is a far worse failure than being a day
-    // late. Roll it forward.
+    final DateTime today = DateTime(now.year, now.month, now.day, hour, minute);
+    // A time already gone rolls to tomorrow. Being an hour early is a far worse
+    // failure than being a day late.
     return today.isAfter(now) ? today : today.add(const Duration(days: 1));
   }
 
@@ -109,12 +150,35 @@ final class AtTimeSchedule extends CallSchedule {
   };
 }
 
-/// The delays offered in the editor.
-const List<int> kScheduleMinuteOptions = <int>[1, 5, 15, 30, 60];
+/// The delays the picker offers, in seconds.
+///
+/// Spans what used to be two controls: the old fuse's short end, and the old
+/// schedule's minutes. One row the user reads left to right.
+const List<int> kScheduleDelayOptions = <int>[
+  5,
+  10,
+  30,
+  60,
+  5 * 60,
+  15 * 60,
+  30 * 60,
+  60 * 60,
+];
 
 /// How far ahead a free user may schedule.
 ///
 /// Ten minutes covers the case the app exists for — set it, put the phone away,
-/// sit down — while a call set for this afternoon or tomorrow morning is
-/// planning rather than escaping, and that is the part Premium sells.
-const int kFreeScheduleMaxMinutes = 10;
+/// sit down. A call set for this afternoon is planning rather than escaping,
+/// and that is the part Premium sells.
+const Duration kFreeScheduleMax = Duration(minutes: 10);
+
+/// Whether [schedule] is inside the free allowance.
+///
+/// [AtTimeSchedule] is premium outright: it is the planning case by definition,
+/// and pinning it to the ten-minute rule would mean the same time of day being
+/// allowed or refused depending on when the user happened to open the editor.
+bool isFreeSchedule(CallSchedule schedule) => switch (schedule) {
+  ImmediateSchedule() => true,
+  AfterDelaySchedule(seconds: final int s) => s <= kFreeScheduleMax.inSeconds,
+  AtTimeSchedule() => false,
+};

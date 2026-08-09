@@ -1,26 +1,24 @@
 import 'dart:async';
 
+import 'package:exitplan/calls/call_booking_center.dart';
 import 'package:exitplan/calls/call_dispatcher.dart';
-import 'package:exitplan/calls/call_launch.dart';
 import 'package:exitplan/calls/call_schedule.dart';
 import 'package:exitplan/calls/call_scheduler.dart';
 import 'package:exitplan/models/call_preset.dart';
 import 'package:exitplan/permissions/call_platform_channel.dart';
-import 'package:exitplan/state/app_state.dart';
 import 'package:exitplan/themes/call_theme_registry.dart';
-import 'package:flutter/material.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-/// The one decision every "ring this" gesture goes through, and what happens
-/// when the call finally arrives.
+/// Booking, arriving, and the rule that makes two arrival routes safe.
 ///
-/// These two are worth pinning together because the bug they guard against is
-/// a pair: an immediate call that quietly starts booking alarms, and an alarm
-/// that outlives the template it belongs to.
+/// A booked call can come from an alarm the OS fired or from an in-process
+/// timer, and both exist on purpose: the alarm survives the app being closed,
+/// the timer is what makes a call due *while you are looking at the app* open
+/// the call screen instead of leaving you a notification to tap. The property
+/// worth pinning is that both can be armed and still only ever produce one
+/// call.
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
   CallPreset preset({
     String id = 'call-1',
     CallSchedule schedule = const ImmediateSchedule(),
@@ -33,13 +31,23 @@ void main() {
     schedule: schedule,
   );
 
-  late _FakeBackend backend;
-  late CallScheduler scheduler;
+  /// A centre wired to fakes, recording which presets it opened.
+  ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+  makeCenter({BookingStore? store, CallPreset? Function(String)? resolve}) {
+    final _FakeBackend backend = _FakeBackend();
+    final List<String> rang = <String>[];
+    final CallBookingCenter center = CallBookingCenter(
+      scheduler: CallScheduler(backend: backend),
+      store: store,
+    )
+      // Parenthesised: without them the lambda swallows the cascade below,
+      // and `onDue` gets set on the CallPreset instead of the centre.
+      ..resolvePreset = resolve ?? ((String id) => preset(id: id))
+      ..onDue = (CallPreset p) => rang.add(p.id);
+    return (center: center, backend: backend, rang: rang);
+  }
 
   setUp(() {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    backend = _FakeBackend();
-    scheduler = CallScheduler(backend: backend);
     CallPlatformChannel.debugAnswers = <String, Object?>{
       'canScheduleExactAlarms': true,
       'canUseFullScreenIntent': true,
@@ -48,162 +56,297 @@ void main() {
 
   tearDown(() => CallPlatformChannel.debugAnswers = null);
 
-  group('rescheduling', () {
+  group('what the dispatcher decides', () {
     test('an immediate template books nothing — the path the app has always '
         'had stays a route push, with no alarm and no notification', () async {
+      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      f = makeCenter();
+
       final ScheduleOutcome? outcome = await CallDispatcher.reschedule(
         preset(),
-        scheduler: scheduler,
+        center: f.center,
       );
       expect(outcome, isNull);
-      expect(backend.scheduled, isEmpty);
+      expect(f.backend.scheduled, isEmpty);
+      expect(f.center.pending, isEmpty);
     });
 
     test('a scheduled template books once', () async {
+      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      f = makeCenter();
+
       final ScheduleOutcome? outcome = await CallDispatcher.reschedule(
-        preset(schedule: const InMinutesSchedule(5)),
-        scheduler: scheduler,
-        now: DateTime(2026, 8, 8, 14, 0),
+        preset(schedule: const AfterDelaySchedule(300)),
+        center: f.center,
+        now: DateTime(2026, 8, 9, 14, 0),
       );
-      expect(outcome, isNotNull);
-      expect(outcome!.at, DateTime(2026, 8, 8, 14, 5));
-      expect(backend.scheduled, hasLength(1));
+      expect(outcome!.at, DateTime(2026, 8, 9, 14, 5));
+      expect(f.backend.scheduled, hasLength(1));
+      expect(f.center.isBooked('call-1'), isTrue);
     });
 
     test('editing a scheduled call replaces the booking rather than leaving '
-        'the old one behind — two alarms for one template means the phone '
-        'rings twice', () async {
-      final CallPreset first = preset(schedule: const InMinutesSchedule(5));
+        'the old one behind — two alarms for one template rings twice',
+        () async {
+      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      f = makeCenter();
+      final CallPreset first = preset(schedule: const AfterDelaySchedule(300));
+      final DateTime now = DateTime(2026, 8, 9, 14, 0);
+
+      await CallDispatcher.reschedule(first, center: f.center, now: now);
       await CallDispatcher.reschedule(
-        first,
-        scheduler: scheduler,
-        now: DateTime(2026, 8, 8, 14, 0),
+        first.copyWith(schedule: const AfterDelaySchedule(1800)),
+        center: f.center,
+        now: now,
       );
 
-      await CallDispatcher.reschedule(
-        first.copyWith(schedule: const InMinutesSchedule(30)),
-        scheduler: scheduler,
-        now: DateTime(2026, 8, 8, 14, 0),
-      );
-
-      expect(backend.scheduled, hasLength(1));
-      expect(backend.scheduled.single.at, DateTime(2026, 8, 8, 14, 30));
-      expect(await scheduler.pending(), <String>{'call-1'});
+      expect(f.backend.scheduled, hasLength(1));
+      expect(f.backend.scheduled.single.at, DateTime(2026, 8, 9, 14, 30));
+      expect(f.center.bookedAt('call-1'), DateTime(2026, 8, 9, 14, 30));
     });
 
-    test(
-      'editing a scheduled call back to "now" cancels the booking rather '
-      'than leaving an alarm for a call that is no longer scheduled',
-      () async {
-        final CallPreset p = preset(schedule: const InMinutesSchedule(5));
-        await CallDispatcher.reschedule(p, scheduler: scheduler);
-        expect(backend.scheduled, hasLength(1));
+    test('editing back to "now" cancels the booking rather than leaving an '
+        'alarm for a call that is no longer scheduled', () async {
+      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      f = makeCenter();
+      final CallPreset p = preset(schedule: const AfterDelaySchedule(300));
 
-        await CallDispatcher.reschedule(
-          p.copyWith(schedule: const ImmediateSchedule()),
-          scheduler: scheduler,
-        );
-        expect(backend.scheduled, isEmpty);
-        expect(await scheduler.pending(), isEmpty);
-      },
-    );
+      await CallDispatcher.reschedule(p, center: f.center);
+      expect(f.center.pending, isNotEmpty);
+
+      await CallDispatcher.reschedule(
+        p.copyWith(schedule: const ImmediateSchedule()),
+        center: f.center,
+      );
+      expect(f.center.pending, isEmpty);
+      expect(f.backend.scheduled, isEmpty);
+    });
 
     test('unschedule drops the booking', () async {
+      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      f = makeCenter();
+
       await CallDispatcher.reschedule(
-        preset(schedule: const InMinutesSchedule(5)),
-        scheduler: scheduler,
+        preset(schedule: const AfterDelaySchedule(300)),
+        center: f.center,
       );
-      await CallDispatcher.unschedule('call-1', scheduler: scheduler);
-      expect(await scheduler.pending(), isEmpty);
+      await CallDispatcher.unschedule('call-1', center: f.center);
+      expect(f.center.pending, isEmpty);
+      expect(f.backend.scheduled, isEmpty);
+    });
+  });
+
+  group('the in-process timer', () {
+    test('a booking that comes due while the app is open opens the call '
+        'directly, with no notification to tap', () {
+      fakeAsync((FakeAsync async) {
+        final ({
+          CallBookingCenter center,
+          _FakeBackend backend,
+          List<String> rang,
+        })
+        f = makeCenter();
+
+        f.center.book(
+          preset(),
+          DateTime.now().add(const Duration(minutes: 5)),
+        );
+        async.flushMicrotasks();
+        expect(f.rang, isEmpty);
+
+        async.elapse(const Duration(minutes: 5));
+        async.flushMicrotasks();
+        expect(f.rang, <String>['call-1']);
+      });
+    });
+
+    test('the notification is cleared when the timer wins, so a call already '
+        'on screen does not also leave an undismissable row in the shade', () {
+      fakeAsync((FakeAsync async) {
+        final ({
+          CallBookingCenter center,
+          _FakeBackend backend,
+          List<String> rang,
+        })
+        f = makeCenter();
+
+        f.center.book(
+          preset(),
+          DateTime.now().add(const Duration(minutes: 1)),
+        );
+        async.elapse(const Duration(minutes: 1));
+        async.flushMicrotasks();
+
+        expect(f.backend.cancelled, isNotEmpty);
+      });
+    });
+
+    test('cancelling disarms the timer too, not just the alarm', () {
+      fakeAsync((FakeAsync async) {
+        final ({
+          CallBookingCenter center,
+          _FakeBackend backend,
+          List<String> rang,
+        })
+        f = makeCenter();
+
+        f.center.book(
+          preset(),
+          DateTime.now().add(const Duration(minutes: 5)),
+        );
+        async.elapse(const Duration(minutes: 1));
+        f.center.cancel('call-1');
+        async.flushMicrotasks();
+
+        async.elapse(const Duration(minutes: 10));
+        expect(f.rang, isEmpty);
+      });
+    });
+  });
+
+  group('exactly one call, whichever route wins', () {
+    test('the alarm and the timer cannot both open the same booking', () {
+      fakeAsync((FakeAsync async) {
+        final ({
+          CallBookingCenter center,
+          _FakeBackend backend,
+          List<String> rang,
+        })
+        f = makeCenter();
+
+        f.center.book(
+          preset(),
+          DateTime.now().add(const Duration(seconds: 30)),
+        );
+        async.elapse(const Duration(seconds: 30));
+        async.flushMicrotasks();
+        expect(f.rang, hasLength(1));
+
+        // The notification lands too — the cold-start payload stays readable
+        // after the stream has already delivered it.
+        f.center.deliver('call-1');
+        async.flushMicrotasks();
+        expect(f.rang, hasLength(1));
+      });
+    });
+
+    test('a second delivery of the same booking is a no-op', () async {
+      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      f = makeCenter();
+
+      await f.center.book(
+        preset(),
+        DateTime.now().add(const Duration(hours: 1)),
+      );
+      await f.center.deliver('call-1');
+      await f.center.deliver('call-1');
+      expect(f.rang, <String>['call-1']);
+    });
+
+    test('re-booking the same template after it rang arms it again', () async {
+      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      f = makeCenter();
+
+      await f.center.book(
+        preset(),
+        DateTime.now().add(const Duration(hours: 1)),
+      );
+      await f.center.deliver('call-1');
+      expect(f.rang, hasLength(1));
+
+      await f.center.book(
+        preset(),
+        DateTime.now().add(const Duration(hours: 1)),
+      );
+      await f.center.deliver('call-1');
+      expect(f.rang, hasLength(2));
     });
   });
 
   group('arrival', () {
-    late AppState state;
+    test('an alarm for a template that has since been deleted cancels itself '
+        'instead of being ignored — an orphan survives reboots and rings for a '
+        'contact the user no longer has', () async {
+      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      f = makeCenter(resolve: (String _) => null);
 
-    Future<void> pumpHost(WidgetTester tester, GlobalKey<NavigatorState> key) {
-      return tester.pumpWidget(
-        AppScope(
-          state: state,
-          child: MaterialApp(
-            navigatorKey: key,
-            home: const Scaffold(body: SizedBox.shrink()),
-          ),
-        ),
+      await f.center.book(
+        preset(),
+        DateTime.now().add(const Duration(hours: 1)),
       );
-    }
+      f.backend.cancelled.clear();
+      await f.center.deliver('call-1');
 
-    setUp(() async {
-      state = await AppState.bootstrap();
+      expect(f.backend.cancelled, isNotEmpty);
+      expect(f.rang, isEmpty);
+      expect(f.center.pending, isEmpty);
     });
 
-    testWidgets('an alarm for a template that has since been deleted cancels '
-        'itself instead of being ignored — an orphaned alarm survives reboots '
-        'and rings for a contact the user no longer has', (
-      WidgetTester tester,
-    ) async {
-      final GlobalKey<NavigatorState> key = GlobalKey<NavigatorState>();
-      await pumpHost(tester, key);
+    test('a delivered booking stops being pending, so the card cannot keep '
+        'claiming a call that already rang', () async {
+      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      f = makeCenter();
 
-      backend.launch = 'a-template-that-is-gone';
-      final CallLaunchRouter router = CallLaunchRouter(
-        navigatorKey: key,
-        state: state,
-        scheduler: scheduler,
+      await f.center.book(
+        preset(),
+        DateTime.now().add(const Duration(hours: 1)),
       );
+      expect(f.center.isBooked('call-1'), isTrue);
 
-      await router.start();
-      await tester.pump();
-
-      expect(backend.cancelled, isNotEmpty);
-      router.stop();
-    });
-
-    testWidgets('the same booking is not rung twice, even though the '
-        'cold-start payload is still readable after the stream delivered it', (
-      WidgetTester tester,
-    ) async {
-      final GlobalKey<NavigatorState> key = GlobalKey<NavigatorState>();
-      await pumpHost(tester, key);
-
-      backend.launch = 'gone';
-      final CallLaunchRouter router = CallLaunchRouter(
-        navigatorKey: key,
-        state: state,
-        scheduler: scheduler,
-      );
-      await router.start();
-      await tester.pump();
-
-      final int afterFirst = backend.cancelled.length;
-
-      // The stream redelivers what the launch details already carried.
-      backend.emitTap('gone');
-      await tester.pump();
-
-      expect(backend.cancelled.length, afterFirst);
-      router.stop();
-    });
-
-    testWidgets('opening the app normally rings nothing', (
-      WidgetTester tester,
-    ) async {
-      final GlobalKey<NavigatorState> key = GlobalKey<NavigatorState>();
-      await pumpHost(tester, key);
-
-      backend.launch = null;
-      final CallLaunchRouter router = CallLaunchRouter(
-        navigatorKey: key,
-        state: state,
-        scheduler: scheduler,
-      );
-      await router.start();
-      await tester.pump();
-
-      expect(backend.cancelled, isEmpty);
-      router.stop();
+      await f.center.deliver('call-1');
+      expect(f.center.isBooked('call-1'), isFalse);
     });
   });
+
+  group('surviving a restart', () {
+    test('a booking still ahead is restored and re-armed', () {
+      fakeAsync((FakeAsync async) {
+        final DateTime at = DateTime.now().add(const Duration(minutes: 10));
+        final ({
+          CallBookingCenter center,
+          _FakeBackend backend,
+          List<String> rang,
+        })
+        f = makeCenter(store: _MemoryStore(<String, DateTime>{'call-1': at}));
+
+        f.center.restore();
+        async.flushMicrotasks();
+        expect(f.center.isBooked('call-1'), isTrue);
+
+        async.elapse(const Duration(minutes: 10));
+        async.flushMicrotasks();
+        expect(f.rang, <String>['call-1']);
+      });
+    });
+
+    test('a booking whose moment passed while the app was dead is dropped, '
+        'not fired — the alarm owned that one, and re-ringing it could mean a '
+        'call the user dealt with hours ago', () async {
+      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      f = makeCenter(
+        store: _MemoryStore(<String, DateTime>{
+          'call-1': DateTime.now().subtract(const Duration(hours: 2)),
+        }),
+      );
+
+      await f.center.restore();
+      expect(f.center.pending, isEmpty);
+      expect(f.rang, isEmpty);
+    });
+  });
+}
+
+class _MemoryStore implements BookingStore {
+  _MemoryStore(this._data);
+
+  Map<String, DateTime> _data;
+
+  @override
+  Future<Map<String, DateTime>> load() async => Map<String, DateTime>.of(_data);
+
+  @override
+  Future<void> save(Map<String, DateTime> bookings) async =>
+      _data = Map<String, DateTime>.of(bookings);
 }
 
 class _FakeBackend implements CallSchedulerBackend {
@@ -213,8 +356,6 @@ class _FakeBackend implements CallSchedulerBackend {
   final StreamController<String> _taps = StreamController<String>.broadcast();
 
   String? launch;
-
-  void emitTap(String payload) => _taps.add(payload);
 
   @override
   Stream<String> get taps => _taps.stream;

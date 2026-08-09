@@ -1,49 +1,58 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/call_preset.dart';
 import '../permissions/call_platform_channel.dart';
 import '../screens/incoming_call_screen.dart';
 import '../state/app_state.dart';
+import 'call_booking_center.dart';
 import 'call_scheduler.dart';
 
-/// Turns "a scheduled call just arrived" into "the incoming-call screen is on
-/// top", however the app got here.
+/// Wires the booking centre to navigation and to the notification stream.
 ///
-/// Two ways in, and both have to work:
+/// The centre decides *that* a call is due; this decides what a due call looks
+/// like on screen, and it is the only place that knows a call can arrive from
+/// two directions:
 ///
 /// * **Cold start.** The alarm fired while the app was not running. Android
 ///   launched it, and the payload is waiting in the launch details.
-/// * **Already running.** The alarm fired with the app in the background, or in
-///   front of the user. The payload arrives on the plugin's stream.
+/// * **Already running.** Either the in-process timer came due — the common
+///   case when the user is sitting in the app waiting — or the user tapped a
+///   notification that arrived while the app was backgrounded.
 ///
-/// The full-screen intent is what makes the first case take over a locked
-/// screen rather than sitting in the shade — but the *routing* is identical
-/// either way, which is why this is one class and not two paths that will drift.
+/// Whichever it is, [CallBookingCenter.deliver] guarantees exactly one call
+/// screen.
 class CallLaunchRouter {
   CallLaunchRouter({
     required this.navigatorKey,
     required this.state,
+    required this.bookings,
     CallScheduler? scheduler,
   }) : _scheduler = scheduler ?? CallScheduler.instance;
 
   final GlobalKey<NavigatorState> navigatorKey;
   final AppState state;
+  final CallBookingCenter bookings;
   final CallScheduler _scheduler;
 
   StreamSubscription<String>? _taps;
 
-  /// Guards against ringing the same booking twice — the cold-start payload is
-  /// still readable after the stream has already delivered it.
-  String? _lastHandled;
-
   Future<void> start() async {
     await _scheduler.init();
-    _taps = _scheduler.taps.listen(_open);
+
+    bookings
+      ..resolvePreset = _presetById
+      ..onDue = _show;
+
+    await bookings.restore();
+
+    _taps = _scheduler.taps.listen(bookings.deliver);
 
     final String? launch = await _scheduler.launchPayload();
-    if (launch != null) await _open(launch);
+    if (launch != null) await bookings.deliver(launch);
   }
 
   void stop() {
@@ -51,31 +60,19 @@ class CallLaunchRouter {
     _taps = null;
   }
 
-  Future<void> _open(String presetId) async {
-    if (presetId == _lastHandled) return;
-    _lastHandled = presetId;
+  CallPreset? _presetById(String presetId) => state.callPresets
+      .cast<CallPreset?>()
+      .firstWhere((CallPreset? p) => p?.id == presetId, orElse: () => null);
 
-    final CallPreset? preset = state.callPresets
-        .cast<CallPreset?>()
-        .firstWhere((CallPreset? p) => p?.id == presetId, orElse: () => null);
-
-    // The template was deleted between booking and arrival. Cancelling rather
-    // than shrugging matters: without it the alarm survives to fire again after
-    // the next reboot, and a call from a contact the user has already forgotten
-    // creating is worse than no call at all.
-    if (preset == null) {
-      await _scheduler.cancel(presetId);
-      return;
-    }
-
-    // Let the window sit over the keyguard and wake the display. Held only for
-    // the life of the call screen — `fireCall` completes when the route is
-    // popped, which is exactly when it has to be given back.
+  Future<void> _show(CallPreset preset) async {
+    // Let the window sit over the keyguard and wake the display. On a cold
+    // start MainActivity has already done this natively — Dart runs far too
+    // late to matter for that launch — but this is what covers the case where
+    // the app was already alive and the in-process timer came due.
     await CallPlatformChannel.setLockScreenMode(enabled: true);
 
-    // Resolved *after* that await, not before: the navigator is the thing most
-    // likely to have gone away across it, and a stale NavigatorState would
-    // push a route into a tree that no longer exists.
+    // Resolved after that await, not before: the navigator is the thing most
+    // likely to have gone away across it.
     final NavigatorState? navigator = navigatorKey.currentState;
     if (navigator == null || !navigator.mounted) {
       await CallPlatformChannel.setLockScreenMode(enabled: false);
@@ -86,6 +83,57 @@ class CallLaunchRouter {
       await fireCall(navigator.context, preset);
     } finally {
       await CallPlatformChannel.setLockScreenMode(enabled: false);
+    }
+  }
+}
+
+/// Pending bookings, on disk.
+///
+/// Its own key rather than a field on the preset: a booking is a transient
+/// event and the template outlives it, so storing one inside the other would
+/// mean rewriting the whole template list every time a call is scheduled or
+/// arrives.
+class PrefsBookingStore implements BookingStore {
+  const PrefsBookingStore();
+
+  static const String _key = 'exitplan.schedule.pending';
+
+  @override
+  Future<Map<String, DateTime>> load() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? raw = prefs.getString(_key);
+      if (raw == null || raw.isEmpty) return <String, DateTime>{};
+
+      final Object? decoded = jsonDecode(raw);
+      if (decoded is! Map) return <String, DateTime>{};
+
+      final Map<String, DateTime> out = <String, DateTime>{};
+      decoded.forEach((Object? id, Object? at) {
+        if (id is! String || at is! int) return;
+        out[id] = DateTime.fromMillisecondsSinceEpoch(at);
+      });
+      return out;
+    } catch (_) {
+      // Same rule as every other read in this app: a bad byte on disk loses a
+      // booking, it does not stop the app from starting.
+      return <String, DateTime>{};
+    }
+  }
+
+  @override
+  Future<void> save(Map<String, DateTime> bookings) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _key,
+        jsonEncode(<String, int>{
+          for (final MapEntry<String, DateTime> e in bookings.entries)
+            e.key: e.value.millisecondsSinceEpoch,
+        }),
+      );
+    } catch (_) {
+      // Losing a write is survivable; crashing on one is not.
     }
   }
 }

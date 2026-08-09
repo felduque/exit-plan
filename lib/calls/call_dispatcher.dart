@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../models/call_preset.dart';
 import '../screens/incoming_call_screen.dart';
+import 'call_booking_center.dart';
 import 'call_scheduler.dart';
 
 /// The single decision every "ring this" gesture goes through: does the call
@@ -9,59 +10,70 @@ import 'call_scheduler.dart';
 ///
 /// Keeping it in one place means the immediate path stays exactly what it has
 /// always been — a route push and an audio player, no alarm, no notification,
-/// no permission — and that the scheduled path can never accidentally be taken
-/// for a call the user is watching happen.
+/// no permission — and that a scheduled call can never accidentally be routed
+/// through it and lost the moment the user locks the phone.
 abstract final class CallDispatcher {
+  /// Set once at boot, by whatever owns the booking centre.
+  static CallBookingCenter? bookings;
+
+  static CallBookingCenter get _center =>
+      bookings ??= CallBookingCenter();
+
   /// Rings [preset] according to its own schedule.
   ///
   /// Returns null for an immediate call, or how the booking actually landed for
-  /// a scheduled one. The caller shows that back to the user: what was asked
-  /// for and what the device will actually do are not always the same thing,
-  /// and finding out afterwards is the failure this whole feature exists to
-  /// avoid.
+  /// a scheduled one. **The caller must show that back to the user.** What was
+  /// asked for and what the device will actually do are not always the same
+  /// thing, and a booking that reports nothing is indistinguishable from a
+  /// button that did not work — which is exactly how this felt before.
   static Future<ScheduleOutcome?> dispatch(
     BuildContext context,
     CallPreset preset, {
-    CallScheduler? scheduler,
+    CallBookingCenter? center,
     DateTime? now,
   }) async {
-    final DateTime at0 = now ?? DateTime.now();
-    final DateTime? at = preset.schedule.resolve(at0);
+    final DateTime? at = preset.schedule.resolve(now ?? DateTime.now());
 
     if (at == null) {
-      // The path the app has always had. Deliberately not routed through the
-      // scheduler even with a zero delay: posting a notification for a call the
-      // user is looking at would leave a banner behind after they hung up.
+      // Deliberately not routed through the scheduler even for a zero delay:
+      // posting a notification for a call the user is looking at would leave a
+      // row in the shade after they had already hung up.
       await fireCall(context, preset);
       return null;
     }
 
-    return (scheduler ?? CallScheduler.instance).schedule(preset, at);
+    return (center ?? _center).book(preset, at);
   }
 
-  /// Drops a booked call. Safe to call for a preset that was never scheduled.
+  /// Rings [preset] immediately, whatever its schedule says.
   ///
-  /// Called from every path that makes a template stop existing or stop being
-  /// scheduled — deleting it, editing it back to "now" — because an alarm
-  /// outliving its template is a call from a contact the user has already
-  /// forgotten creating.
+  /// The one path that ignores the template's timing, for the case where
+  /// somebody needs the excuse *now* and has no interest in what they
+  /// configured last week.
+  static Future<void> ringNow(BuildContext context, CallPreset preset) =>
+      fireCall(context, preset);
+
+  /// Drops a booked call. Safe for a preset that was never booked.
   static Future<void> unschedule(
     String presetId, {
-    CallScheduler? scheduler,
-  }) => (scheduler ?? CallScheduler.instance).cancel(presetId);
+    CallBookingCenter? center,
+  }) => (center ?? _center).cancel(presetId);
 
-  /// Re-books [preset] after an edit: cancels whatever was pending, then
-  /// schedules again only if it is still a scheduled call.
+  /// Re-books [preset] after an edit: cancels whatever was pending, then books
+  /// again only if it is still a scheduled call.
+  ///
+  /// Editing a template back to "now" therefore cancels its alarm rather than
+  /// leaving one behind for a call that is no longer scheduled.
   static Future<ScheduleOutcome?> reschedule(
     CallPreset preset, {
-    CallScheduler? scheduler,
+    CallBookingCenter? center,
     DateTime? now,
   }) async {
-    final CallScheduler s = scheduler ?? CallScheduler.instance;
-    await s.cancel(preset.id);
+    final CallBookingCenter c = center ?? _center;
+    await c.cancel(preset.id);
 
     final DateTime? at = preset.schedule.resolve(now ?? DateTime.now());
     if (at == null) return null;
-    return s.schedule(preset, at);
+    return c.book(preset, at);
   }
 }

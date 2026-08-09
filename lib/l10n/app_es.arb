@@ -252,6 +252,8 @@
 
   "callPresetCardEdit": "Editar {name}",
   "callPresetCardRing": "Llamar a {name}",
+  "callPresetCardCancel": "Cancelar la llamada programada a {name}",
+  "callPresetCardScheduledFor": "PROGRAMADA · {when}",
 
   "callThemeMissedCall": "Llamada perdida",
 

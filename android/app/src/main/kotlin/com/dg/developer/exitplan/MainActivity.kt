@@ -30,7 +30,50 @@ class MainActivity : AudioServiceActivity() {
 
     private companion object {
         const val CHANNEL = "exitplan/calls"
+
+        /**
+         * The extra flutter_local_notifications puts on the launch intent. Its
+         * presence is how this Activity knows, natively and immediately, that
+         * it is being started by a scheduled call rather than by the user.
+         */
+        const val NOTIFICATION_PAYLOAD = "payload"
     }
+
+    /**
+     * Set here rather than from Dart, and that ordering is the whole point.
+     *
+     * `setLockScreenMode` below is still called from Dart, but on a cold start
+     * it arrives far too late to matter: Android launches this Activity, then
+     * the Flutter engine boots, then `main()` runs, then `AppState.bootstrap()`
+     * resolves, and only then does any Dart get to ask for these flags. By that
+     * point the window has already been placed — behind the keyguard, with the
+     * display still off. The call rang into a phone showing its lock screen.
+     *
+     * Doing it in `onCreate` puts the flags on before the first frame.
+     *
+     * Deliberately **not** `android:showWhenLocked="true"` in the manifest,
+     * which is the one-line version of this fix. MainActivity is the launcher
+     * activity, so a permanent flag means that locking the phone with ExitPlan
+     * in the foreground leaves the app sitting on top of the lock screen — the
+     * opposite of what this app is for.
+     */
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (isCallLaunch(intent)) setLockScreenMode(true)
+    }
+
+    /**
+     * The warm path: the process was already alive and Android delivered the
+     * full-screen intent to the existing Activity instead of creating one.
+     * `launchMode="singleTop"` is what routes it here.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (isCallLaunch(intent)) setLockScreenMode(true)
+    }
+
+    private fun isCallLaunch(intent: Intent?): Boolean =
+        intent?.hasExtra(NOTIFICATION_PAYLOAD) == true
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

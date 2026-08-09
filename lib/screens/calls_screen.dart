@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../calls/call_dispatcher.dart';
+import '../calls/call_scheduler.dart';
 import '../core/theme.dart';
 import '../core/premium_config.dart';
 import '../l10n/app_localizations.dart';
@@ -9,6 +10,7 @@ import '../state/app_state.dart';
 import '../widgets/ad_banner.dart';
 import '../widgets/call_preset_card.dart';
 import '../widgets/premium_gate_sheet.dart';
+import '../widgets/schedule_outcome.dart';
 import '../widgets/tip_banner.dart';
 import 'call_preset_editor_screen.dart';
 
@@ -18,6 +20,10 @@ import 'call_preset_editor_screen.dart';
 /// templates instead of sounds: a template bundles who is "calling" with which
 /// screen it imitates, while the ringtone underneath is still just a sound
 /// from the same shared library `BrowseScreen` lists.
+/// Stands in for the booking centre before boot has wired one up, so the list
+/// can subscribe unconditionally instead of branching on null in `build`.
+final Listenable _never = ValueNotifier<int>(0);
+
 class CallsScreen extends StatelessWidget {
   const CallsScreen({super.key});
 
@@ -48,22 +54,35 @@ class CallsScreen extends StatelessWidget {
               Expanded(
                 child: presets.isEmpty
                     ? _EmptyState(onTap: () => _newPreset(context))
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(22, 4, 22, 24),
-                        itemCount: presets.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 9),
-                        itemBuilder: (BuildContext context, int index) {
-                          final CallPreset preset = presets[index];
-                          return CallPresetCard(
-                            preset: preset,
-                            // Through the dispatcher, not straight to
-                            // `fireCall`: a template whose schedule says "in
-                            // five minutes" must book an alarm here too, not
-                            // ring instantly because this happens to be the
-                            // list screen.
-                            onCall: () =>
-                                CallDispatcher.dispatch(context, preset),
-                            onEdit: () => _editPreset(context, preset),
+                    // Rebuilt whenever a booking is made, cancelled or comes
+                    // due, so a card can never claim a call is still pending
+                    // after it has already rung.
+                    : AnimatedBuilder(
+                        animation: CallDispatcher.bookings ?? _never,
+                        builder: (BuildContext context, _) {
+                          return ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(22, 4, 22, 24),
+                            itemCount: presets.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: 9),
+                            itemBuilder: (BuildContext context, int index) {
+                              final CallPreset preset = presets[index];
+                              return CallPresetCard(
+                                preset: preset,
+                                bookedAt: CallDispatcher.bookings?.bookedAt(
+                                  preset.id,
+                                ),
+                                onCancelBooking: () =>
+                                    CallDispatcher.unschedule(preset.id),
+                                // Through the dispatcher, not straight to
+                                // `fireCall`: a template whose schedule says
+                                // "in five minutes" must book here too, not
+                                // ring instantly because this happens to be
+                                // the list screen.
+                                onCall: () => _call(context, preset),
+                                onEdit: () => _editPreset(context, preset),
+                              );
+                            },
                           );
                         },
                       ),
@@ -74,6 +93,22 @@ class CallsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Rings or books, and **always says which**.
+  ///
+  /// Booking used to be silent here: the `ScheduleOutcome` was discarded and
+  /// nothing on screen changed, so tapping the button on a scheduled template
+  /// looked exactly like tapping a dead control. The card's own state covers
+  /// the "what is pending" question; this covers the "and what will it
+  /// actually do" one, including the two ways Android degrades a booking.
+  Future<void> _call(BuildContext context, CallPreset preset) async {
+    final ScheduleOutcome? outcome = await CallDispatcher.dispatch(
+      context,
+      preset,
+    );
+    if (outcome == null || !context.mounted) return;
+    showScheduleOutcome(context, outcome);
   }
 
   /// The gate lives here, at the point the user's intent starts, rather than
