@@ -25,6 +25,7 @@ void main() {
         ringSeconds: 60,
         autoEndSeconds: 120,
         vibrate: false,
+        retryOnMissed: true,
       );
 
       final CallPreset? parsed = CallPreset.tryFromJson(preset.toJson());
@@ -40,6 +41,20 @@ void main() {
       expect(parsed.ringSeconds, preset.ringSeconds);
       expect(parsed.autoEndSeconds, preset.autoEndSeconds);
       expect(parsed.vibrate, preset.vibrate);
+      expect(parsed.retryOnMissed, preset.retryOnMissed);
+    });
+
+    test('a template saved before the retry option existed does not start '
+        'ringing twice', () {
+      final Map<String, dynamic> saved = const CallPreset(
+        id: 'call-1',
+        name: 'Mom',
+        number: '',
+        themeId: 'chat-green',
+        ringtoneSoundId: 'alarms-clock',
+      ).toJson()..remove('retryOnMissed');
+
+      expect(CallPreset.tryFromJson(saved)!.retryOnMissed, isFalse);
     });
 
     test('still writes the pre-registry platform field, so rolling back to '

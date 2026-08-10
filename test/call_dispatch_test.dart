@@ -32,19 +32,38 @@ void main() {
   );
 
   /// A centre wired to fakes, recording which presets it opened.
-  ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
-  makeCenter({BookingStore? store, CallPreset? Function(String)? resolve}) {
+  ({
+    CallBookingCenter center,
+    _FakeBackend backend,
+    List<String> rang,
+    List<bool> fromNotificationFlags,
+  })
+  makeCenter({
+    BookingStore? store,
+    CallPreset? Function(String)? resolve,
+    bool Function()? isInForeground,
+  }) {
     final _FakeBackend backend = _FakeBackend();
     final List<String> rang = <String>[];
+    final List<bool> fromNotificationFlags = <bool>[];
     final CallBookingCenter center = CallBookingCenter(
       scheduler: CallScheduler(backend: backend),
       store: store,
+      isInForeground: isInForeground,
     )
       // Parenthesised: without them the lambda swallows the cascade below,
       // and `onDue` gets set on the CallPreset instead of the centre.
       ..resolvePreset = resolve ?? ((String id) => preset(id: id))
-      ..onDue = (CallPreset p) => rang.add(p.id);
-    return (center: center, backend: backend, rang: rang);
+      ..onDue = (CallPreset p, {required bool fromNotification}) {
+        rang.add(p.id);
+        fromNotificationFlags.add(fromNotification);
+      };
+    return (
+      center: center,
+      backend: backend,
+      rang: rang,
+      fromNotificationFlags: fromNotificationFlags,
+    );
   }
 
   setUp(() {
@@ -59,7 +78,12 @@ void main() {
   group('what the dispatcher decides', () {
     test('an immediate template books nothing — the path the app has always '
         'had stays a route push, with no alarm and no notification', () async {
-      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
       f = makeCenter();
 
       final ScheduleOutcome? outcome = await CallDispatcher.reschedule(
@@ -72,7 +96,12 @@ void main() {
     });
 
     test('a scheduled template books once', () async {
-      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
       f = makeCenter();
 
       final ScheduleOutcome? outcome = await CallDispatcher.reschedule(
@@ -88,7 +117,12 @@ void main() {
     test('editing a scheduled call replaces the booking rather than leaving '
         'the old one behind — two alarms for one template rings twice',
         () async {
-      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
       f = makeCenter();
       final CallPreset first = preset(schedule: const AfterDelaySchedule(300));
       final DateTime now = DateTime(2026, 8, 9, 14, 0);
@@ -107,7 +141,12 @@ void main() {
 
     test('editing back to "now" cancels the booking rather than leaving an '
         'alarm for a call that is no longer scheduled', () async {
-      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
       f = makeCenter();
       final CallPreset p = preset(schedule: const AfterDelaySchedule(300));
 
@@ -123,7 +162,12 @@ void main() {
     });
 
     test('unschedule drops the booking', () async {
-      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
       f = makeCenter();
 
       await CallDispatcher.reschedule(
@@ -144,6 +188,7 @@ void main() {
           CallBookingCenter center,
           _FakeBackend backend,
           List<String> rang,
+          List<bool> fromNotificationFlags,
         })
         f = makeCenter();
 
@@ -167,6 +212,7 @@ void main() {
           CallBookingCenter center,
           _FakeBackend backend,
           List<String> rang,
+          List<bool> fromNotificationFlags,
         })
         f = makeCenter();
 
@@ -181,12 +227,58 @@ void main() {
       });
     });
 
+    test('the timer marks deliveries as not from a notification', () {
+      fakeAsync((FakeAsync async) {
+        final ({
+          CallBookingCenter center,
+          _FakeBackend backend,
+          List<String> rang,
+          List<bool> fromNotificationFlags,
+        })
+        f = makeCenter();
+
+        f.center.book(
+          preset(),
+          DateTime.now().add(const Duration(seconds: 5)),
+        );
+        async.elapse(const Duration(seconds: 5));
+        async.flushMicrotasks();
+
+        expect(f.rang, <String>['call-1']);
+        expect(f.fromNotificationFlags, <bool>[false]);
+      });
+    });
+
+    test('the timer does not deliver while the app is in the background', () {
+      fakeAsync((FakeAsync async) {
+        bool inForeground = false;
+        final ({
+          CallBookingCenter center,
+          _FakeBackend backend,
+          List<String> rang,
+          List<bool> fromNotificationFlags,
+        })
+        f = makeCenter(isInForeground: () => inForeground);
+
+        f.center.book(
+          preset(),
+          DateTime.now().add(const Duration(seconds: 5)),
+        );
+        async.elapse(const Duration(seconds: 5));
+        async.flushMicrotasks();
+
+        expect(f.rang, isEmpty);
+        expect(f.backend.cancelled, isEmpty);
+      });
+    });
+
     test('cancelling disarms the timer too, not just the alarm', () {
       fakeAsync((FakeAsync async) {
         final ({
           CallBookingCenter center,
           _FakeBackend backend,
           List<String> rang,
+          List<bool> fromNotificationFlags,
         })
         f = makeCenter();
 
@@ -211,6 +303,7 @@ void main() {
           CallBookingCenter center,
           _FakeBackend backend,
           List<String> rang,
+          List<bool> fromNotificationFlags,
         })
         f = makeCenter();
 
@@ -231,7 +324,12 @@ void main() {
     });
 
     test('a second delivery of the same booking is a no-op', () async {
-      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
       f = makeCenter();
 
       await f.center.book(
@@ -243,8 +341,49 @@ void main() {
       expect(f.rang, <String>['call-1']);
     });
 
+    test('a notification delivery reports fromNotification as true', () async {
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
+      f = makeCenter();
+
+      await f.center.book(
+        preset(),
+        DateTime.now().add(const Duration(hours: 1)),
+      );
+      await f.center.deliver('call-1', fromNotification: true);
+      expect(f.rang, <String>['call-1']);
+      expect(f.fromNotificationFlags, <bool>[true]);
+    });
+
+    test('a notification delivery keeps the notification ringing so the device '
+        'ringtone lasts until the user answers or declines', () async {
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
+      f = makeCenter();
+
+      await f.center.book(
+        preset(),
+        DateTime.now().add(const Duration(hours: 1)),
+      );
+      await f.center.deliver('call-1', fromNotification: true);
+      expect(f.backend.cancelled, isEmpty);
+    });
+
     test('re-booking the same template after it rang arms it again', () async {
-      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
       f = makeCenter();
 
       await f.center.book(
@@ -267,7 +406,12 @@ void main() {
     test('an alarm for a template that has since been deleted cancels itself '
         'instead of being ignored — an orphan survives reboots and rings for a '
         'contact the user no longer has', () async {
-      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
       f = makeCenter(resolve: (String _) => null);
 
       await f.center.book(
@@ -284,7 +428,12 @@ void main() {
 
     test('a delivered booking stops being pending, so the card cannot keep '
         'claiming a call that already rang', () async {
-      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
       f = makeCenter();
 
       await f.center.book(
@@ -306,6 +455,7 @@ void main() {
           CallBookingCenter center,
           _FakeBackend backend,
           List<String> rang,
+          List<bool> fromNotificationFlags,
         })
         f = makeCenter(store: _MemoryStore(<String, DateTime>{'call-1': at}));
 
@@ -322,7 +472,12 @@ void main() {
     test('a booking whose moment passed while the app was dead is dropped, '
         'not fired — the alarm owned that one, and re-ringing it could mean a '
         'call the user dealt with hours ago', () async {
-      final ({CallBookingCenter center, _FakeBackend backend, List<String> rang})
+      final ({
+        CallBookingCenter center,
+        _FakeBackend backend,
+        List<String> rang,
+        List<bool> fromNotificationFlags,
+      })
       f = makeCenter(
         store: _MemoryStore(<String, DateTime>{
           'call-1': DateTime.now().subtract(const Duration(hours: 2)),

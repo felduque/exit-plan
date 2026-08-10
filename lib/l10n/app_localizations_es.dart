@@ -466,6 +466,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get callEditorSaveTemplate => 'Guardar contacto';
 
   @override
+  String get callEditorSaved => 'Contacto guardado';
+
+  @override
   String get callEditorPhotoUnreadable => 'No se pudo leer esa foto.';
 
   @override
@@ -502,6 +505,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get callEditorVibrateDetail => 'Vibra junto con el tono';
+
+  @override
+  String get callEditorRetrySemantics => 'Volver a sonar si no contestas';
+
+  @override
+  String get callEditorRetryLabel => 'Volver a sonar';
+
+  @override
+  String get callEditorRetryDetail => 'Insiste una vez si nadie contesta';
 
   @override
   String get callEditorPickPhoto => 'Elegir una foto';
@@ -771,6 +783,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get callThemeMissedCall => 'Llamada perdida';
+
+  @override
+  String get callThemeCallEnded => 'Llamada finalizada';
+
+  @override
+  String get callThemeCallDeclined => 'Rechazada';
 
   @override
   String get callActionDecline => 'Rechazar';

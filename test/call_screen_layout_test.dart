@@ -140,20 +140,26 @@ void main() {
           expect(tester.takeException(), isNull);
         });
 
-        testWidgets('the missed notice fits at $at', (
-          WidgetTester tester,
-        ) async {
-          await pumpAt(
-            tester,
-            size,
-            CallMissedView(
-              palette: theme.palette,
-              name: 'Priya',
-              avatarPath: null,
-            ),
-          );
-          expect(tester.takeException(), isNull);
-        });
+        for (final CallEndOutcome outcome in CallEndOutcome.values) {
+          testWidgets('the ${outcome.name} notice fits at $at', (
+            WidgetTester tester,
+          ) async {
+            await pumpAt(
+              tester,
+              size,
+              CallEndView(
+                palette: theme.palette,
+                name: 'Priya',
+                avatarPath: null,
+                outcome: outcome,
+                // The tallest the card ever gets: only `ended` draws it, and
+                // it is the line that pushes the column past the fold first.
+                duration: '124:59',
+              ),
+            );
+            expect(tester.takeException(), isNull);
+          });
+        }
       }
 
       testWidgets('hang-up ends the call', (WidgetTester tester) async {

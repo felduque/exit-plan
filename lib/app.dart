@@ -80,8 +80,14 @@ class _ExitAppState extends State<ExitApp> {
   /// Owns every pending booking, and the in-process timers that make a call
   /// due while the app is open open the call screen directly instead of
   /// leaving a notification for the user to find.
+  ///
+  /// The foreground gate is what stops the timer from firing while the app is
+  /// in the background and stealing the notification from the user.
+  bool _isInForeground = true;
+
   late final CallBookingCenter _bookings = CallBookingCenter(
     store: const PrefsBookingStore(),
+    isInForeground: () => _isInForeground,
   );
 
   late final CallLaunchRouter _calls = CallLaunchRouter(
@@ -125,7 +131,13 @@ class _ExitAppState extends State<ExitApp> {
     // the user leaves can otherwise sit in the queue unsent. Leaving is exactly
     // when this app expects to be dismissed mid-use, so the flush matters more
     // here than it would elsewhere. A no-op when tracking is not configured.
-    _lifecycle = AppLifecycleListener(onPause: TikTokAnalytics.flush);
+    _lifecycle = AppLifecycleListener(
+      onPause: () {
+        _isInForeground = false;
+        TikTokAnalytics.flush();
+      },
+      onResume: () => _isInForeground = true,
+    );
     // Opens the Play connection and replays anything already owned — a purchase
     // made on another device, a subscription that renewed, a payment that
     // cleared while the app was closed. The service never writes storage; it

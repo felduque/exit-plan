@@ -93,6 +93,33 @@ void main() {
         expect(vibration.running, isFalse);
       });
     });
+
+    test('playSound: false cycles without loading or playing the preset tone', () {
+      fakeAsync((FakeAsync async) {
+        engine.arm(sound, delaySeconds: 0, playSound: false);
+        async.flushMicrotasks();
+        expect(engine.phase, CallEnginePhase.ringing);
+        expect(player.loads, 0);
+        expect(player.playing, isFalse);
+        expect(vibration.running, isTrue);
+
+        // The cycle still answers into active so the in-call screen works.
+        engine.answer();
+        async.flushMicrotasks();
+        expect(engine.phase, CallEnginePhase.active);
+      });
+    });
+
+    test('a notification-style arm disables both sound and vibration', () {
+      fakeAsync((FakeAsync async) {
+        engine.arm(sound, delaySeconds: 0, playSound: false, vibrate: false);
+        async.flushMicrotasks();
+        expect(engine.phase, CallEnginePhase.ringing);
+        expect(player.loads, 0);
+        expect(player.playing, isFalse);
+        expect(vibration.running, isFalse);
+      });
+    });
   });
 
   group('missed calls', () {

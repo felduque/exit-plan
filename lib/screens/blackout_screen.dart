@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,6 +8,7 @@ import '../models/enums.dart';
 import '../models/escape_sound.dart';
 import '../state/app_state.dart';
 import '../state/ui_flags.dart';
+import '../widgets/hold_to_exit.dart';
 
 /// Fires [soundId] by opening the black screen. Every trigger in the app goes
 /// through here: no ordinary screen plays the alarm itself.
@@ -53,7 +51,9 @@ class BlackoutScreen extends StatefulWidget {
     required this.loop,
   });
 
-  static const Duration holdToExit = Duration(milliseconds: 750);
+  /// Kept as the screen's own name for the gesture; the timing itself now
+  /// lives with the widget that implements it.
+  static const Duration holdToExit = HoldToExit.kHoldToExit;
 
   final String soundId;
   final int delaySeconds;
@@ -63,25 +63,8 @@ class BlackoutScreen extends StatefulWidget {
   State<BlackoutScreen> createState() => _BlackoutScreenState();
 }
 
-class _BlackoutScreenState extends State<BlackoutScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _hold = AnimationController(
-    vsync: this,
-    duration: BlackoutScreen.holdToExit,
-  );
-
+class _BlackoutScreenState extends State<BlackoutScreen> {
   bool _leaving = false;
-
-  /// How long after opening a pointer is treated as the leftover of the tap that
-  /// got here. The finger that hit the exit is usually still on the glass when
-  /// this screen appears, and that pointer arrives with no matching release —
-  /// counting it as the exit gesture would throw the user straight back out.
-  static const Duration _graceAfterOpen = Duration(milliseconds: 500);
-
-  late final DateTime _shownAt = DateTime.now();
-
-  /// Wall-clock start of the current hold, or null when nothing is held.
-  DateTime? _holdStart;
 
   @override
   void initState() {
@@ -89,7 +72,6 @@ class _BlackoutScreenState extends State<BlackoutScreen>
     blackoutActive.value = true;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     fireEngine.addListener(_onEngine);
-    _hold.addStatusListener(_onHoldStatus);
     WidgetsBinding.instance.addPostFrameCallback((_) => _arm());
   }
 
@@ -109,43 +91,6 @@ class _BlackoutScreenState extends State<BlackoutScreen>
     if (mounted) setState(() {});
   }
 
-  void _onHoldDown() {
-    if (DateTime.now().difference(_shownAt) < _graceAfterOpen) return;
-    _holdStart = DateTime.now();
-    _hold.forward(from: 0);
-  }
-
-  void _onHoldRelease() {
-    _holdStart = null;
-    _hold.reverse();
-  }
-
-  void _onHoldStatus(AnimationStatus status) {
-    if (status != AnimationStatus.completed) return;
-
-    final DateTime? start = _holdStart;
-    final bool heldLongEnough =
-        start != null &&
-        DateTime.now().difference(start) >= BlackoutScreen.holdToExit;
-    if (heldLongEnough) {
-      _exit();
-      return;
-    }
-
-    // Firing can stall the frames for a moment (starting the media service is
-    // not instant), and the first tick afterwards carries the whole gap, which
-    // completes the ring in one jump. Only wall-clock time may end the excuse,
-    // so an early completion just restarts it.
-    scheduleMicrotask(() {
-      if (!mounted || _leaving) return;
-      if (_holdStart == null) {
-        _hold.value = 0;
-      } else {
-        _hold.forward(from: 0);
-      }
-    });
-  }
-
   Future<void> _exit() async {
     if (_leaving) return;
     _leaving = true;
@@ -156,7 +101,6 @@ class _BlackoutScreenState extends State<BlackoutScreen>
   @override
   void dispose() {
     fireEngine.removeListener(_onEngine);
-    _hold.dispose();
     blackoutActive.value = false;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     // Belt and braces: leaving this route must never leave audio running.
@@ -176,13 +120,12 @@ class _BlackoutScreenState extends State<BlackoutScreen>
       canPop: false,
       child: Scaffold(
         backgroundColor: ExitColors.black,
-        // A raw Listener rather than a gesture recognizer: no arena, no
-        // slop threshold, so a slow finger still counts as a hold.
-        body: Listener(
-          behavior: HitTestBehavior.opaque,
-          onPointerDown: (_) => _onHoldDown(),
-          onPointerUp: (_) => _onHoldRelease(),
-          onPointerCancel: (_) => _onHoldRelease(),
+        body: HoldToExit(
+          onExit: _exit,
+          // A held finger during the fuse aborts before anything sounds,
+          // which is a different promise from ending a live excuse.
+          label: armed ? loc.blackoutHoldToAbort : loc.blackoutHoldToExit,
+          showHints: hints,
           child: Stack(
             fit: StackFit.expand,
             children: <Widget>[
@@ -195,13 +138,6 @@ class _BlackoutScreenState extends State<BlackoutScreen>
                   _GetOutLine(excuse: fireEngine.sound?.excuse, loc: loc),
                 ],
               ],
-              _HoldRing(
-                progress: _hold,
-                // A held finger during the fuse aborts before anything sounds,
-                // which is a different promise from ending a live excuse.
-                label: armed ? loc.blackoutHoldToAbort : loc.blackoutHoldToExit,
-                visible: hints,
-              ),
             ],
           ),
         ),
@@ -336,113 +272,4 @@ class _GetOutLine extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The exit gesture's only feedback: a ring that closes while held.
-class _HoldRing extends StatelessWidget {
-  const _HoldRing({
-    required this.progress,
-    required this.label,
-    required this.visible,
-  });
-
-  static const double _size = 60;
-
-  final Animation<double> progress;
-  final String label;
-  final bool visible;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 52),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            SizedBox(
-              width: _size,
-              height: _size,
-              child: Stack(
-                alignment: Alignment.center,
-                children: <Widget>[
-                  // The arc shows even with hints off — it is the only
-                  // confirmation that a hold is registering, and without it the
-                  // gesture feels broken rather than discreet. The empty track
-                  // and the label do not: a permanent grey ring at the bottom of
-                  // the screen is exactly what hints off is meant to remove.
-                  AnimatedBuilder(
-                    animation: progress,
-                    builder: (_, _) => CustomPaint(
-                      size: const Size.square(_size),
-                      painter: _RingPainter(
-                        progress: progress.value,
-                        track: visible ? _grey(0.12) : ExitColors.black,
-                        arc: _grey(0.35),
-                      ),
-                    ),
-                  ),
-                  if (visible)
-                    Container(
-                      width: 15,
-                      height: 15,
-                      decoration: BoxDecoration(
-                        color: _grey(0.28),
-                        borderRadius: const BorderRadius.all(
-                          Radius.circular(4),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (visible) ...<Widget>[
-              const SizedBox(height: 16),
-              Text(label, style: mono(8, color: _grey(0.25), letterSpacing: 3)),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RingPainter extends CustomPainter {
-  const _RingPainter({
-    required this.progress,
-    required this.track,
-    required this.arc,
-  });
-
-  final double progress;
-  final Color track;
-  final Color arc;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Rect box = Offset.zero & size;
-    final Rect circle = box.deflate(0.75);
-
-    final Paint stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..color = track;
-    canvas.drawArc(circle, 0, math.pi * 2, false, stroke);
-
-    if (progress <= 0) return;
-    canvas.drawArc(
-      circle,
-      -math.pi / 2,
-      math.pi * 2 * progress.clamp(0.0, 1.0),
-      false,
-      stroke
-        ..color = arc
-        ..strokeCap = StrokeCap.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter old) =>
-      old.progress != progress || old.track != track || old.arc != arc;
 }

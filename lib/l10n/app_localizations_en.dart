@@ -456,6 +456,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get callEditorSaveTemplate => 'Save template';
 
   @override
+  String get callEditorSaved => 'Template saved';
+
+  @override
   String get callEditorPhotoUnreadable => 'Could not read that photo.';
 
   @override
@@ -492,6 +495,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get callEditorVibrateDetail => 'Buzz along with the ringtone';
+
+  @override
+  String get callEditorRetrySemantics => 'Ring again if missed';
+
+  @override
+  String get callEditorRetryLabel => 'Ring again if missed';
+
+  @override
+  String get callEditorRetryDetail => 'Calls back once if nobody answers';
 
   @override
   String get callEditorPickPhoto => 'Pick a photo';
@@ -760,6 +772,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get callThemeMissedCall => 'Missed call';
+
+  @override
+  String get callThemeCallEnded => 'Call ended';
+
+  @override
+  String get callThemeCallDeclined => 'Declined';
 
   @override
   String get callActionDecline => 'Decline';

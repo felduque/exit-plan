@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../calls/call_dispatcher.dart';
 import '../calls/call_schedule.dart';
-import '../calls/call_scheduler.dart';
 import '../core/icons.dart';
 import '../core/theme.dart';
 import '../data/call_avatar_files.dart';
@@ -62,6 +61,7 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
   late int _ringSeconds = widget.preset?.ringSeconds ?? 30;
   late int? _autoEndSeconds = widget.preset?.autoEndSeconds;
   late bool _vibrate = widget.preset?.vibrate ?? true;
+  late bool _retryOnMissed = widget.preset?.retryOnMissed ?? false;
   late CallSchedule _schedule =
       widget.preset?.schedule ?? const ImmediateSchedule();
 
@@ -215,10 +215,27 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
                           setState(() => _autoEndSeconds = value),
                     ),
                     const SizedBox(height: 20),
-                    _VibrateToggle(
+                    _ToggleRow(
+                      label: loc.callEditorVibrateLabel,
+                      detail: loc.callEditorVibrateDetail,
+                      semantics: loc.callEditorVibrateSemantics,
                       value: _vibrate,
                       onChanged: (bool v) => setState(() => _vibrate = v),
                     ),
+                    // Only offered for a call that can actually be missed: with
+                    // "ring for" set to ON the phone never gives up, so there is
+                    // nothing for a retry to follow.
+                    if (_ringSeconds != 0) ...<Widget>[
+                      const SizedBox(height: 12),
+                      _ToggleRow(
+                        label: loc.callEditorRetryLabel,
+                        detail: loc.callEditorRetryDetail,
+                        semantics: loc.callEditorRetrySemantics,
+                        value: _retryOnMissed,
+                        onChanged: (bool v) =>
+                            setState(() => _retryOnMissed = v),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -319,6 +336,7 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
             ringSeconds: _ringSeconds,
             autoEndSeconds: _autoEndSeconds,
             vibrate: _vibrate,
+            retryOnMissed: _retryOnMissed,
             schedule: _schedule,
           )
         : existing.copyWith(
@@ -332,6 +350,7 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
             autoEndSeconds: _autoEndSeconds,
             clearAutoEnd: _autoEndSeconds == null,
             vibrate: _vibrate,
+            retryOnMissed: _retryOnMissed,
             schedule: _schedule,
           );
 
@@ -342,40 +361,17 @@ class _CallPresetEditorScreenState extends State<CallPresetEditorScreen> {
       await state.updateCallPreset(preset);
     }
 
-    // After the save, never before: an alarm booked for a template that then
-    // failed to persist would ring for something the user cannot find, edit or
-    // cancel. Cancels first internally, so editing a scheduled call does not
-    // leave the previous booking behind — and editing one back to "now" simply
-    // cancels and books nothing.
-    final ScheduleOutcome? outcome = await CallDispatcher.reschedule(preset);
+    // Saving a template must not schedule or fire a call. Drop any previous
+    // booking for this preset so an edit does not leave an orphaned alarm that
+    // would ring with stale data; the user triggers the call from the list.
+    await CallDispatcher.unschedule(preset.id);
 
     if (!mounted) return;
-    if (outcome != null) _reportBooking(outcome);
-    Navigator.of(context).pop();
-  }
-
-  /// Tells the user what the device is actually going to do.
-  ///
-  /// Not a celebration — a receipt. The two degraded cases are the ones worth
-  /// the line: an inexact alarm and a call that will arrive as a banner are
-  /// both perfectly usable, and both are things somebody should learn now
-  /// rather than while waiting for a call that is running four minutes behind.
-  void _reportBooking(ScheduleOutcome outcome) {
     final AppLocalizations loc = AppLocalizations.of(context);
-    final String when =
-        '${outcome.at.hour.toString().padLeft(2, '0')}:'
-        '${outcome.at.minute.toString().padLeft(2, '0')}';
-
-    final String message = switch ((outcome.exact, outcome.fullScreen)) {
-      (true, true) => loc.callEditorScheduledExact(when),
-      (false, true) => loc.callEditorScheduledApprox(when),
-      (true, false) => loc.callEditorScheduledExactBanner(when),
-      (false, false) => loc.callEditorScheduledApproxBanner(when),
-    };
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message, style: ExitText.bodySmall)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(loc.callEditorSaved, style: ExitText.bodySmall)),
+    );
+    Navigator.of(context).pop();
   }
 
   Future<void> _delete(AppState state) async {
@@ -421,19 +417,28 @@ String _autoEndLabel(int? seconds, AppLocalizations loc) {
 /// The one switch in this editor. A [Panel] with an [ExitSwitch] rather than a
 /// segmented row, matching how settings draws a boolean — a two-cell segmented
 /// control for on/off would be a second grammar for the same idea.
-class _VibrateToggle extends StatelessWidget {
-  const _VibrateToggle({required this.value, required this.onChanged});
+/// One labelled switch in this editor's stack of behaviour options. Shared by
+/// vibrate and the missed-call retry, which are the same row twice over.
+class _ToggleRow extends StatelessWidget {
+  const _ToggleRow({
+    required this.label,
+    required this.detail,
+    required this.semantics,
+    required this.value,
+    required this.onChanged,
+  });
 
+  final String label;
+  final String detail;
+  final String semantics;
   final bool value;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations loc = AppLocalizations.of(context);
-
     return Semantics(
       toggled: value,
-      label: loc.callEditorVibrateSemantics,
+      label: semantics,
       child: Panel(
         onTap: () => onChanged(!value),
         radius: ExitRadius.tile,
@@ -443,9 +448,9 @@ class _VibrateToggle extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(loc.callEditorVibrateLabel, style: ExitText.row),
+                  Text(label, style: ExitText.row),
                   const SizedBox(height: 3),
-                  Text(loc.callEditorVibrateDetail, style: ExitText.bodySmall),
+                  Text(detail, style: ExitText.bodySmall),
                 ],
               ),
             ),

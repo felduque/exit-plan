@@ -159,27 +159,72 @@ class CallActiveContext {
   final VoidCallback onHangUp;
 }
 
-/// What every theme shows once the ring times out unanswered.
+/// The three ways a fake call stops.
+enum CallEndOutcome {
+  /// Nobody picked up before [CallPreset.ringSeconds] ran out.
+  missed,
+
+  /// The user declined it.
+  declined,
+
+  /// It was answered and then hung up — by the user or by the auto-end.
+  ended,
+}
+
+/// What every theme shows once the call is over, whichever way it ended.
 ///
-/// Shared rather than per-theme on purpose: a missed call looks essentially the
+/// Shared rather than per-theme on purpose: an ended call looks essentially the
 /// same everywhere — a name, the words, and nothing to do about it. Six
 /// bespoke versions of that would be six chances to disagree about a screen the
 /// user sees for two seconds. It takes the theme's palette so it still belongs
 /// to whichever call it ended.
-class CallMissedView extends StatelessWidget {
-  const CallMissedView({
+///
+/// One card for all three outcomes rather than one for the missed case alone:
+/// the other two used to end with the app simply reappearing, which is both a
+/// worse handoff and the thing the mask exists to prevent.
+class CallEndView extends StatelessWidget {
+  const CallEndView({
     super.key,
     required this.palette,
     required this.name,
     required this.avatarPath,
+    required this.outcome,
+    this.duration,
   });
 
   final CallPalette palette;
   final String name;
   final String? avatarPath;
+  final CallEndOutcome outcome;
+
+  /// Already formatted `mm:ss`, and only for [CallEndOutcome.ended] — the other
+  /// two never had a call to measure.
+  final String? duration;
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations loc = AppLocalizations.of(context);
+
+    final (IconData icon, Color tint, String label) = switch (outcome) {
+      CallEndOutcome.missed => (
+        Icons.call_missed,
+        palette.decline,
+        loc.callThemeMissedCall,
+      ),
+      CallEndOutcome.declined => (
+        Icons.call_end,
+        palette.decline,
+        loc.callThemeCallDeclined,
+      ),
+      CallEndOutcome.ended => (
+        Icons.call_end,
+        palette.subtext,
+        loc.callThemeCallEnded,
+      ),
+    };
+
+    final String? elapsed = outcome == CallEndOutcome.ended ? duration : null;
+
     return Scaffold(
       backgroundColor: palette.base,
       body: SafeArea(
@@ -198,12 +243,12 @@ class CallMissedView extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Icon(Icons.call_missed, size: 17, color: palette.decline),
+                  Icon(icon, size: 17, color: tint),
                   const SizedBox(width: 8),
                   Text(
-                    AppLocalizations.of(context).callThemeMissedCall,
+                    label,
                     style: TextStyle(
-                      color: palette.decline,
+                      color: tint,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
@@ -220,6 +265,19 @@ class CallMissedView extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              if (elapsed != null) ...<Widget>[
+                const SizedBox(height: 6),
+                Text(
+                  elapsed,
+                  style: TextStyle(
+                    color: palette.subtext,
+                    fontSize: 15,
+                    fontFeatures: const <FontFeature>[
+                      FontFeature.tabularFigures(),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),

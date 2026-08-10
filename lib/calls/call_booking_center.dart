@@ -37,12 +37,19 @@ import 'call_scheduler.dart';
 /// persisted, rather than a flag on the preset — a booking is a transient event
 /// and the template outlives it.
 class CallBookingCenter extends ChangeNotifier {
-  CallBookingCenter({CallScheduler? scheduler, BookingStore? store})
-    : _scheduler = scheduler ?? CallScheduler.instance,
-      _store = store ?? const NoBookingStore();
+  CallBookingCenter({
+    CallScheduler? scheduler,
+    BookingStore? store,
+    bool Function()? isInForeground,
+  }) : _scheduler = scheduler ?? CallScheduler.instance,
+       _store = store ?? const NoBookingStore(),
+       _isInForeground = isInForeground ?? _alwaysForeground;
 
   final CallScheduler _scheduler;
   final BookingStore _store;
+  final bool Function() _isInForeground;
+
+  static bool _alwaysForeground() => true;
 
   final Map<String, DateTime> _booked = <String, DateTime>{};
   final Map<String, Timer> _timers = <String, Timer>{};
@@ -52,7 +59,11 @@ class CallBookingCenter extends ChangeNotifier {
   final Set<String> _fired = <String>{};
 
   /// Called when a booking comes due. Set once, by whatever owns navigation.
-  void Function(CallPreset preset)? onDue;
+  ///
+  /// [fromNotification] is true when the call arrived through the system
+  /// notification (cold start or banner tap); false when the in-process timer
+  /// fired while the app was in the foreground.
+  void Function(CallPreset preset, {required bool fromNotification})? onDue;
 
   /// Resolves a preset id against current state. Injected rather than holding
   /// `AppState`, so this stays testable without bootstrapping storage.
@@ -114,7 +125,13 @@ class CallBookingCenter extends ChangeNotifier {
   ///
   /// Idempotent by [_fired]: the second caller does nothing at all, which is
   /// what stops the notification and the timer both pushing a call screen.
-  Future<void> deliver(String presetId) async {
+  ///
+  /// Set [fromNotification] to true when this delivery comes from the system
+  /// notification (cold start or banner tap). The timer path leaves it false.
+  Future<void> deliver(
+    String presetId, {
+    bool fromNotification = false,
+  }) async {
     if (_fired.contains(presetId)) return;
     _fired.add(presetId);
 
@@ -122,10 +139,16 @@ class CallBookingCenter extends ChangeNotifier {
     _booked.remove(presetId);
     await _persist();
 
-    // Clears the notification whichever way this arrived. It is posted
-    // `ongoing`, so nothing else will ever remove it — a call that has already
-    // been dealt with must not leave a permanent row in the shade.
-    await _scheduler.cancel(presetId);
+    // When the call arrived through the system notification, that notification
+    // is what is ringing the device. Cancelling it here would silence the ring
+    // before the user has answered or declined. The notification is cancelled
+    // by [IncomingCallScreen] once the user acts.
+    //
+    // When the in-process timer won, the alarm is no longer needed and must be
+    // cleared so it does not leave an undismissable row in the shade.
+    if (!fromNotification) {
+      await _scheduler.cancel(presetId);
+    }
     notifyListeners();
 
     final CallPreset? preset = resolvePreset?.call(presetId);
@@ -134,14 +157,20 @@ class CallBookingCenter extends ChangeNotifier {
     // would survive a reboot and ring for a contact that no longer exists.
     if (preset == null) return;
 
-    onDue?.call(preset);
+    onDue?.call(preset, fromNotification: fromNotification);
   }
 
   void _armTimer(String presetId, DateTime at) {
     _timers.remove(presetId)?.cancel();
     final Duration wait = at.difference(DateTime.now());
     if (wait.isNegative) return;
-    _timers[presetId] = Timer(wait, () => deliver(presetId));
+    _timers[presetId] = Timer(wait, () {
+      // If the app is not in the foreground, the system notification is the
+      // correct route. Delivering here would cancel the notification before the
+      // user has a chance to see or hear it.
+      if (!_isInForeground()) return;
+      deliver(presetId, fromNotification: false);
+    });
   }
 
   Future<void> _persist() => _store.save(_booked);

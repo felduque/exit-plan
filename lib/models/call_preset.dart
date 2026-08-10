@@ -32,6 +32,7 @@ class CallPreset {
     this.ringSeconds = 30,
     this.autoEndSeconds,
     this.vibrate = true,
+    this.retryOnMissed = false,
     this.schedule = const ImmediateSchedule(),
   });
 
@@ -65,6 +66,14 @@ class CallPreset {
   /// Whether the phone buzzes along with the ringtone.
   final bool vibrate;
 
+  /// Whether an unanswered call rings a second time, a few seconds later.
+  ///
+  /// Off by default, and capped at exactly one retry: somebody who really
+  /// wants you calls back once, and a phone that keeps ringing by itself stops
+  /// being an excuse. Only meaningful with a finite [ringSeconds] — a call
+  /// that rings forever is never missed in the first place.
+  final bool retryOnMissed;
+
   /// When the call arrives — the only timing axis there is.
   ///
   /// [ImmediateSchedule] rings here and now with the app open, and is the only
@@ -87,6 +96,7 @@ class CallPreset {
     int? autoEndSeconds,
     bool clearAutoEnd = false,
     bool? vibrate,
+    bool? retryOnMissed,
     CallSchedule? schedule,
   }) {
     return CallPreset(
@@ -102,6 +112,7 @@ class CallPreset {
           ? null
           : (autoEndSeconds ?? this.autoEndSeconds),
       vibrate: vibrate ?? this.vibrate,
+      retryOnMissed: retryOnMissed ?? this.retryOnMissed,
       schedule: schedule ?? this.schedule,
     );
   }
@@ -127,6 +138,7 @@ class CallPreset {
     'ringSeconds': ringSeconds,
     'autoEndSeconds': autoEndSeconds,
     'vibrate': vibrate,
+    'retryOnMissed': retryOnMissed,
     'schedule': schedule.toJson(),
   };
 
@@ -170,6 +182,12 @@ class CallPreset {
     final Object? vibrateRaw = raw['vibrate'];
     final bool vibrate = vibrateRaw is bool ? vibrateRaw : true;
 
+    // Absent in every template saved before the option existed, and absent
+    // again in anything written by a build that has been rolled back. Both
+    // read as "no retry", which is what those builds actually did.
+    final Object? retryRaw = raw['retryOnMissed'];
+    final bool retryOnMissed = retryRaw is bool ? retryRaw : false;
+
     return CallPreset(
       id: id,
       name: name,
@@ -180,6 +198,7 @@ class CallPreset {
       ringSeconds: ringSeconds,
       autoEndSeconds: autoEndSeconds,
       vibrate: vibrate,
+      retryOnMissed: retryOnMissed,
       schedule: CallSchedule.fromJson(
         raw['schedule'],
         legacyDelaySeconds: legacyDelay,

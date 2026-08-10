@@ -49,10 +49,14 @@ class CallLaunchRouter {
 
     await bookings.restore();
 
-    _taps = _scheduler.taps.listen(bookings.deliver);
+    _taps = _scheduler.taps.listen(
+      (String payload) => bookings.deliver(payload, fromNotification: true),
+    );
 
     final String? launch = await _scheduler.launchPayload();
-    if (launch != null) await bookings.deliver(launch);
+    if (launch != null) {
+      await bookings.deliver(launch, fromNotification: true);
+    }
   }
 
   void stop() {
@@ -64,7 +68,10 @@ class CallLaunchRouter {
       .cast<CallPreset?>()
       .firstWhere((CallPreset? p) => p?.id == presetId, orElse: () => null);
 
-  Future<void> _show(CallPreset preset) async {
+  Future<void> _show(
+    CallPreset preset, {
+    required bool fromNotification,
+  }) async {
     // Let the window sit over the keyguard and wake the display. On a cold
     // start MainActivity has already done this natively — Dart runs far too
     // late to matter for that launch — but this is what covers the case where
@@ -80,7 +87,11 @@ class CallLaunchRouter {
     }
 
     try {
-      await fireCall(navigator.context, preset);
+      await fireCall(
+        navigator.context,
+        preset,
+        fromNotification: fromNotification,
+      );
     } finally {
       await CallPlatformChannel.setLockScreenMode(enabled: false);
     }

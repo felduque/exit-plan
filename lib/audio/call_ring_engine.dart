@@ -70,12 +70,18 @@ class CallRingEngine {
   ///
   /// [ringSeconds] of 0 rings until answered or declined. [autoEndSeconds] of
   /// null never hangs up on its own.
+  ///
+  /// [playSound] is false when the call arrived through a system notification
+  /// that is already ringing the device's own ringtone; the cycle still runs
+  /// so the screen and the in-call timer work, but the app does not add a
+  /// second tone on top.
   Future<void> arm(
     EscapeSound sound, {
     required int delaySeconds,
     int ringSeconds = 0,
     int? autoEndSeconds,
     bool vibrate = true,
+    bool playSound = true,
   }) async {
     await cancel();
     final int generation = _generation;
@@ -98,13 +104,13 @@ class CallRingEngine {
     _notify();
 
     if (delaySeconds <= 0) {
-      await _ring(sound, generation, vibrate: vibrate);
+      await _ring(sound, generation, vibrate: vibrate, playSound: playSound);
       return;
     }
 
     _fuseTimer = Timer(
       Duration(seconds: delaySeconds),
-      () => _ring(sound, generation, vibrate: vibrate),
+      () => _ring(sound, generation, vibrate: vibrate, playSound: playSound),
     );
   }
 
@@ -112,28 +118,31 @@ class CallRingEngine {
     EscapeSound sound,
     int generation, {
     required bool vibrate,
+    required bool playSound,
   }) async {
     // Overtaken before ever starting: answered or declined during the delay.
     if (generation != _generation) return;
 
-    try {
-      await _player.load(sound.source, sound.trim);
-      // Overtaken while loading: nothing may start playing on behalf of a
-      // cycle that has already moved on.
-      if (generation != _generation) return;
+    if (playSound) {
+      try {
+        await _player.load(sound.source, sound.trim);
+        // Overtaken while loading: nothing may start playing on behalf of a
+        // cycle that has already moved on.
+        if (generation != _generation) return;
 
-      // Starting is deliberately not awaitable — see [CallPlayerBackend.play].
-      _player.play();
-    } catch (_) {
-      // A tone that fails to load still has to ring — silently, rather than
-      // not ring at all.
-    }
+        // Starting is deliberately not awaitable — see [CallPlayerBackend.play].
+        _player.play();
+      } catch (_) {
+        // A tone that fails to load still has to ring — silently, rather than
+        // not ring at all.
+      }
 
-    // Overtaken while starting: a stop may have reached the player before
-    // play() did. Undo it rather than leave it playing.
-    if (generation != _generation) {
-      await _player.stop();
-      return;
+      // Overtaken while starting: a stop may have reached the player before
+      // play() did. Undo it rather than leave it playing.
+      if (generation != _generation) {
+        await _player.stop();
+        return;
+      }
     }
 
     if (vibrate) {

@@ -154,6 +154,7 @@
   "callEditorSchedulingPremiumBody": "La versión gratuita programa una llamada hasta {minutes} minutos antes. Premium elimina el límite y agrega una hora fija del día.",
   "callEditorSchedulingPremiumFootnote": "Llamar ahora mismo siempre es gratis.",
   "callEditorSaveTemplate": "Guardar contacto",
+  "callEditorSaved": "Contacto guardado",
   "callEditorPhotoUnreadable": "No se pudo leer esa foto.",
   "callEditorScheduledExact": "Llamada programada para las {when}.",
   "callEditorScheduledApprox": "Llamada programada para alrededor de las {when}.",
@@ -164,6 +165,9 @@
   "callEditorVibrateSemantics": "Vibrar mientras suena",
   "callEditorVibrateLabel": "Vibración",
   "callEditorVibrateDetail": "Vibra junto con el tono",
+  "callEditorRetrySemantics": "Volver a sonar si no contestas",
+  "callEditorRetryLabel": "Volver a sonar",
+  "callEditorRetryDetail": "Insiste una vez si nadie contesta",
   "callEditorPickPhoto": "Elegir una foto",
   "callEditorRemovePhoto": "Quitar foto",
   "callEditorPickRingtone": "Elegir un tono",
@@ -256,6 +260,8 @@
   "callPresetCardScheduledFor": "PROGRAMADA · {when}",
 
   "callThemeMissedCall": "Llamada perdida",
+  "callThemeCallEnded": "Llamada finalizada",
+  "callThemeCallDeclined": "Rechazada",
 
   "callActionDecline": "Rechazar",
   "callActionDeclineCall": "Rechazar llamada",

@@ -51,7 +51,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # effect immediately instead of needing a restart, the Settings language
 # picker moved from a bottom sheet (which rendered transparent over the ad
 # banner) to a dialog, and a stray secondary button lost its missing padding.
-version: 1.5.1+8
+version: 1.6.0+11
 
 environment:
   sdk: ^3.12.2

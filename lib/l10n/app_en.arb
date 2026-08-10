@@ -207,6 +207,7 @@
   },
   "callEditorSchedulingPremiumFootnote": "Ringing a call right now stays free, always.",
   "callEditorSaveTemplate": "Save template",
+  "callEditorSaved": "Template saved",
   "callEditorPhotoUnreadable": "Could not read that photo.",
   "callEditorScheduledExact": "Call scheduled for {when}.",
   "@callEditorScheduledExact": {
@@ -237,6 +238,9 @@
   "callEditorVibrateSemantics": "Vibrate while ringing",
   "callEditorVibrateLabel": "Vibrate",
   "callEditorVibrateDetail": "Buzz along with the ringtone",
+  "callEditorRetrySemantics": "Ring again if missed",
+  "callEditorRetryLabel": "Ring again if missed",
+  "callEditorRetryDetail": "Calls back once if nobody answers",
   "callEditorPickPhoto": "Pick a photo",
   "callEditorRemovePhoto": "Remove photo",
   "callEditorPickRingtone": "Pick a ringtone",
@@ -411,6 +415,8 @@
   },
 
   "callThemeMissedCall": "Missed call",
+  "callThemeCallEnded": "Call ended",
+  "callThemeCallDeclined": "Declined",
 
   "callActionDecline": "Decline",
   "callActionDeclineCall": "Decline call",

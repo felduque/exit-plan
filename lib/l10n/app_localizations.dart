@@ -890,6 +890,12 @@ abstract class AppLocalizations {
   /// **'Save template'**
   String get callEditorSaveTemplate;
 
+  /// No description provided for @callEditorSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Template saved'**
+  String get callEditorSaved;
+
   /// No description provided for @callEditorPhotoUnreadable.
   ///
   /// In en, this message translates to:
@@ -949,6 +955,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Buzz along with the ringtone'**
   String get callEditorVibrateDetail;
+
+  /// No description provided for @callEditorRetrySemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Ring again if missed'**
+  String get callEditorRetrySemantics;
+
+  /// No description provided for @callEditorRetryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ring again if missed'**
+  String get callEditorRetryLabel;
+
+  /// No description provided for @callEditorRetryDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Calls back once if nobody answers'**
+  String get callEditorRetryDetail;
 
   /// No description provided for @callEditorPickPhoto.
   ///
@@ -1405,6 +1429,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Missed call'**
   String get callThemeMissedCall;
+
+  /// No description provided for @callThemeCallEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Call ended'**
+  String get callThemeCallEnded;
+
+  /// No description provided for @callThemeCallDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get callThemeCallDeclined;
 
   /// No description provided for @callActionDecline.
   ///
