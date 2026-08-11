@@ -2,8 +2,18 @@
 ///
 /// One enum rather than a class per permission — which is what
 /// `state/permissions.dart` grew into when there was only one. That shape does
-/// not survive four: each would bring its own singleton, its own lifecycle
-/// observer and its own hand-written notice widget, and the four would drift.
+/// not survive three: each would bring its own singleton, its own lifecycle
+/// observer and its own hand-written notice widget, and the three would drift.
+///
+/// `USE_FULL_SCREEN_INTENT` used to be the fourth, and is gone rather than
+/// merely denied. Play rejected it under the full-screen intent policy, which
+/// admits only apps whose core purpose is real calls or alarms, so the app no
+/// longer declares it on any Android version. Modelling it as a permission
+/// stuck at "not granted" would have been worse than dropping it: the notice
+/// widget would offer a settings page that has no switch for an app that does
+/// not ask for the permission, and the scheduled call would report itself
+/// permanently degraded for a capability it can never regain. See
+/// android/app/src/main/AndroidManifest.xml.
 enum AppPermission {
   /// `POST_NOTIFICATIONS`. Lock-screen media controls rest on it, and so does
   /// every scheduled call — a call that arrives while the app is closed arrives
@@ -18,14 +28,6 @@ enum AppPermission {
   /// restricted by Play policy to alarm-clock and calendar apps. Shipping it
   /// here would be claiming to be something this app is not.
   exactAlarm,
-
-  /// `USE_FULL_SCREEN_INTENT`. The difference between a call that takes over
-  /// the locked screen and one that appears as a banner at the top.
-  ///
-  /// Granted at install below Android 14. From 14 it is held back from apps
-  /// that are not phone or alarm apps, and has to be asked for by sending the
-  /// user to a settings page.
-  fullScreenIntent,
 
   /// Exemption from battery optimisation. Never required, never asked for
   /// unprompted, and offered only from the permission centre — a request for
@@ -45,9 +47,8 @@ enum PermissionAvailability {
   /// then on a request returns denied with no UI at all, so the only honest
   /// action left is to open the settings page.
   ///
-  /// Some permissions are born in this state: `SCHEDULE_EXACT_ALARM` and
-  /// `USE_FULL_SCREEN_INTENT` have no runtime dialog and are only ever granted
-  /// from a settings screen.
+  /// Some permissions are born in this state: `SCHEDULE_EXACT_ALARM` has no
+  /// runtime dialog and is only ever granted from a settings screen.
   needsSettings,
 
   /// This version of Android has no such concept, so it is neither granted nor
@@ -72,8 +73,8 @@ class PermissionState {
   /// Whether the app may behave as though it has this.
   ///
   /// [PermissionAvailability.unsupported] counts, and that is the point: on
-  /// Android 13 there is no full-screen-intent permission to hold, so a call
-  /// takes the screen regardless and the feature is not degraded.
+  /// Android 11 there is no exact-alarm permission to hold, so the alarm is
+  /// exact regardless and the feature is not degraded.
   bool get satisfied =>
       availability == PermissionAvailability.granted ||
       availability == PermissionAvailability.unsupported;

@@ -17,9 +17,9 @@ import '../permissions/call_platform_channel.dart';
 ///
 /// ```
 /// AlarmManager (exact, allow-while-idle)
-///   └→ notification, IMPORTANCE_MAX, category "call", full-screen intent
-///        ├─ screen locked or off → Android launches the activity full-screen
-///        └─ phone in use          → heads-up banner; tapping it opens the app
+///   └→ notification, IMPORTANCE_MAX, category "call", ringtone, insistent
+///        └→ heads-up banner that rings until answered; tapping it opens the
+///           call screen, over the keyguard if the phone is locked
 /// ```
 ///
 /// There is no other legitimate route. Waking an Activity from a background
@@ -27,18 +27,28 @@ import '../permissions/call_platform_channel.dart';
 /// API that would give the real system call UI — requires declaring the app as
 /// a telephony app, which this is not and will not claim to be.
 ///
-/// ## Two things it degrades rather than refuses
+/// ## Why the call no longer takes the screen by itself
 ///
-/// * **No exact-alarm permission** → an inexact alarm. It still arrives; it may
-///   be minutes late, batched with whatever else Android was waking for.
-/// * **No full-screen-intent permission** (Android 14+, where the system holds
-///   it back from non-phone apps) → the notification is posted without one, so
-///   it rings and vibrates as a banner instead of taking the screen.
+/// It used to: the notification carried a full-screen intent and Android
+/// launched the call screen unprompted. Play rejected that in version 11
+/// (1.6.0) — `USE_FULL_SCREEN_INTENT` is admitted only from apps whose core
+/// purpose is real calls or alarms, and a simulated call does not qualify
+/// however identical the result. The permission is gone from the manifest, so
+/// the notification is now posted without one on every Android version.
 ///
-/// Both are told to the user *before* they save, not discovered afterwards.
-/// Refusing outright would mean withholding a feature the device can mostly
-/// perform, and a call that is two minutes late still gets somebody out of a
-/// meeting.
+/// What survives is most of it. The banner still rings the device's ringtone,
+/// still vibrates in the call pattern, and still repeats until it is answered
+/// (`FLAG_INSISTENT`), so the phone behaves like a ringing phone. The one lost
+/// step is automatic: somebody has to tap the notification. From there the call
+/// screen is unchanged, keyguard and all.
+///
+/// ## What it still degrades rather than refuses
+///
+/// **No exact-alarm permission** → an inexact alarm. It still arrives; it may
+/// be minutes late, batched with whatever else Android was waking for. This is
+/// told to the user *before* they save, not discovered afterwards: refusing
+/// outright would mean withholding a feature the device can mostly perform, and
+/// a call that is two minutes late still gets somebody out of a meeting.
 class CallScheduler {
   CallScheduler({CallSchedulerBackend? backend})
     : _backend = backend ?? LocalNotificationsBackend();
@@ -55,10 +65,13 @@ class CallScheduler {
   ///
   /// `v1` was silent, and that was a mistake worth recording. The reasoning was
   /// "the call screen owns the ringtone, so a channel sound would double up" —
-  /// true when the full-screen intent fires, and completely wrong when it does
-  /// not. On Android 14+, where the system withholds that permission from
+  /// true when a full-screen intent fires, and completely wrong when it does
+  /// not. On Android 14+, where the system withheld that permission from
   /// non-phone apps, every scheduled call arrived as a mute, undismissable row
   /// in the shade. It read as the call never arriving at all.
+  ///
+  /// That is now the only path there is, on every version, so this channel's
+  /// sound *is* the ring of a scheduled call rather than a backstop for one.
   ///
   /// Bumping the id is the only way to change it: devices that already ran v1
   /// keep its frozen settings for ever otherwise.
@@ -83,10 +96,6 @@ class CallScheduler {
   /// Whether a call scheduled right now would land on time.
   Future<bool> get canBeExact => CallPlatformChannel.canScheduleExactAlarms();
 
-  /// Whether a scheduled call would take the whole screen or arrive as a
-  /// banner.
-  Future<bool> get canTakeScreen => CallPlatformChannel.canUseFullScreenIntent();
-
   /// Books [preset] to arrive at [at].
   ///
   /// Returns how it was actually booked, which is not always what was asked
@@ -95,7 +104,6 @@ class CallScheduler {
     await init();
 
     final bool exact = await canBeExact;
-    final bool fullScreen = await canTakeScreen;
 
     await _backend.schedule(
       id: _idFor(preset.id),
@@ -104,10 +112,9 @@ class CallScheduler {
       body: preset.number.isEmpty ? 'Incoming call' : preset.number,
       payload: preset.id,
       exact: exact,
-      fullScreen: fullScreen,
     );
 
-    return ScheduleOutcome(at: at, exact: exact, fullScreen: fullScreen);
+    return ScheduleOutcome(at: at, exact: exact);
   }
 
   Future<void> cancel(String presetId) async {
@@ -143,21 +150,12 @@ class CallScheduler {
 /// What a booking actually turned into.
 @immutable
 class ScheduleOutcome {
-  const ScheduleOutcome({
-    required this.at,
-    required this.exact,
-    required this.fullScreen,
-  });
+  const ScheduleOutcome({required this.at, required this.exact});
 
   final DateTime at;
 
   /// False when the alarm was booked inexact, and may run minutes late.
   final bool exact;
-
-  /// False when the call will arrive as a banner rather than taking the screen.
-  final bool fullScreen;
-
-  bool get isPerfect => exact && fullScreen;
 }
 
 /// The platform work, behind a seam.
@@ -177,7 +175,6 @@ abstract interface class CallSchedulerBackend {
     required String body,
     required String payload,
     required bool exact,
-    required bool fullScreen,
   });
 
   Future<void> cancel(int id);
@@ -275,7 +272,6 @@ class LocalNotificationsBackend implements CallSchedulerBackend {
     required String body,
     required String payload,
     required bool exact,
-    required bool fullScreen,
   }) async {
     await _plugin.zonedSchedule(
       id: id,
@@ -289,7 +285,10 @@ class LocalNotificationsBackend implements CallSchedulerBackend {
           importance: Importance.max,
           priority: Priority.high,
           category: AndroidNotificationCategory.call,
-          fullScreenIntent: fullScreen,
+          // No fullScreenIntent, on any Android version. The permission it
+          // needs is gone from the manifest — see the class doc — and asking
+          // for one without it is a no-op the system logs a warning about.
+          // `category: call` still earns the banner the ranking of a call.
           playSound: true,
           sound: const UriAndroidNotificationSound(_ringtoneUri),
           audioAttributesUsage: AudioAttributesUsage.notificationRingtone,

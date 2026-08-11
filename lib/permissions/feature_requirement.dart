@@ -66,7 +66,6 @@ abstract final class FeatureRequirement {
         AppFeature.fakeCallNow => const <AppPermission>[],
         AppFeature.fakeCallScheduled => const <AppPermission>[
           AppPermission.exactAlarm,
-          AppPermission.fullScreenIntent,
           AppPermission.batteryUnrestricted,
         ],
       };

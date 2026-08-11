@@ -7,7 +7,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.core.app.NotificationManagerCompat
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -18,9 +17,17 @@ import io.flutter.plugin.common.MethodChannel
  * activity to hand it the right FlutterEngine so the media session can be bound
  * from a cold start.
  *
- * On top of that it answers the three questions Dart cannot ask for itself, and
+ * On top of that it answers the two questions Dart cannot ask for itself, and
  * performs the one action that has to happen on a real Activity: showing a fake
  * incoming call over the lock screen.
+ *
+ * That last part still works without `USE_FULL_SCREEN_INTENT`, and the
+ * distinction is worth stating because the permission's removal looks like it
+ * should have taken it with it. `setShowWhenLocked`/`setTurnScreenOn` are
+ * window flags on an Activity that is *already being started*; the permission
+ * only governs whether Android may start it **unprompted**. So the call screen
+ * still covers the keyguard exactly as before — it is now reached by tapping
+ * the notification rather than by the system launching it on its own.
  *
  * There is deliberately **no second Activity** for the call. A dedicated one
  * would need its own FlutterEngine and would duplicate the audio_service
@@ -85,17 +92,11 @@ class MainActivity : AudioServiceActivity() {
     private fun handle(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "canScheduleExactAlarms" -> result.success(canScheduleExactAlarms())
-            "canUseFullScreenIntent" -> result.success(canUseFullScreenIntent())
             "isIgnoringBatteryOptimizations" ->
                 result.success(isIgnoringBatteryOptimizations())
 
             "openExactAlarmSettings" -> {
                 openExactAlarmSettings()
-                result.success(null)
-            }
-
-            "openFullScreenIntentSettings" -> {
-                openFullScreenIntentSettings()
                 result.success(null)
             }
 
@@ -123,17 +124,6 @@ class MainActivity : AudioServiceActivity() {
         return alarms.canScheduleExactAlarms()
     }
 
-    /**
-     * Below Android 14 this is an install-time permission and is simply held.
-     * From 14 the system withholds it from apps that are not phone or alarm
-     * apps — which this is not, and does not claim to be — so it has to be
-     * granted by hand.
-     */
-    private fun canUseFullScreenIntent(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
-        return NotificationManagerCompat.from(this).canUseFullScreenIntent()
-    }
-
     private fun isIgnoringBatteryOptimizations(): Boolean {
         val power = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
         return power.isIgnoringBatteryOptimizations(packageName)
@@ -144,16 +134,6 @@ class MainActivity : AudioServiceActivity() {
         startSafely(
             Intent(
                 Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                Uri.parse("package:$packageName"),
-            )
-        )
-    }
-
-    private fun openFullScreenIntentSettings() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return
-        startSafely(
-            Intent(
-                Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
                 Uri.parse("package:$packageName"),
             )
         )

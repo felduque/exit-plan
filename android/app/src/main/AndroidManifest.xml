@@ -24,11 +24,21 @@
          the user grants, and when they do not, the app falls back to an inexact
          alarm and says so before they rely on it.
 
-         USE_FULL_SCREEN_INTENT is granted at install below Android 14. From 14
-         the system withholds it from apps that are not phone or alarm apps, so
-         it has to be requested from a settings page, and a refusal degrades the
-         call to a heads-up banner rather than breaking it. See
-         lib/permissions/ for both fallbacks.
+         USE_FULL_SCREEN_INTENT is deliberately stripped below, and that is a
+         policy decision rather than a technical one. Play rejected version 11
+         (1.6.0) under the full-screen intent policy: from May 2024 Google only
+         accepts the permission from apps whose *core* purpose is placing or
+         receiving real phone calls, or setting alarms — verified against the
+         system Dialer and Alarm Clock roles, which this app neither holds nor
+         claims. Simulating a call does not qualify, however identical the
+         on-screen result. Appealing it means arguing against the wording of the
+         policy, so the call now arrives as a heads-up banner and the user taps
+         it to open the call screen.
+
+         tools:node="remove" rather than simply deleting the line: Play scans
+         the *merged* manifest, so a permission any future dependency declares
+         would be silently re-added and rejected again. No current dependency
+         does, and this keeps it that way.
 
          RECEIVE_BOOT_COMPLETED reinstates pending alarms after a restart:
          Android drops every alarm on reboot, and a call scheduled for tomorrow
@@ -39,7 +49,8 @@
          permission centre instead — calls are late without an exemption, not
          absent, and that does not meet Play's bar for the prompt. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"
+        tools:node="remove"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <!-- These used to be stripped with tools:node="remove", because nothing in

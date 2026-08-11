@@ -462,16 +462,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get callEditorPhotoUnreadable => 'Could not read that photo.';
 
   @override
-  String callEditorScheduledExact(String when) {
-    return 'Call scheduled for $when.';
-  }
-
-  @override
-  String callEditorScheduledApprox(String when) {
-    return 'Call scheduled for around $when.';
-  }
-
-  @override
   String callEditorScheduledExactBanner(String when) {
     return 'Call scheduled for $when. It will arrive as a banner.';
   }
@@ -657,14 +647,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Android needs permission to wake the phone at an exact moment. Without it the call still arrives, but a few minutes after the time you set.';
 
   @override
-  String get scheduleNoticeFullScreenTitle =>
-      'The call will not take over the screen';
-
-  @override
-  String get scheduleNoticeFullScreenBody =>
-      'Without this the call arrives as a banner at the top of the screen instead of filling it. It still rings and vibrates, and tapping it opens the call.';
-
-  @override
   String get scheduleCaption => 'SCHEDULE';
 
   @override
@@ -672,7 +654,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scheduleArrivesWhenClosed =>
-      'The call arrives even if ExitPlan is closed and the phone is locked.';
+      'The call rings even if ExitPlan is closed and the phone is locked. It arrives as a notification — tap it to open the call.';
 
   @override
   String get scheduleModeNow => 'NOW';

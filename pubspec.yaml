@@ -51,7 +51,14 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # effect immediately instead of needing a restart, the Settings language
 # picker moved from a bottom sheet (which rendered transparent over the ad
 # banner) to a dialog, and a stray secondary button lost its missing padding.
-version: 1.6.0+11
+#
+# 1.6.1 removes USE_FULL_SCREEN_INTENT, which is why 1.6.0+11 never reached
+# anyone: Play rejected it under the full-screen intent policy. A scheduled
+# call now arrives as a ringing notification the user taps rather than a screen
+# Android fills on its own. The version *name* moves with it rather than
+# reusing 1.6.0 at a higher code, because a 1.6.0 in the wild that behaves
+# differently from the 1.6.0 in the tree is a support problem later.
+version: 1.6.1+12
 
 environment:
   sdk: ^3.12.2

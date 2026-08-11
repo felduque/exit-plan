@@ -902,18 +902,6 @@ abstract class AppLocalizations {
   /// **'Could not read that photo.'**
   String get callEditorPhotoUnreadable;
 
-  /// No description provided for @callEditorScheduledExact.
-  ///
-  /// In en, this message translates to:
-  /// **'Call scheduled for {when}.'**
-  String callEditorScheduledExact(String when);
-
-  /// No description provided for @callEditorScheduledApprox.
-  ///
-  /// In en, this message translates to:
-  /// **'Call scheduled for around {when}.'**
-  String callEditorScheduledApprox(String when);
-
   /// No description provided for @callEditorScheduledExactBanner.
   ///
   /// In en, this message translates to:
@@ -1244,18 +1232,6 @@ abstract class AppLocalizations {
   /// **'Android needs permission to wake the phone at an exact moment. Without it the call still arrives, but a few minutes after the time you set.'**
   String get scheduleNoticeExactAlarmBody;
 
-  /// No description provided for @scheduleNoticeFullScreenTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'The call will not take over the screen'**
-  String get scheduleNoticeFullScreenTitle;
-
-  /// No description provided for @scheduleNoticeFullScreenBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Without this the call arrives as a banner at the top of the screen instead of filling it. It still rings and vibrates, and tapping it opens the call.'**
-  String get scheduleNoticeFullScreenBody;
-
   /// No description provided for @scheduleCaption.
   ///
   /// In en, this message translates to:
@@ -1271,7 +1247,7 @@ abstract class AppLocalizations {
   /// No description provided for @scheduleArrivesWhenClosed.
   ///
   /// In en, this message translates to:
-  /// **'The call arrives even if ExitPlan is closed and the phone is locked.'**
+  /// **'The call rings even if ExitPlan is closed and the phone is locked. It arrives as a notification — tap it to open the call.'**
   String get scheduleArrivesWhenClosed;
 
   /// No description provided for @scheduleModeNow.

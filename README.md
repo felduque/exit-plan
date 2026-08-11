@@ -125,23 +125,36 @@ legitimate route on Android and `lib/calls/call_scheduler.dart` documents it:
 
 ```
 AlarmManager (exact, allow-while-idle)
-  └→ notification, IMPORTANCE_MAX, category "call", full-screen intent
-       ├─ screen locked or off → Android launches the activity full-screen
-       └─ phone in use          → heads-up banner; tapping it opens the call
+  └→ notification, IMPORTANCE_MAX, category "call", ringtone, FLAG_INSISTENT
+       └→ heads-up banner that rings until answered; tapping it opens the call
+          screen, over the keyguard if the phone is locked
 ```
 
 `ConnectionService` — the API behind the real system call UI — is deliberately
 not used: it requires declaring the app as a telephony app, which it is not.
 
-**Both degradations are told to the user before they save, not discovered
-afterwards** (`ScheduleReadinessNotice`):
+**The call no longer takes the screen by itself, and that is a policy limit
+rather than a technical one.** It used to: the notification carried a
+full-screen intent and Android launched the call screen unprompted. Play
+rejected version 11 (1.6.0) for it — since May 2024 `USE_FULL_SCREEN_INTENT` is
+admitted only from apps whose *core* purpose is real calls or alarms, verified
+against the system Dialer and Alarm Clock roles, and a simulated call does not
+qualify however identical the result. The permission is stripped from the merged
+manifest with `tools:node="remove"`, so a dependency cannot quietly reintroduce
+it and earn a second rejection.
 
-- no `SCHEDULE_EXACT_ALARM` → an inexact alarm; it arrives, possibly minutes late
-- no `USE_FULL_SCREEN_INTENT` (Android 14+ withholds it from non-phone apps) → it
-  arrives as a banner that still rings, instead of taking the screen
+What survives is most of it: the banner rings the device ringtone, vibrates in
+the call pattern, and repeats until answered, so the phone behaves like a
+ringing phone. The one lost step is automatic — somebody has to tap. From there
+the call screen is unchanged, keyguard and all, because `setShowWhenLocked` is a
+window flag on an Activity that is *already starting* and never needed the
+permission.
 
-Refusing outright would withhold a feature the device can mostly perform, and a
-call two minutes late still gets somebody out of a meeting.
+**The remaining degradation is told to the user before they save, not discovered
+afterwards** (`ScheduleReadinessNotice`): no `SCHEDULE_EXACT_ALARM` → an inexact
+alarm; it arrives, possibly minutes late. Refusing outright would withhold a
+feature the device can mostly perform, and a call two minutes late still gets
+somebody out of a meeting.
 
 **One timing control, not two.** The editor used to carry a `FUSE` row of
 seconds *and* a `SCHEDULE` row of minutes. They asked the same question in two
@@ -200,19 +213,25 @@ is no way to pause a firing except reopening the app, and Android will eventuall
 kill background playback that has no foreground service notification) and
 **scheduled calls**, which arrive *as* a notification.
 
-Three more were added for scheduling, and none of them has a dialog —
-`SCHEDULE_EXACT_ALARM`, `USE_FULL_SCREEN_INTENT` and the battery-optimisation
-exemption are granted on a settings page or not at all. That is why
-`PermissionCenter` is a lifecycle observer: noticing the app was resumed is the
-*only* way it can ever learn one of them was granted.
+Two more were added for scheduling, and neither has a dialog —
+`SCHEDULE_EXACT_ALARM` and the battery-optimisation exemption are granted on a
+settings page or not at all. That is why `PermissionCenter` is a lifecycle
+observer: noticing the app was resumed is the *only* way it can ever learn one
+of them was granted.
 
-Two deliberate omissions:
+Three deliberate omissions:
 
 - **`USE_EXACT_ALARM`** is granted automatically, which is why it is tempting,
   and Play restricts it to alarm-clock and calendar apps. This is neither.
 - **`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`** is never prompted for. The app
   offers a shortcut to the battery settings *list* instead: calls are late
   without an exemption, not absent, and that does not meet Play's bar.
+- **`USE_FULL_SCREEN_INTENT`** was removed after Play rejected version 11
+  (1.6.0) for it — see *Scheduled calls* above. It is not merely un-asked-for
+  but stripped from the merged manifest, and `AppPermission` has no member for
+  it: a permission modelled as permanently denied would have left the notice
+  widget pointing at a settings page with no switch on it, and the scheduled
+  call reporting itself degraded for a capability it can never regain.
 
 `state/permissions.dart` still owns `POST_NOTIFICATIONS` alone; `PermissionCenter`
 delegates to it rather than keeping a second copy that would eventually disagree.

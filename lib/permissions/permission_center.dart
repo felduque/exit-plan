@@ -8,10 +8,10 @@ import 'call_platform_channel.dart';
 /// app comes back to the foreground.
 ///
 /// That last part is the whole reason this is a long-lived object rather than a
-/// function: two of the four permissions here have **no runtime dialog at
-/// all**. `SCHEDULE_EXACT_ALARM` and `USE_FULL_SCREEN_INTENT` can only be
-/// granted on a settings page, so the app's only way to learn the answer is to
-/// notice it has been resumed and ask again.
+/// function: two of the three permissions here have **no runtime dialog at
+/// all**. `SCHEDULE_EXACT_ALARM` and the battery-optimisation exemption can only
+/// be granted on a settings page, so the app's only way to learn the answer is
+/// to notice it has been resumed and ask again.
 ///
 /// A singleton because a permission is a property of the process, not of a
 /// screen, and because several screens watch the same ones.
@@ -29,7 +29,7 @@ class PermissionCenter extends ChangeNotifier with WidgetsBindingObserver {
 
   static final PermissionCenter instance = PermissionCenter._();
 
-  /// The three this object genuinely owns. Notifications are read through
+  /// The two this object genuinely owns. Notifications are read through
   /// [NotificationPermission] on demand.
   final Map<AppPermission, PermissionState> _states =
       <AppPermission, PermissionState>{};
@@ -91,7 +91,7 @@ class PermissionCenter extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Coming back from a system settings page is the entire reason this
-    // listens. For exact alarms and full-screen intents it is the *only* way
+    // listens. For exact alarms and the battery exemption it is the *only* way
     // the answer can ever change.
     if (state == AppLifecycleState.resumed) refresh();
   }
@@ -103,9 +103,6 @@ class PermissionCenter extends ChangeNotifier with WidgetsBindingObserver {
         <AppPermission, PermissionAvailability>{
           AppPermission.exactAlarm: _fromChannel(
             await CallPlatformChannel.canScheduleExactAlarms(),
-          ),
-          AppPermission.fullScreenIntent: _fromChannel(
-            await CallPlatformChannel.canUseFullScreenIntent(),
           ),
           AppPermission.batteryUnrestricted: _fromChannel(
             await CallPlatformChannel.isIgnoringBatteryOptimizations(),
@@ -133,8 +130,6 @@ class PermissionCenter extends ChangeNotifier with WidgetsBindingObserver {
         await _notifications.resolve();
       case AppPermission.exactAlarm:
         await CallPlatformChannel.openExactAlarmSettings();
-      case AppPermission.fullScreenIntent:
-        await CallPlatformChannel.openFullScreenIntentSettings();
       case AppPermission.batteryUnrestricted:
         await CallPlatformChannel.openBatterySettings();
     }
@@ -153,7 +148,7 @@ class PermissionCenter extends ChangeNotifier with WidgetsBindingObserver {
   /// a blocked feature, a permission this Android version does not have — are
   /// exactly the ones that would otherwise rot unnoticed.
   ///
-  /// Covers only the three permissions this object owns. Notifications belong
+  /// Covers only the two permissions this object owns. Notifications belong
   /// to [NotificationPermission] and are set through *its* seam — asserting
   /// rather than quietly forwarding, because a value written here that the
   /// getter then reads from somewhere else would be a test that passes while

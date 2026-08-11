@@ -35,7 +35,7 @@ void main() {
     test('unsupported counts as satisfied — on an Android with no such '
         'permission the feature is not degraded, it simply works', () {
       const PermissionState state = PermissionState(
-        permission: AppPermission.fullScreenIntent,
+        permission: AppPermission.exactAlarm,
         availability: PermissionAvailability.unsupported,
       );
       expect(state.satisfied, isTrue);
@@ -137,14 +137,17 @@ void main() {
       );
     });
 
-    test('no full-screen intent degrades rather than blocks — the call arrives '
-        'as a banner, which still rings', () {
+    test('the full-screen intent is not a permission this app has any more, so '
+        'nothing may model the scheduled call as degraded without it — Play '
+        'rejected the version that asked for it and the call now always '
+        'arrives as a banner', () {
+      expect(AppPermission.values, isNot(contains('fullScreenIntent')));
       expect(
-        FeatureRequirement.statusOf(
-          AppFeature.fakeCallScheduled,
-          without(AppPermission.fullScreenIntent),
-        ),
-        FeatureStatus.degraded,
+        FeatureRequirement.recommended(AppFeature.fakeCallScheduled),
+        <AppPermission>[
+          AppPermission.exactAlarm,
+          AppPermission.batteryUnrestricted,
+        ],
       );
     });
 
@@ -168,7 +171,7 @@ void main() {
         FeatureRequirement.statusOf(
           AppFeature.fakeCallScheduled,
           without(
-            AppPermission.fullScreenIntent,
+            AppPermission.exactAlarm,
             as: PermissionAvailability.unsupported,
           ),
         ),
@@ -222,7 +225,7 @@ void main() {
       );
     });
 
-    test('debugSet moves the three it owns', () {
+    test('debugSet moves the two it owns', () {
       PermissionCenter.instance.debugSet(<AppPermission, PermissionAvailability>{
         AppPermission.exactAlarm: PermissionAvailability.needsSettings,
       });
@@ -233,7 +236,7 @@ void main() {
       // …and leaves the others alone.
       expect(
         PermissionCenter.instance
-            .stateOf(AppPermission.fullScreenIntent)
+            .stateOf(AppPermission.batteryUnrestricted)
             .satisfied,
         isTrue,
       );

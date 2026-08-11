@@ -1,15 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// The three questions about this device that Dart cannot answer, and the
+/// The two questions about this device that Dart cannot answer, and the
 /// actions that have to happen on a real Activity.
 ///
 /// Thin on purpose: everything here is one platform call and a default. The
 /// defaults all mean **"assume it works"**, which is the right way round —
-/// `permission_handler` cannot see either of the two permissions that matter
-/// most here, and a process with no channel at all (every widget test, and the
-/// desktop builds) should render the app as it looks when nothing is wrong
-/// rather than as a wall of warnings.
+/// `permission_handler` cannot see `SCHEDULE_EXACT_ALARM` at all, and a process
+/// with no channel (every widget test, and the desktop builds) should render
+/// the app as it looks when nothing is wrong rather than as a wall of warnings.
 ///
 /// Mirrors the seam `NotificationPermission` and `AdsService` already have, for
 /// the same reason: the interesting states are the ones the developer's own
@@ -45,18 +44,11 @@ abstract final class CallPlatformChannel {
   static Future<bool> canScheduleExactAlarms() =>
       _ask<bool>('canScheduleExactAlarms', true);
 
-  /// True below Android 14, where the permission is granted at install.
-  static Future<bool> canUseFullScreenIntent() =>
-      _ask<bool>('canUseFullScreenIntent', true);
-
   static Future<bool> isIgnoringBatteryOptimizations() =>
       _ask<bool>('isIgnoringBatteryOptimizations', true);
 
   static Future<void> openExactAlarmSettings() =>
       _tell('openExactAlarmSettings');
-
-  static Future<void> openFullScreenIntentSettings() =>
-      _tell('openFullScreenIntentSettings');
 
   static Future<void> openBatterySettings() => _tell('openBatterySettings');
 

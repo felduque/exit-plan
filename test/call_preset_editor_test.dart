@@ -134,7 +134,6 @@ class _FakeBackend implements CallSchedulerBackend {
     required String body,
     required String payload,
     required bool exact,
-    required bool fullScreen,
   }) async {
     scheduled.removeWhere((_Booking b) => b.id == id);
     scheduled.add(
@@ -145,7 +144,6 @@ class _FakeBackend implements CallSchedulerBackend {
         body: body,
         payload: payload,
         exact: exact,
-        fullScreen: fullScreen,
       ),
     );
   }
@@ -172,7 +170,6 @@ class _Booking {
     required this.body,
     required this.payload,
     required this.exact,
-    required this.fullScreen,
   });
 
   final int id;
@@ -181,5 +178,4 @@ class _Booking {
   final String body;
   final String payload;
   final bool exact;
-  final bool fullScreen;
 }

@@ -145,23 +145,19 @@ void main() {
       expect(backend.scheduled.single.at, at);
     });
 
-    test('books exact and full-screen when both are permitted', () async {
+    test('books an exact alarm when the permission is there', () async {
       final ScheduleOutcome outcome = await scheduler.schedule(
         preset(),
         DateTime(2026, 8, 8, 15, 0),
       );
       expect(outcome.exact, isTrue);
-      expect(outcome.fullScreen, isTrue);
-      expect(outcome.isPerfect, isTrue);
       expect(backend.scheduled.single.exact, isTrue);
-      expect(backend.scheduled.single.fullScreen, isTrue);
     });
 
     test('falls back to an inexact alarm rather than refusing when the exact '
         'permission is missing, and reports that it did', () async {
       CallPlatformChannel.debugAnswers = <String, Object?>{
         'canScheduleExactAlarms': false,
-        'canUseFullScreenIntent': true,
       };
 
       final ScheduleOutcome outcome = await scheduler.schedule(
@@ -169,26 +165,24 @@ void main() {
         DateTime(2026, 8, 8, 15, 0),
       );
       expect(outcome.exact, isFalse);
-      expect(outcome.isPerfect, isFalse);
       // Still booked. Late is not the same as absent.
       expect(backend.scheduled.single.exact, isFalse);
       expect(backend.scheduled, hasLength(1));
     });
 
-    test('drops the full-screen intent rather than refusing when Android 14 '
-        'withheld it, and reports that it did', () async {
+    test('never asks for a full-screen intent, whatever the platform would '
+        'have answered — the permission is gone from the manifest and Play '
+        'rejected the version that shipped it', () async {
       CallPlatformChannel.debugAnswers = <String, Object?>{
         'canScheduleExactAlarms': true,
-        'canUseFullScreenIntent': false,
+        // The old key, still answered generously. Nothing may read it.
+        'canUseFullScreenIntent': true,
       };
 
-      final ScheduleOutcome outcome = await scheduler.schedule(
-        preset(),
-        DateTime(2026, 8, 8, 15, 0),
-      );
-      expect(outcome.fullScreen, isFalse);
-      expect(backend.scheduled.single.fullScreen, isFalse);
+      await scheduler.schedule(preset(), DateTime(2026, 8, 8, 15, 0));
+
       expect(backend.scheduled, hasLength(1));
+      expect(backend.scheduled.single.exact, isTrue);
     });
 
     test('the notification says the caller name, which is what a banner has '
@@ -286,7 +280,6 @@ class _FakeBackend implements CallSchedulerBackend {
     required String body,
     required String payload,
     required bool exact,
-    required bool fullScreen,
   }) async {
     // Mirrors the real plugin: booking the same id twice replaces it.
     scheduled.removeWhere((_Booking b) => b.id == id);
@@ -298,7 +291,6 @@ class _FakeBackend implements CallSchedulerBackend {
         body: body,
         payload: payload,
         exact: exact,
-        fullScreen: fullScreen,
       ),
     );
   }
@@ -325,7 +317,6 @@ class _Booking {
     required this.body,
     required this.payload,
     required this.exact,
-    required this.fullScreen,
   });
 
   final int id;
@@ -334,5 +325,4 @@ class _Booking {
   final String body;
   final String payload;
   final bool exact;
-  final bool fullScreen;
 }

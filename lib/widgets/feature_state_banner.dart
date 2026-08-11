@@ -167,11 +167,6 @@ class ScheduleReadinessNotice extends StatelessWidget {
           title: loc.scheduleNoticeExactAlarmTitle,
           explanation: loc.scheduleNoticeExactAlarmBody,
         ),
-        PermissionNotice(
-          permission: AppPermission.fullScreenIntent,
-          title: loc.scheduleNoticeFullScreenTitle,
-          explanation: loc.scheduleNoticeFullScreenBody,
-        ),
       ],
     );
   }

@@ -6,10 +6,12 @@ import '../l10n/app_localizations.dart';
 
 /// Tells the user what the device is actually going to do with a booking.
 ///
-/// A receipt, not a celebration. Two of the four cases are the ones worth the
-/// line: an inexact alarm and a call that will arrive as a banner are both
-/// perfectly usable, and both are things somebody should learn now rather than
-/// while waiting for a call that is running four minutes behind.
+/// A receipt, not a celebration. Both cases say the call arrives as a banner,
+/// because since the full-screen intent permission was dropped it always does,
+/// and somebody should learn that now rather than while staring at a locked
+/// screen waiting for a call to fill it. What still varies is the timing: an
+/// inexact alarm is perfectly usable, but only if its owner knows it may run a
+/// few minutes behind.
 ///
 /// Shared between the editor's save and the list's call button so the two
 /// cannot drift into describing the same outcome differently — which they did,
@@ -20,12 +22,9 @@ void showScheduleOutcome(BuildContext context, ScheduleOutcome outcome) {
       '${outcome.at.hour.toString().padLeft(2, '0')}:'
       '${outcome.at.minute.toString().padLeft(2, '0')}';
 
-  final String message = switch ((outcome.exact, outcome.fullScreen)) {
-    (true, true) => loc.callEditorScheduledExact(when),
-    (false, true) => loc.callEditorScheduledApprox(when),
-    (true, false) => loc.callEditorScheduledExactBanner(when),
-    (false, false) => loc.callEditorScheduledApproxBanner(when),
-  };
+  final String message = outcome.exact
+      ? loc.callEditorScheduledExactBanner(when)
+      : loc.callEditorScheduledApproxBanner(when);
 
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()

@@ -526,7 +526,6 @@ class _FakeBackend implements CallSchedulerBackend {
     required String body,
     required String payload,
     required bool exact,
-    required bool fullScreen,
   }) async {
     scheduled.removeWhere(
       (({int id, DateTime at, String payload}) b) => b.id == id,
