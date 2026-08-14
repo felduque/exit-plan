@@ -1,0 +1,187 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation "Encabezado de página" [ref=e3]:
+      - link "Logotipo de Google Play" [ref=e4] [cursor=pointer]:
+        - /url: /store/games
+        - generic [ref=e12]: google_logo Play
+      - navigation "Principal" [ref=e14]:
+        - tablist [ref=e16]:
+          - generic [ref=e19]:
+            - tab "Juegos" [ref=e20] [cursor=pointer]
+            - tab "Aplicaciones" [selected] [ref=e22] [cursor=pointer]
+            - tab "Libros" [ref=e24] [cursor=pointer]
+            - tab "Niños" [ref=e26] [cursor=pointer]
+            - tab "Tarjetas regalo" [ref=e28] [cursor=pointer]
+      - generic [ref=e30]:
+        - button "Buscar" [ref=e32] [cursor=pointer]:
+          - generic [ref=e33]: search
+        - button "Centro de ayuda" [ref=e35] [cursor=pointer]:
+          - generic [ref=e36]: help_outline
+        - button "Abre el menú de la cuenta" [ref=e41] [cursor=pointer]
+  - generic [ref=e47]:
+    - generic [ref=e50]:
+      - generic [ref=e55]:
+        - generic [ref=e58]:
+          - 'heading "Llamada Falsa: Excusa Perfecta" [level=1] [ref=e60]'
+          - generic [ref=e61]:
+            - link "Dg-Development" [ref=e63] [cursor=pointer]:
+              - /url: /store/apps/developer?id=Dg-Development
+            - generic [ref=e64]: Contiene anuncios · Compras directas desde la app
+        - region "Insignias de información" [ref=e67]:
+          - generic [ref=e69]:
+            - generic [ref=e70]: 100+
+            - generic [ref=e71]: Descargas
+      - generic [ref=e72]:
+        - button "Instalar" [ref=e80]
+        - generic [ref=e84]:
+          - button "Compartir" [ref=e88] [cursor=pointer]
+          - button "Agregar a la lista de deseos" [ref=e95] [cursor=pointer]
+    - generic [ref=e100]:
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - img "Calificación del contenido" [ref=e103]
+          - generic [ref=e104]:
+            - generic [ref=e105]: Apto para todo público
+            - link "Más información sobre las clasificaciones de contenido" [ref=e106] [cursor=pointer]:
+              - /url: https://support.google.com/googleplay?p=appgame_ratings
+              - text: Más información
+        - generic [ref=e107]:
+          - generic [ref=e110]:
+            - list [ref=e111]:
+              - listitem [ref=e112]:
+                - button "Imagen de la captura de pantalla" [ref=e114] [cursor=pointer]
+              - listitem [ref=e115]:
+                - button "Imagen de la captura de pantalla" [ref=e117] [cursor=pointer]
+              - listitem [ref=e118]:
+                - button "Imagen de la captura de pantalla" [ref=e120] [cursor=pointer]
+              - listitem [ref=e121]:
+                - button "Imagen de la captura de pantalla" [ref=e123] [cursor=pointer]
+              - listitem [ref=e124]:
+                - button "Imagen de la captura de pantalla" [ref=e126] [cursor=pointer]
+              - listitem [ref=e127]:
+                - button "Imagen de la captura de pantalla" [ref=e129] [cursor=pointer]
+              - listitem [ref=e130]:
+                - button "Imagen de la captura de pantalla" [ref=e132] [cursor=pointer]
+              - listitem [ref=e133]:
+                - button "Imagen de la captura de pantalla" [ref=e135] [cursor=pointer]
+              - listitem [ref=e136]:
+                - button "Imagen de la captura de pantalla" [ref=e138] [cursor=pointer]
+              - listitem [ref=e139]:
+                - button "Imagen de la captura de pantalla" [ref=e141] [cursor=pointer]
+              - listitem [ref=e142]:
+                - button "Imagen de la captura de pantalla" [ref=e144] [cursor=pointer]
+              - listitem [ref=e145]:
+                - button "Imagen de la captura de pantalla" [ref=e147] [cursor=pointer]
+              - listitem [ref=e148]:
+                - button "Imagen de la captura de pantalla" [ref=e150] [cursor=pointer]
+              - listitem [ref=e151]:
+                - button "Imagen de la captura de pantalla" [ref=e153] [cursor=pointer]
+              - listitem [ref=e154]:
+                - button "Imagen de la captura de pantalla" [ref=e156] [cursor=pointer]
+              - listitem [ref=e157]:
+                - button "Imagen de la captura de pantalla" [ref=e159] [cursor=pointer]
+              - listitem [ref=e160]:
+                - button "Imagen de la captura de pantalla" [ref=e162] [cursor=pointer]
+              - listitem [ref=e163]:
+                - button "Imagen de la captura de pantalla" [ref=e165] [cursor=pointer]
+              - listitem [ref=e166]:
+                - button "Imagen de la captura de pantalla" [ref=e168] [cursor=pointer]
+              - listitem [ref=e169]:
+                - button "Imagen de la captura de pantalla" [ref=e171] [cursor=pointer]
+            - button "Ir al conjunto siguiente" [ref=e173] [cursor=pointer]:
+              - generic [ref=e174]: chevron_right
+          - generic [ref=e178]:
+            - generic [ref=e180]:
+              - heading "Acerca de esta app" [level=2] [ref=e182]
+              - button "Más información sobre Acerca de esta app" [ref=e184] [cursor=pointer]:
+                - generic [ref=e185]: arrow_forward
+            - generic [ref=e186]:
+              - generic [ref=e187]: "¿Atrapado en una reunión que no termina o en una cita que no va para ningún lado? ExitPlan es la app de llamada falsa que te da una excusa creíble para irte, con un solo toque.ExitPlan simula interrupciones cotidianas realistas: una llamada falsa, un timbre, una alarma, una llamada que se corta. Todo discreto y en segundos. Elige un sonido, programa el retardo y deja que tu celular haga el resto.CÓMO FUNCIONAN LA LLAMADA FALSA Y LOS SONIDOS DE SALIDA1. Elige tu salida: 47 sonidos de alta calidad pensados para sonar creíbles en un cuarto en silencio.2. Programa el retardo: 5, 10 o 30 segundos, para que no parezca que lo activaste tú.3. Pantalla en negro: al dispararse, la pantalla se apaga por completo, como si el celular estuviera guardado.4. Sal de ahí: la llamada falsa, la alarma o el timbre se disparan de fondo y te dan la excusa.LLAMADAS FALSAS QUE PARECEN REALESCrea un contacto falso con nombre, número y una foto de tu galería, y elige si la pantalla de llamada entrante debe verse como iOS, Android o WhatsApp. Haz que suene cuando lo necesites, contéstala de verdad y cuelga cuando quieras irte. La foto nunca sale de tu teléfono.CUÁNDO SE USA EXITPLAN- Una primera cita que no está funcionando- Una reunión o una clase que se alarga- Un vendedor o una visita a domicilio que no pediste- Una cena familiar o una fiesta de la que quieres irte temprano- Cualquier conversación incómoda en la que necesitas una salida amable- Un momento en el que simplemente quieres sentirte más seguro al irteCATEGORÍAS DE SONIDOS INCLUIDAS- Sonidos de timbre: campanas y timbres realistas, como si alguien acabara de llegar.- Sonidos de alarma: sirenas, despertadores y pitidos de emergencia para justificar una salida rápida.- Sin señal: cortes, estática e interferencias para colgar una llamada a media frase.- Eléctrico: cortocircuitos y zumbidos para simular un apagón.- Fuego: crepitar de llamas para una emergencia real.- Tormenta: truenos, lluvia fuerte y viento, para tener que ir a revisar la casa.TUS PROPIOS SONIDOSImporta cualquier archivo de audio de tu dispositivo, recorta con el editor de onda el fragmento exacto que quieras, ponle una etiqueta y un ícono, y guárdalo como una salida más junto a las que ya vienen.CARACTERÍSTICAS- Pantalla de llamada falsa en estilo iOS, Android y WhatsApp- Identificador de llamada falso con nombre, número y foto propios- Cuatro accesos directos en la pantalla de inicio, siempre a un toque- 47 sonidos de alarma falsa, timbre, sirena y emergencia en 6 categorías- Retardo de 0, 5, 10 o 30 segundos- Reproducción una vez, 30 segundos o hasta que tú la detengas- Pantalla completamente en negro mientras suena- Importación de audio con recorte por onda- Etiquetas e íconos personalizados para tus propias salidas- Vibración háptica y volumen máximo forzado- Controles en la pantalla de bloqueo que mantienen el audio activoPRIVACIDAD PRIMEROExitPlan funciona totalmente sin conexión. Sin cuenta, sin registro, sin recolección de datos, sin acceso al micrófono y sin grabar nada. Tus sonidos y las fotos de contacto nunca salen de tu dispositivo.ExitPlan es una herramienta de conveniencia personal, no una app para acosar a nadie. No es un servicio de emergencias y no contacta a nadie en tu nombre. Si estás en peligro, llama al número de emergencias de tu país."
+              - 'note "App de llamada falsa: alarma, timbre y sirena para salir de cualquier lugar." [ref=e189]'
+              - generic [ref=e191]:
+                - generic [ref=e192]: Actualización
+                - generic [ref=e193]: 7 ago 2026
+              - generic [ref=e196]:
+                - generic [ref=e198]: Herramientas
+                - link "Herramientas" [ref=e199] [cursor=pointer]:
+                  - /url: /store/apps/category/TOOLS
+          - generic [ref=e201]:
+            - generic [ref=e203]:
+              - heading "Seguridad de los datos" [level=2] [ref=e205]
+              - generic [ref=e206] [cursor=pointer]:
+                - generic [ref=e207]: arrow_forward
+                - link "Más información sobre Seguridad de los datos" [ref=e208]:
+                  - /url: /store/apps/datasafety?id=com.dg.developer.exitplan
+            - generic [ref=e209]:
+              - text: El primer paso de la seguridad es comprender cómo los desarrolladores recopilan y comparten tus datos. Las prácticas de privacidad y seguridad de datos pueden variar en función del uso de la app, la región y la edad. El desarrollador proporcionó esta información y podría actualizarla con el tiempo.
+              - generic [ref=e210]:
+                - list [ref=e211]:
+                  - listitem [ref=e212]:
+                    - generic [ref=e214]:
+                      - text: Esta app podría compartir estos tipos de datos con terceros
+                      - generic [ref=e215]: Ubicación, Actividad en la app y Dispositivo u otros IDs
+                  - listitem [ref=e216]:
+                    - generic [ref=e218]:
+                      - text: Es posible que esta app recopile estos tipos de datos
+                      - generic [ref=e219]: Ubicación, Actividad en la app y 2 más
+                  - listitem [ref=e220]:
+                    - generic [ref=e222]: Los datos están encriptados en tránsito
+                  - listitem [ref=e223]:
+                    - generic [ref=e225]: No se pueden borrar los datos
+                - generic [ref=e228]:
+                  - generic [ref=e230]: Ver detalles
+                  - link "Más detalles sobre la seguridad de los datos" [ref=e231] [cursor=pointer]:
+                    - /url: /store/apps/datasafety?id=com.dg.developer.exitplan
+      - generic [ref=e236]:
+        - heading "Asistencia de la app" [level=2] [ref=e238]
+        - button "Expandir" [ref=e240] [cursor=pointer]:
+          - generic [ref=e241]: expand_more
+      - link "Marcar como inapropiada" [ref=e245] [cursor=pointer]:
+        - /url: https://support.google.com/googleplay/?p=report_content
+        - generic [ref=e246]: flag
+        - text: Marcar como inapropiada
+  - contentinfo [ref=e248]:
+    - generic [ref=e250]:
+      - generic [ref=e252]:
+        - text: Google Play
+        - link [ref=e254] [cursor=pointer]:
+          - /url: /store/pass/getstarted
+          - paragraph [ref=e255]: Play Pass
+        - link [ref=e257] [cursor=pointer]:
+          - /url: /store/points/enroll
+          - paragraph [ref=e258]: Play Points
+        - link [ref=e260] [cursor=pointer]:
+          - /url: https://play.google.com/about/giftcards
+          - paragraph [ref=e261]: Tarjetas regalo
+        - link [ref=e263] [cursor=pointer]:
+          - /url: /redeem
+          - paragraph [ref=e264]: Canjear
+        - link [ref=e266] [cursor=pointer]:
+          - /url: https://support.google.com/googleplay/answer/134336
+          - paragraph [ref=e267]: Política de reembolsos
+      - generic [ref=e269]:
+        - text: Niños y familia
+        - link [ref=e271] [cursor=pointer]:
+          - /url: https://support.google.com/googleplay?p=pff_parentguide
+          - paragraph [ref=e272]: Guía para padres
+        - link [ref=e274] [cursor=pointer]:
+          - /url: https://support.google.com/googleplay/answer/7007852
+          - paragraph [ref=e275]: Compartir en familia
+    - generic [ref=e276]:
+      - link [ref=e278] [cursor=pointer]:
+        - /url: https://play.google.com/intl/es_co/about/play-terms.html
+        - paragraph [ref=e279]: Términos del Servicio
+      - link [ref=e281] [cursor=pointer]:
+        - /url: https://policies.google.com/privacy
+        - paragraph [ref=e282]: Privacidad
+      - link [ref=e284] [cursor=pointer]:
+        - /url: https://support.google.com/googleplay/?p=about_play
+        - paragraph [ref=e285]: Información sobre Google Play
+      - link [ref=e287] [cursor=pointer]:
+        - /url: http://developer.android.com/index.html
+        - paragraph [ref=e288]: Desarrolladores
+      - link [ref=e290] [cursor=pointer]:
+        - /url: https://store.google.com/?playredirect=true&utm_source=play&utm_medium=google_oo&utm_campaign=GS106288
+        - paragraph [ref=e291]: Google Store
+      - generic [ref=e292]: Todos los precios incluyen IVA
+      - generic [ref=e293]: Colombia (Español)

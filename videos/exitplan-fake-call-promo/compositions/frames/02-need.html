@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "Space Grotesk"; src: url("assets/fonts/space-grotesk-0.ttf") format("truetype"); font-weight: 400; }
+        @font-face { font-family: "Space Grotesk"; src: url("assets/fonts/space-grotesk-1.ttf") format("truetype"); font-weight: 600; }
+        @font-face { font-family: "Space Grotesk"; src: url("assets/fonts/space-grotesk-2.ttf") format("truetype"); font-weight: 700; }
+        @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/jetbrains-mono-0.ttf") format("truetype"); font-weight: 500; }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: hidden;
+          background: #0A0A0A;
+          font-family: "Space Grotesk", sans-serif;
+        }
+
+        .word {
+          position: absolute;
+          left: 64px;
+          width: 952px;
+          font-weight: 700;
+          line-height: 1.0;
+          letter-spacing: -0.03em;
+        }
+
+        .word-1 {
+          top: 420px;
+          font-size: 160px;
+          color: #FFFFFF;
+        }
+
+        .word-2 {
+          top: 620px;
+          font-size: 120px;
+          color: #A0A0A0;
+        }
+
+        .word-3 {
+          top: 820px;
+          font-size: 140px;
+          color: #F5A623;
+        }
+
+        .tag {
+          position: absolute;
+          left: 64px;
+          top: 300px;
+          font-family: "JetBrains Mono", monospace;
+          font-size: 24px;
+          font-weight: 500;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: #F5A623;
+        }
+
+        .bottom-line {
+          position: absolute;
+          left: 64px;
+          bottom: 220px;
+          width: 952px;
+          font-size: 42px;
+          font-weight: 600;
+          line-height: 1.25;
+          color: #FFFFFF;
+        }
+      </style>
+
+      <div id="root" data-composition-id="frame-02" data-width="1080" data-height="1920">
+        <div id="f2-tag" class="clip tag" data-start="0" data-duration="3" data-track-index="1">la situación</div>
+        <div id="f2-w1" class="clip word word-1" data-start="0" data-duration="1.2" data-track-index="2">reunión</div>
+        <div id="f2-w2" class="clip word word-2" data-start="0.7" data-duration="1.3" data-track-index="3">que se alarga</div>
+        <div id="f2-w3" class="clip word word-3" data-start="1.5" data-duration="1.5" data-track-index="4">necesitas salir</div>
+        <div id="f2-bottom" class="clip bottom-line" data-start="1.8" data-duration="1.2" data-track-index="5">
+          Una excusa que nadie dude.
+        </div>
+      </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#f2-tag", { y: -30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, 0);
+        tl.fromTo("#f2-w1", { x: -120, opacity: 0 }, { x: 0, opacity: 1, duration: 0.45, ease: "power3.out" }, 0.1);
+        tl.fromTo("#f2-w2", { x: 120, opacity: 0 }, { x: 0, opacity: 1, duration: 0.45, ease: "power3.out" }, 0.7);
+        tl.fromTo("#f2-w3", { y: 80, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.55, ease: "power3.out" }, 1.5);
+        tl.fromTo("#f2-bottom", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" }, 1.85);
+
+        window.__timelines["frame-02"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

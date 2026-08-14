@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "Space Grotesk"; src: url("assets/fonts/space-grotesk-0.ttf") format("truetype"); font-weight: 400; }
+        @font-face { font-family: "Space Grotesk"; src: url("assets/fonts/space-grotesk-1.ttf") format("truetype"); font-weight: 600; }
+        @font-face { font-family: "Space Grotesk"; src: url("assets/fonts/space-grotesk-2.ttf") format("truetype"); font-weight: 700; }
+        @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/jetbrains-mono-0.ttf") format("truetype"); font-weight: 500; }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: hidden;
+          background: #0A0A0A;
+          font-family: "Space Grotesk", sans-serif;
+        }
+
+        .call-card {
+          position: absolute;
+          left: 40px;
+          top: 180px;
+          width: 1000px;
+          height: 1380px;
+          background: #000;
+          border-radius: 60px;
+          overflow: hidden;
+          box-shadow: 0 60px 160px rgba(0,0,0,0.7);
+        }
+
+        .call-img {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center top;
+        }
+
+        .ring {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          border: 3px solid #F5A623;
+          pointer-events: none;
+        }
+
+        .caption {
+          position: absolute;
+          left: 64px;
+          bottom: 160px;
+          width: 952px;
+          font-size: 56px;
+          font-weight: 700;
+          line-height: 1.15;
+          color: #FFFFFF;
+          text-align: center;
+        }
+
+        .caption span {
+          color: #F5A623;
+        }
+
+        .caller-label {
+          position: absolute;
+          left: 50%;
+          top: 260px;
+          transform: translateX(-50%);
+          padding: 12px 28px;
+          background: rgba(0,0,0,0.5);
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 100px;
+          font-family: "JetBrains Mono", monospace;
+          font-size: 22px;
+          font-weight: 500;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #F5A623;
+          z-index: 3;
+        }
+      </style>
+
+      <div id="root" data-composition-id="frame-05" data-width="1080" data-height="1920" data-layout-allow-overflow>
+        <div id="f5-card" class="clip call-card" data-start="0" data-duration="5" data-track-index="1">
+          <img id="f5-img" class="call-img" src="assets/screen_incoming_classic_2.png" alt="Incoming call" />
+          <div id="f5-ring1" class="ring" style="width: 360px; height: 360px; opacity: 0.0;"></div>
+          <div id="f5-ring2" class="ring" style="width: 560px; height: 560px; opacity: 0.0;"></div>
+          <div id="f5-ring3" class="ring" style="width: 760px; height: 760px; opacity: 0.0;"></div>
+        </div>
+        <div id="f5-caller" class="clip caller-label" data-start="0" data-duration="5" data-track-index="2">Llamada entrante</div>
+        <div id="f5-caption" class="clip caption" data-start="0.5" data-duration="4.5" data-track-index="3">
+          Cuando suene, <span>solo actúa</span>.<br/>Tu teléfono hará el resto.
+        </div>
+      </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#f5-card", { scale: 0.82, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.8, ease: "power3.out" }, 0);
+        tl.fromTo("#f5-caller", { y: -30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 0.4);
+        tl.fromTo("#f5-caption", { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 0.6);
+
+        tl.fromTo("#f5-ring1", { scale: 0.8, opacity: 0.6 }, { scale: 1.4, opacity: 0, duration: 1.4, ease: "power2.out", repeat: 2 }, 0.5);
+        tl.fromTo("#f5-ring2", { scale: 0.8, opacity: 0.45 }, { scale: 1.4, opacity: 0, duration: 1.5, ease: "power2.out", repeat: 2 }, 0.8);
+        tl.fromTo("#f5-ring3", { scale: 0.8, opacity: 0.3 }, { scale: 1.4, opacity: 0, duration: 1.6, ease: "power2.out", repeat: 2 }, 1.1);
+
+        tl.to("#f5-card", { x: "+=8", y: "+=6", duration: 0.08, yoyo: true, repeat: 15, ease: "none" }, 1.0);
+
+        window.__timelines["frame-05"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

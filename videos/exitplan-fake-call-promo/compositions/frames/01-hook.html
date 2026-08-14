@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "Space Grotesk"; src: url("assets/fonts/space-grotesk-0.ttf") format("truetype"); font-weight: 400; }
+        @font-face { font-family: "Space Grotesk"; src: url("assets/fonts/space-grotesk-1.ttf") format("truetype"); font-weight: 600; }
+        @font-face { font-family: "Space Grotesk"; src: url("assets/fonts/space-grotesk-2.ttf") format("truetype"); font-weight: 700; }
+        @font-face { font-family: "JetBrains Mono"; src: url("assets/fonts/jetbrains-mono-0.ttf") format("truetype"); font-weight: 500; }
+
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          overflow: hidden;
+          background: #0A0A0A;
+          font-family: "Space Grotesk", sans-serif;
+        }
+
+        .accent-line {
+          position: absolute;
+          left: 64px;
+          top: 200px;
+          width: 80px;
+          height: 6px;
+          background: #F5A623;
+          border-radius: 3px;
+          transform-origin: left center;
+        }
+
+        .headline {
+          position: absolute;
+          left: 64px;
+          top: 188px;
+          width: 952px;
+          font-size: 90px;
+          font-weight: 700;
+          line-height: 1.08;
+          letter-spacing: -0.02em;
+          color: #FFFFFF;
+        }
+
+        .caption {
+          position: absolute;
+          left: 64px;
+          top: 580px;
+          width: 800px;
+          font-size: 38px;
+          font-weight: 400;
+          line-height: 1.45;
+          color: #A0A0A0;
+        }
+
+        .phone-wrap {
+          position: absolute;
+          left: 260px;
+          bottom: -40px;
+          width: 560px;
+          height: 1080px;
+        }
+
+        .phone-body {
+          position: absolute;
+          inset: 0;
+          background: #141414;
+          border: 2px solid rgba(255,255,255,0.12);
+          border-radius: 56px;
+          box-shadow: 0 40px 100px rgba(0,0,0,0.65);
+          overflow: hidden;
+        }
+
+        .phone-notch {
+          position: absolute;
+          top: 18px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 160px;
+          height: 28px;
+          background: #000;
+          border-radius: 14px;
+        }
+
+        .phone-screen {
+          position: absolute;
+          top: 70px;
+          left: 22px;
+          right: 22px;
+          bottom: 22px;
+          background: #0A0A0A;
+          border-radius: 36px;
+          overflow: hidden;
+          display: grid;
+          place-items: center;
+        }
+
+        .call-ring {
+          position: relative;
+          width: 240px;
+          height: 240px;
+        }
+
+        .ring {
+          position: absolute;
+          inset: 0;
+          border: 4px solid #F5A623;
+          border-radius: 50%;
+          opacity: 0.35;
+        }
+
+        .ring:nth-child(2) {
+          inset: 28px;
+          opacity: 0.55;
+        }
+
+        .ring:nth-child(3) {
+          inset: 56px;
+          background: #F5A623;
+          opacity: 1;
+          display: grid;
+          place-items: center;
+        }
+
+        .ring-icon {
+          width: 64px;
+          height: 64px;
+          fill: #0A0A0A;
+        }
+      </style>
+
+      <div id="root" data-composition-id="frame-01" data-width="1080" data-height="1920" data-layout-allow-overflow>
+        <div id="f1-accent" class="clip accent-line" data-start="0" data-duration="4" data-track-index="1"></div>
+        <div id="f1-headline" class="clip headline" data-start="0" data-duration="4" data-track-index="2">
+          ¿Alguna vez has estado atrapado en una cita que no termina?
+        </div>
+        <div id="f1-caption" class="clip caption" data-start="0" data-duration="4" data-track-index="3">
+          Necesitas una excusa que nadie dude.
+        </div>
+        <div id="f1-phone" class="clip phone-wrap" data-start="0" data-duration="4" data-track-index="4">
+          <div class="phone-body">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="call-ring">
+                <div class="ring"></div>
+                <div class="ring"></div>
+                <div class="ring">
+                  <svg class="ring-icon" viewBox="0 0 24 24">
+                    <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-2.2 2.2a15.057 15.057 0 0 1-6.59-6.59l2.2-2.21c.28-.26.36-.65.25-1.01A11.36 11.36 0 0 1 8.59 3.99c0-.55-.45-1-1-1H4.08c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#f1-accent", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.out" }, 0);
+        tl.fromTo("#f1-headline", { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 0.15);
+        tl.fromTo("#f1-caption", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 0.45);
+        tl.fromTo("#f1-phone", { y: 420, opacity: 0, scale: 0.88 }, { y: 0, opacity: 1, scale: 1, duration: 1.0, ease: "power3.out" }, 0.25);
+        tl.fromTo(".ring", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: (i) => i === 2 ? 1 : (i === 1 ? 0.55 : 0.35), duration: 0.8, ease: "back.out(1.4)", stagger: 0.1 }, 0.6);
+
+        window.__timelines["frame-01"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+Voice: ElevenLabs v3, Spanish (es), conversational young adult, slight dry humour.
+Settings: stability 0.35 · similarity 0.75 · style 0.25
+Delivery: UGC, like a friend showing you a trick. Fast but clear. Dry, not salesy.
+Total duration: ~30 seconds
+
+[0:00] ¿Alguna vez has estado atrapado en una cita que no termina?
+[0:04] Necesitas una salida. Una excusa que nadie dude.
+[0:07] ExitPlan. La app de llamada falsa que suena y parece real.
+[0:12] Elige quién llama, qué pantalla quieres — Android, WhatsApp — y decide: ahora o dentro de cinco minutos.
+[0:20] Cuando suene, solo actúa. Tu teléfono hará el resto.
+[0:25] Busca "Llamada Falsa: Excusa Perfecta" en Google Play. Tu excusa perfecta, a un toque.
